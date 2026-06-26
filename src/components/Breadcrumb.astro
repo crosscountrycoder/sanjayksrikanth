@@ -1,0 +1,42 @@
+---
+interface Crumb {
+	label: string;
+	href?: string;
+}
+interface Props {
+	crumbs: Crumb[];
+}
+const { crumbs } = Astro.props;
+---
+
+<nav class="breadcrumb">
+	{crumbs.map((crumb, i) => (
+		<span>
+			{i > 0 && <span class="sep"> &gt; </span>}
+			{crumb.href
+				? <a href={crumb.href}>{crumb.label}</a>
+				: <span class="current">{crumb.label}</span>}
+		</span>
+	))}
+</nav>
+
+<style>
+	.breadcrumb {
+		font-size: 0.875rem;
+		color: #606060;
+		margin-bottom: 1rem;
+	}
+	.breadcrumb a {
+		color: #3245ff;
+		text-decoration: none;
+	}
+	.breadcrumb a:hover {
+		text-decoration: underline;
+	}
+	.current {
+		color: #606060;
+	}
+	.sep {
+		color: #909090;
+	}
+</style>

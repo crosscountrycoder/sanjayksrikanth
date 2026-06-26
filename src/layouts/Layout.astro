@@ -6,18 +6,81 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>Sanjay Srikanth</title>
 	</head>
 	<body>
 		<slot />
+		<footer>
+			<p>© Copyright 2026&ndash;<span id="footer-year"></span> Sanjay Srikanth</p>
+		</footer>
 	</body>
 </html>
 
-<style>
+<style is:global>
 	html,
 	body {
 		margin: 0;
 		width: 100%;
 		height: 100%;
+		background-color: #94b1ff;
+	}
+	main {
+		background-color: #ffffff;
+		max-width: 1200px;
+		margin: auto;
+		padding: 0.5rem 1.5rem;
+		font-family: Arial, sans-serif;
+		color: #000000;
+	}
+	h1 {
+		font-size: 2rem;
+		margin-bottom: 0.25rem;
+	}
+	p {
+		margin-top: 0;
+		margin-bottom: 1rem;
+		color: #404040;
+	}
+	.bio {
+		color: #404040;
+		margin-top: 0;
+		margin-bottom: 1.5rem;
+	}
+	h2 {
+		font-size: 1.25rem;
+		border-bottom: 1px solid #e5e7eb;
+		padding-bottom: 0.4rem;
+		margin-bottom: 0.75rem;
+	}
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 2rem;
+	}
+	li {
+		margin-bottom: 0.4rem;
+	}
+	a {
+		color: #3245ff;
+		text-decoration: none;
+	}
+	a:hover {
+		text-decoration: underline;
+	}
+	footer {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 0.75rem 1.5rem;
+		text-align: center;
+	}
+	footer p {
+		color: #000000;
+		font-family: Arial, sans-serif;
+		font-size: 1rem;
+		margin: 0;
 	}
 </style>
+
+<script>
+	document.getElementById('footer-year')!.textContent = String(new Date().getFullYear());
+</script>

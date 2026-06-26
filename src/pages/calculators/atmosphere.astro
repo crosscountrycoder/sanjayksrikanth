@@ -1,0 +1,751 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+---
+
+<Layout>
+	<main>
+		<Breadcrumb crumbs={[
+			{ label: 'Home', href: '/' },
+			{ label: 'Calculators', href: '/calculators' },
+			{ label: 'U.S. Standard Atmosphere Calculator' },
+		]} />
+		<h1>U.S. Standard Atmosphere Calculator</h1>
+		<p>
+		Calculates atmospheric properties at a given altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>, with adjustable sea-level conditions.
+		</p>
+
+		<section class="calculator">
+			<div class="inputs">
+				<h2>Inputs</h2>
+
+				<div class="field">
+					<label for="altitude">Altitude</label>
+					<div class="input-row">
+						<input type="number" id="altitude" value="0" />
+						<select id="altitude-unit">
+							<option value="m" selected>m</option>
+							<option value="ft">ft</option>
+							<option value="mi">mi</option>
+							<option value="km">km</option>
+						</select>
+					</div>
+					<p class="error" id="err-altitude"></p>
+				</div>
+
+				<div class="field">
+					<label for="sea-level-temp">Sea-level temperature</label>
+					<div class="input-row">
+						<input type="number" id="sea-level-temp" value="15" />
+						<select id="sea-level-temp-unit">
+							<option value="C" selected>°C</option>
+							<option value="F">°F</option>
+							<option value="K">K</option>
+							<option value="R">°R</option>
+						</select>
+					</div>
+					<p class="error" id="err-temp"></p>
+				</div>
+
+				<div class="field">
+					<label for="sea-level-pressure">Sea-level pressure</label>
+					<div class="input-row">
+						<input type="number" id="sea-level-pressure" value="1" />
+						<select id="sea-level-pressure-unit">
+							<option value="atm" selected>atm</option>
+							<option value="Pa">Pa</option>
+							<option value="hPa">hPa (mbar)</option>
+							<option value="kPa">kPa</option>
+							<option value="mmHg">mmHg (Torr)</option>
+							<option value="inHg">inHg</option>
+							<option value="psi">psi</option>
+						</select>
+					</div>
+					<p class="error" id="err-pressure"></p>
+				</div>
+
+				<div class="field checkbox-field">
+					<label>
+						<input type="checkbox" id="use-geopotential" />
+						Use geopotential rather than geometric altitude
+					</label>
+				</div>
+
+				<div class="unit-buttons">
+					<button id="btn-default">Default units</button>
+					<button id="btn-si">SI units</button>
+					<button id="btn-imperial">Imperial units</button>
+				</div>
+				<div class="unit-buttons">
+					<button id="btn-reset">Reset to standard conditions</button>
+				</div>
+
+			</div>
+
+			<div class="outputs">
+				<h2>Outputs</h2>
+
+				<div class="field">
+					<label>Air pressure</label>
+					<div class="output-row">
+						<span id="out-pressure">—</span>
+						<select id="out-pressure-unit">
+							<option value="atm" selected>atm</option>
+							<option value="Pa">Pa</option>
+							<option value="hPa">hPa (mbar)</option>
+							<option value="kPa">kPa</option>
+							<option value="mmHg">mmHg (Torr)</option>
+							<option value="inHg">inHg</option>
+							<option value="psi">psi</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Air temperature</label>
+					<div class="output-row">
+						<span id="out-temperature">—</span>
+						<select id="out-temperature-unit">
+							<option value="C" selected>°C</option>
+							<option value="F">°F</option>
+							<option value="K">K</option>
+							<option value="R">°R</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Air density</label>
+					<div class="output-row">
+						<span id="out-density">—</span>
+						<select id="out-density-unit">
+							<option value="kg/m3" selected>kg/m³</option>
+							<option value="lb/ft3">lb/ft³</option>
+							<option value="slug/ft3">slug/ft³</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Density altitude</label>
+					<div class="output-row">
+						<span id="out-density-altitude">—</span>
+						<select id="out-density-altitude-unit">
+							<option value="m" selected>m</option>
+							<option value="ft">ft</option>
+							<option value="mi">mi</option>
+							<option value="km">km</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Speed of sound</label>
+					<div class="output-row">
+						<span id="out-speed-of-sound">—</span>
+						<select id="out-speed-of-sound-unit">
+							<option value="m/s" selected>m/s</option>
+							<option value="km/h">km/h</option>
+							<option value="mph">mph</option>
+							<option value="ft/s">ft/s</option>
+							<option value="kn">knots</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Dynamic viscosity</label>
+					<div class="output-row">
+						<span id="out-viscosity">—</span>
+						<select id="out-viscosity-unit">
+							<option value="Pa·s" selected>Pa·s</option>
+							<option value="μPa·s">μPa·s</option>
+							<option value="P">poise</option>
+							<option value="cP">centipoise</option>
+							<option value="lbf·s/ft2">lbf·s/ft²</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Boiling point of water</label>
+					<div class="output-row">
+						<span id="out-boiling-point">—</span>
+						<select id="out-boiling-point-unit">
+							<option value="C" selected>°C</option>
+							<option value="F">°F</option>
+							<option value="K">K</option>
+							<option value="R">°R</option>
+						</select>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<h2>Notes</h2>
+		<p>
+		Pressure, temperature, speed of sound, and dynamic viscosity are derived from 
+		the <a href="https://www.ngdc.noaa.gov/stp/space-weather/online-publications/miscellaneous/us-standard-atmosphere-1976/us-standard-atmosphere_st76-1562_noaa.pdf" target="_blank">U.S. Standard Atmosphere of 1976</a> for 
+		altitudes between -5000 and 86000 m. Density is calculated using the ideal gas law and molar mass of 28.9644 g/mol. Standard sea-level 
+		conditions are 15°C (59°F, 288.15 K) and 1 atm (101325 Pa, 14.6959 psi, 1013.25 hPa, 760 mmHg, 29.9213 inHg). 
+		Boiling point of water is calculated using <a href="https://www.iapws.org/relguide/IF97-Rev.html" target="_blank">IAPWS-95</a> and is
+		accurate to 0.01°C. At pressures below the triple point of water (611.657 Pa), the boiling point is undefined because
+		liquid water cannot exist.
+		</p>
+		<p>
+		Note that the density and speed of sound differ from the U.S. Standard Atmosphere by about 0.002%. The 1976 model uses a
+		value of the gas constant R that predates the 2019 revision of the SI which fixed R at 8.31446261815324 J/(mol·K). This calculator
+		uses the SI value. Density is computed for dry air; humid air can be up to 2% less dense than dry air. Density altitude is the altitude at
+		which under standard conditions the air density would be equal to the given air density. It is used in aviation to determine aircraft performance.
+		</p>
+		<p>
+		In the troposphere (under 11 km), temperature decreases linearly with increasing altitude, by about 6.5°C/km (0.00357°F/ft). Pressure decreases
+		roughly exponentially; in the troposphere it can be approximated as P = 2<sup>-h/5500</sup> where P is in atm and h in altitude in meters,
+		indicating that pressure halves about every 5500 m (18000 ft).
+		</p>
+		<p>
+		In the altitude range covered by the U.S. Standard Atmosphere, dry air is 78.08% nitrogen, 20.95% oxygen, 0.93% argon, and 0.04% carbon dioxide
+		by volume. The partial pressure of each gas is its volume fraction multiplied by total air pressure. For example, partial pressure of oxygen 
+		is 0.2095 times the total pressure.
+		</p>
+	</main>
+</Layout>
+
+<style>
+	.calculator {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 10rem 1fr;
+		align-items: center;
+		column-gap: 0.75rem;
+		row-gap: 0.15rem;
+		margin-bottom: 0.75rem;
+	}
+
+	label {
+		font-size: 1rem;
+		color: #404040;
+	}
+
+	.input-row,
+	.output-row {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		padding: 0.25rem 0.35rem;
+		border: 1px solid #d0d0d0;
+		border-radius: 6px;
+		font-size: 1rem;
+	}
+
+	select {
+		padding: 0.25rem 0.35rem;
+		border: 1px solid #d0d0d0;
+		border-radius: 6px;
+		font-size: 1rem;
+		background: #fff;
+	}
+
+	.output-row span {
+		flex: 1;
+		padding: 0.25rem 0.35rem;
+		background: #f0f0f0;
+		border: 1px solid #d0d0d0;
+		border-radius: 6px;
+		font-size: 1rem;
+		min-width: 0;
+	}
+
+	.error {
+		grid-column: 2;
+		color: red;
+		font-size: 0.875rem;
+		margin: 0;
+	}
+
+	.checkbox-field label {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 1rem;
+		color: #000000;
+		cursor: pointer;
+	}
+
+	.unit-buttons {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+	}
+
+	.unit-buttons button {
+		padding: 0.4rem 1rem;
+		border: 1px solid #d0d0d0;
+		border-radius: 6px;
+		background: #fff;
+		font-size: 0.875rem;
+		cursor: pointer;
+	}
+
+	.unit-buttons button:hover {
+		background: #f0f0f0;
+	}
+
+	@media (max-width: 700px) {
+		.calculator {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+
+<script>
+	// Earth radius used by the 1976 Standard Atmosphere model
+	const EARTH_RADIUS_M = 6_356_766;
+
+	// Converts geometric altitude (m) to geopotential altitude (m)
+	function geometricToGeopotential(h: number): number {
+		return (EARTH_RADIUS_M * h) / (EARTH_RADIUS_M + h);
+	}
+
+	// Converts geopotential altitude (m) to geometric altitude (m)
+	function geopotentialToGeometric(H: number): number {
+		return (EARTH_RADIUS_M * H) / (EARTH_RADIUS_M - H);
+	}
+
+	// B = g0 * M0 / R* (K/m), from the 1976 Standard Atmosphere
+	const B = 0.0341631947;
+
+	// Layer table: base geopotential altitude (m), base temperature (K), lapse rate (K/m), base pressure (Pa)
+	const LAYERS = [
+		{ Hb:     0, Tb: 288.15, Lb: -0.0065, Pb: 101325},
+		{ Hb: 11000, Tb: 216.65, Lb:  0,      Pb: 22632.1},
+		{ Hb: 20000, Tb: 216.65, Lb:  0.001,  Pb: 5474.89},
+		{ Hb: 32000, Tb: 228.65, Lb:  0.0028, Pb: 868.019},
+		{ Hb: 47000, Tb: 270.65, Lb:  0,      Pb: 110.906},
+		{ Hb: 51000, Tb: 270.65, Lb: -0.0028, Pb: 66.9389},
+		{ Hb: 71000, Tb: 214.65, Lb: -0.002,  Pb: 3.95642},
+	];
+
+	// Returns the layer index for a given geopotential altitude H (m)
+	function getLayerIndex(H: number): number {
+		for (let i = LAYERS.length - 1; i >= 0; i--) {
+			if (H >= LAYERS[i].Hb) return i;
+		}
+		return 0;
+	}
+
+	// Returns pressure (Pa) at geopotential altitude H (m), with sea-level pressure P0 (Pa)
+	function getPressure(H: number, P0_Pa: number): number {
+		const scale = P0_Pa / 101325;
+		const i     = getLayerIndex(H);
+		const { Hb, Lb, Pb, Tb } = LAYERS[i];
+
+		if (Lb === 0) {
+			return Pb * scale * Math.exp(-B * (H - Hb) / Tb);
+		} else {
+			return Pb * scale * Math.pow((Tb + Lb * (H - Hb)) / Tb, -B / Lb);
+		}
+	}
+
+	const R  = 8.31446261815324; // J/(mol·K)
+	const M0 = 0.0289644;        // kg/mol, molar mass of dry air
+
+	// Returns air density (kg/m³) via the ideal gas law: ρ = P·M0 / (R·T)
+	function getDensity(P_Pa: number, T_K: number): number {
+		return (P_Pa * M0) / (R * T_K);
+	}
+
+	// IAPWS-95 vapor pressure of water (Pa) given temperature T (K)
+	function waterVaporPressure(T: number): number {
+		const Tc = 647.096, Pc = 22_064_000;
+		const theta = 1 - T / Tc;
+		const exponent = (Tc / T) * (
+			-7.85951783  * theta       +
+			 1.84408259  * theta**1.5  +
+			-11.7866497  * theta**3    +
+			 22.6807411  * theta**3.5  +
+			-15.9618719  * theta**4    +
+			 1.80122502  * theta**7.5
+		);
+		return Pc * Math.exp(exponent);
+	}
+
+	// Returns boiling point of water (K) at given pressure (Pa) via bisection
+	function getBoilingPoint(P_Pa: number): number {
+		let lo = 273, hi = 647.096;
+		for (let i = 0; i < 30; i++) {
+			const mid = (lo + hi) / 2;
+			if (waterVaporPressure(mid) < P_Pa) lo = mid; else hi = mid;
+		}
+		return hi;
+	}
+
+	// Returns density altitude (m geometric) for a given air density (kg/m³)
+	function getDensityAltitude(rho: number): number {
+		let lo = -5_000, hi = 86_000;
+		for (let i = 0; i < 40; i++) {
+			const mid = (lo + hi) / 2;
+			const H   = geometricToGeopotential(mid);
+			const T   = getTemperature(H, 288.15);
+			const P   = getPressure(H, 101_325);
+			if (getDensity(P, T) > rho) lo = mid; else hi = mid;
+		}
+		return hi;
+	}
+
+	// Returns temperature (K) at geopotential altitude H (m), with sea-level temperature T0 (K)
+	function getTemperature(H: number, T0_K: number): number {
+		const dT = T0_K - 288.15;
+		const { Hb, Lb, Tb } = LAYERS[getLayerIndex(H)];
+		return (Tb + dT) + Lb * (H - Hb);
+	}
+
+	function fmtBound(n: number): string {
+		return parseFloat(n.toPrecision(6)).toString();
+	}
+
+	function validate(): boolean {
+		let valid = true;
+
+		// Altitude
+		const altVal    = parseFloat((document.getElementById('altitude') as HTMLInputElement).value);
+		const altUnit   = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
+		const useGeopot = (document.getElementById('use-geopotential') as HTMLInputElement).checked;
+		const errAlt    = document.getElementById('err-altitude') as HTMLElement;
+
+		if (!isNaN(altVal)) {
+			const h_m = altUnit === 'ft' ? altVal * 0.3048
+			          : altUnit === 'mi' ? altVal * 1609.344
+			          : altUnit === 'km' ? altVal * 1000
+			          : altVal;
+			const loM = useGeopot ? -5004 : -5000;
+			const hiM = useGeopot ? 84852 : 86000;
+			const label = useGeopot ? 'Geopotential altitude' : 'Geometric altitude';
+			const factor = altUnit === 'ft' ? 3.280839895
+			             : altUnit === 'mi' ? 0.000621371192
+			             : altUnit === 'km' ? 0.001
+			             : 1;
+			if (h_m < loM || h_m > hiM) {
+				errAlt.textContent = `${label} must be between ${fmtBound(loM * factor)} and ${fmtBound(hiM * factor)} ${altUnit}`;
+				valid = false;
+			} else {
+				errAlt.textContent = '';
+			}
+		} else {
+			errAlt.textContent = '';
+		}
+
+		// Temperature (-100°C to 100°C)
+		const tempVal  = parseFloat((document.getElementById('sea-level-temp') as HTMLInputElement).value);
+		const tempUnit = (document.getElementById('sea-level-temp-unit') as HTMLSelectElement).value;
+		const errTemp  = document.getElementById('err-temp') as HTMLElement;
+
+		if (!isNaN(tempVal)) {
+			const T_K  = tempUnit === 'C' ? tempVal + 273.15 : tempUnit === 'F' ? (tempVal - 32) / 1.8 + 273.15 : tempUnit === 'R' ? tempVal / 1.8 : tempVal;
+			const loK  = 173.15, hiK = 373.15;
+			const loDisplay = tempUnit === 'C' ? -100 : tempUnit === 'F' ? -148 : tempUnit === 'R' ? loK * 1.8 : loK;
+			const hiDisplay = tempUnit === 'C' ?  100 : tempUnit === 'F' ?  212 : tempUnit === 'R' ? hiK * 1.8 : hiK;
+			const unitLabel = tempUnit === 'C' ? '°C' : tempUnit === 'F' ? '°F' : tempUnit === 'R' ? '°R' : 'K';
+			if (T_K < loK || T_K > hiK) {
+				errTemp.textContent = `Sea-level temperature must be between ${fmtBound(loDisplay)} and ${fmtBound(hiDisplay)} ${unitLabel}`;
+				valid = false;
+			} else {
+				errTemp.textContent = '';
+			}
+		} else {
+			errTemp.textContent = '';
+		}
+
+		// Pressure (0.5 to 1.5 atm)
+		const pressVal  = parseFloat((document.getElementById('sea-level-pressure') as HTMLInputElement).value);
+		const pressUnit = (document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value;
+		const errPress  = document.getElementById('err-pressure') as HTMLElement;
+
+		if (!isNaN(pressVal)) {
+			const P_Pa  = pressUnit === 'atm'  ? pressVal * 101325
+			            : pressUnit === 'hPa'  ? pressVal * 100
+			            : pressUnit === 'kPa'  ? pressVal * 1000
+			            : pressUnit === 'mmHg' ? pressVal * 133.322387415
+			            : pressUnit === 'inHg' ? pressVal * 3386.388640341
+			            : pressUnit === 'psi'  ? pressVal * 6894.757293168
+			            : pressVal;
+			const loP = 0.5 * 101325, hiP = 1.5 * 101325;
+			const toUnit = (p: number) =>
+				  pressUnit === 'atm'  ? p / 101325
+				: pressUnit === 'hPa'  ? p / 100
+				: pressUnit === 'kPa'  ? p / 1000
+				: pressUnit === 'mmHg' ? p / 133.322387415
+				: pressUnit === 'inHg' ? p / 3386.388640341
+				: pressUnit === 'psi'  ? p / 6894.757293168
+				: p;
+			if (P_Pa < loP || P_Pa > hiP) {
+				errPress.textContent = `Sea-level pressure must be between ${fmtBound(toUnit(loP))} and ${fmtBound(toUnit(hiP))} ${pressUnit}`;
+				valid = false;
+			} else {
+				errPress.textContent = '';
+			}
+		} else {
+			errPress.textContent = '';
+		}
+
+		return valid;
+	}
+
+	function fmt6(n: number): string {
+		return n.toPrecision(6);
+	}
+
+	function fmtTemp(n: number): string {
+		return n.toFixed(3);
+	}
+
+	function calculate() {
+		const outputIds = [
+			'out-pressure', 'out-temperature', 'out-density',
+			'out-density-altitude', 'out-speed-of-sound', 'out-viscosity', 'out-boiling-point',
+		];
+		if (!validate()) {
+			for (const id of outputIds) {
+				(document.getElementById(id) as HTMLElement).textContent = '—';
+			}
+			return;
+		}
+
+		const altVal   = parseFloat((document.getElementById('altitude') as HTMLInputElement).value);
+		const altUnit  = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
+		const tempVal  = parseFloat((document.getElementById('sea-level-temp') as HTMLInputElement).value);
+		const tempUnit = (document.getElementById('sea-level-temp-unit') as HTMLSelectElement).value;
+		const pressVal  = parseFloat((document.getElementById('sea-level-pressure') as HTMLInputElement).value);
+		const pressUnit = (document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value;
+
+		if (isNaN(altVal) || isNaN(tempVal) || isNaN(pressVal)) return;
+
+		const P0_Pa = pressUnit === 'atm'  ? pressVal * 101_325
+		            : pressUnit === 'hPa'  ? pressVal * 100
+		            : pressUnit === 'kPa'  ? pressVal * 1000
+		            : pressUnit === 'mmHg' ? pressVal * 133.322387415
+		            : pressUnit === 'inHg' ? pressVal * 3386.388640341
+		            : pressUnit === 'psi'  ? pressVal * 6894.757293168
+		            : pressVal;
+
+		const T0_K = tempUnit === 'C' ? tempVal + 273.15
+		           : tempUnit === 'F' ? (tempVal - 32) / 1.8 + 273.15
+		           : tempUnit === 'R' ? tempVal * 5 / 9
+		           : tempVal;
+
+		const h_m = altUnit === 'ft' ? altVal * 0.3048
+		          : altUnit === 'mi' ? altVal * 1609.344
+		          : altUnit === 'km' ? altVal * 1000
+		          : altVal;
+
+		const useGeopot = (document.getElementById('use-geopotential') as HTMLInputElement).checked;
+		const H = useGeopot ? h_m : geometricToGeopotential(h_m);
+
+		const P_Pa = getPressure(H, P0_Pa);
+		const T_K  = getTemperature(H, T0_K);
+
+		const pUnit = (document.getElementById('out-pressure-unit') as HTMLSelectElement).value;
+		const P_out = pUnit === 'atm'  ? P_Pa / 101325
+		            : pUnit === 'hPa'  ? P_Pa / 100
+		            : pUnit === 'kPa'  ? P_Pa / 1000
+		            : pUnit === 'mmHg' ? P_Pa / 133.322387415
+		            : pUnit === 'inHg' ? P_Pa / 3386.388640341
+		            : pUnit === 'psi'  ? P_Pa / 6894.757293168
+		            : P_Pa;
+
+		(document.getElementById('out-pressure') as HTMLElement).textContent = fmt6(P_out);
+
+		const tUnit = (document.getElementById('out-temperature-unit') as HTMLSelectElement).value;
+		const T_out = tUnit === 'C' ? T_K - 273.15
+		            : tUnit === 'F' ? (T_K - 273.15) * 1.8 + 32
+		            : tUnit === 'R' ? T_K * 1.8
+		            : T_K;
+		(document.getElementById('out-temperature') as HTMLElement).textContent = fmtTemp(T_out);
+
+		const rho   = getDensity(P_Pa, T_K);
+		const dUnit = (document.getElementById('out-density-unit') as HTMLSelectElement).value;
+		const rho_out = dUnit === 'lb/ft3'   ? rho * 0.062427960576145
+		              : dUnit === 'slug/ft3'  ? rho * 0.0019403203
+		              : rho;
+		(document.getElementById('out-density') as HTMLElement).textContent = fmt6(rho_out);
+
+		const da_m = getDensityAltitude(rho);
+		const daUnit = (document.getElementById('out-density-altitude-unit') as HTMLSelectElement).value;
+		const da_out = daUnit === 'ft' ? da_m / 0.3048
+		             : daUnit === 'mi' ? da_m / 1609.344
+		             : daUnit === 'km' ? da_m / 1000
+		             : da_m;
+		const da_str = Math.abs(da_out) > 1 ? fmt6(da_out) : da_out.toFixed(5);
+		(document.getElementById('out-density-altitude') as HTMLElement).textContent = da_str;
+
+		const sos_ms = Math.sqrt(1.4 * P_Pa / rho);
+		const sosUnit = (document.getElementById('out-speed-of-sound-unit') as HTMLSelectElement).value;
+		const sos_out = sosUnit === 'km/h' ? sos_ms * 3.6
+		              : sosUnit === 'mph'  ? sos_ms * 2.2369362920544
+		              : sosUnit === 'ft/s' ? sos_ms / 0.3048
+		              : sosUnit === 'kn'   ? sos_ms * 1.9438444924574
+		              : sos_ms;
+		(document.getElementById('out-speed-of-sound') as HTMLElement).textContent = fmt6(sos_out);
+
+		const mu_Pas = 1.458e-6 * Math.pow(T_K, 1.5) / (T_K + 110.4);
+		const muUnit = (document.getElementById('out-viscosity-unit') as HTMLSelectElement).value;
+		const mu_out = muUnit === 'μPa·s'     ? mu_Pas * 1e6
+		             : muUnit === 'P'          ? mu_Pas * 10
+		             : muUnit === 'cP'         ? mu_Pas * 1000
+		             : muUnit === 'lbf·s/ft2'  ? mu_Pas * 0.020885434233150128
+		             : mu_Pas;
+		(document.getElementById('out-viscosity') as HTMLElement).textContent = fmt6(mu_out);
+
+		const bp_K = getBoilingPoint(P_Pa);
+		const bpEl = document.getElementById('out-boiling-point') as HTMLElement;
+		if (bp_K < 273.16) {
+			bpEl.textContent = 'N/A';
+		} else {
+			const bpUnit = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value;
+			const bp_out = bpUnit === 'C' ? bp_K - 273.15
+			             : bpUnit === 'F' ? (bp_K - 273.15) * 1.8 + 32
+			             : bpUnit === 'R' ? bp_K * 1.8
+			             : bp_K;
+			bpEl.textContent = fmtTemp(bp_out);
+		}
+	}
+
+	const inputIds = [
+		'altitude', 'altitude-unit',
+		'sea-level-temp', 'sea-level-temp-unit',
+		'sea-level-pressure', 'sea-level-pressure-unit',
+		'use-geopotential',
+		'out-pressure-unit', 'out-temperature-unit', 'out-density-unit',
+		'out-density-altitude-unit', 'out-speed-of-sound-unit',
+		'out-viscosity-unit', 'out-boiling-point-unit',
+	];
+
+	for (const id of inputIds) {
+		const el = document.getElementById(id)!;
+		el.addEventListener('input', calculate);
+		el.addEventListener('change', calculate);
+	}
+
+	calculate();
+
+	function setUnits(units: 'si' | 'imperial') {
+		const getNum = (id: string) => parseFloat((document.getElementById(id) as HTMLInputElement).value);
+		const getUnit = (id: string) => (document.getElementById(id) as HTMLSelectElement).value;
+		const setNum = (id: string, val: number) =>
+			{ (document.getElementById(id) as HTMLInputElement).value = parseFloat(val.toPrecision(6)).toString(); };
+		const sel = (id: string, val: string) =>
+			{ (document.getElementById(id) as HTMLSelectElement).value = val; };
+
+		// Read current input values and convert to base SI units
+		const altVal   = getNum('altitude');
+		const altUnit  = getUnit('altitude-unit');
+		const tempVal  = getNum('sea-level-temp');
+		const tempUnit = getUnit('sea-level-temp-unit');
+		const pressVal = getNum('sea-level-pressure');
+		const pressUnit = getUnit('sea-level-pressure-unit');
+
+		const alt_m = altUnit === 'ft' ? altVal * 0.3048
+		            : altUnit === 'mi' ? altVal * 1609.344
+		            : altUnit === 'km' ? altVal * 1000
+		            : altVal;
+
+		const temp_K = tempUnit === 'C' ? tempVal + 273.15
+		             : tempUnit === 'F' ? (tempVal - 32) / 1.8 + 273.15
+		             : tempUnit === 'R' ? tempVal * 5 / 9
+		             : tempVal;
+
+		const press_Pa = pressUnit === 'atm'  ? pressVal * 101_325
+		               : pressUnit === 'hPa'  ? pressVal * 100
+		               : pressUnit === 'kPa'  ? pressVal * 1000
+		               : pressUnit === 'mmHg' ? pressVal * 133.322387415
+		               : pressUnit === 'inHg' ? pressVal * 3386.388640341
+		               : pressUnit === 'psi'  ? pressVal * 6894.757293168
+		               : pressVal;
+
+		if (units === 'si') {
+			setNum('altitude', alt_m);
+			setNum('sea-level-temp', temp_K);
+			setNum('sea-level-pressure', press_Pa);
+			sel('altitude-unit', 'm');
+			sel('sea-level-temp-unit', 'K');
+			sel('sea-level-pressure-unit', 'Pa');
+			sel('out-pressure-unit', 'Pa');
+			sel('out-temperature-unit', 'K');
+			sel('out-density-unit', 'kg/m3');
+			sel('out-density-altitude-unit', 'm');
+			sel('out-speed-of-sound-unit', 'm/s');
+			sel('out-viscosity-unit', 'Pa·s');
+			sel('out-boiling-point-unit', 'K');
+		} else {
+			setNum('altitude', alt_m * 3.280839895);
+			setNum('sea-level-temp', (temp_K - 273.15) * 1.8 + 32);
+			setNum('sea-level-pressure', press_Pa / 6894.757293168);
+			sel('altitude-unit', 'ft');
+			sel('sea-level-temp-unit', 'F');
+			sel('sea-level-pressure-unit', 'psi');
+			sel('out-pressure-unit', 'psi');
+			sel('out-temperature-unit', 'F');
+			sel('out-density-unit', 'lb/ft3');
+			sel('out-density-altitude-unit', 'ft');
+			sel('out-speed-of-sound-unit', 'ft/s');
+			sel('out-viscosity-unit', 'lbf·s/ft2');
+			sel('out-boiling-point-unit', 'F');
+		}
+		calculate();
+	}
+
+	document.getElementById('btn-default')!.addEventListener('click', () => {
+		setUnits('si');
+		// Override temperature and pressure to Celsius and atm
+		const temp_K   = parseFloat((document.getElementById('sea-level-temp') as HTMLInputElement).value);
+		const press_Pa = parseFloat((document.getElementById('sea-level-pressure') as HTMLInputElement).value);
+		(document.getElementById('sea-level-temp') as HTMLInputElement).value =
+			parseFloat((temp_K - 273.15).toPrecision(6)).toString();
+		(document.getElementById('sea-level-temp-unit') as HTMLSelectElement).value = 'C';
+		(document.getElementById('sea-level-pressure') as HTMLInputElement).value =
+			parseFloat((press_Pa / 101_325).toPrecision(6)).toString();
+		(document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value = 'atm';
+		(document.getElementById('out-pressure-unit') as HTMLSelectElement).value = 'atm';
+		(document.getElementById('out-temperature-unit') as HTMLSelectElement).value = 'C';
+		(document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value = 'C';
+		calculate();
+	});
+
+	document.getElementById('btn-si')!.addEventListener('click', () => setUnits('si'));
+	document.getElementById('btn-imperial')!.addEventListener('click', () => setUnits('imperial'));
+
+	document.getElementById('btn-reset')!.addEventListener('click', () => {
+		const altUnit   = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
+		const tempUnit  = (document.getElementById('sea-level-temp-unit') as HTMLSelectElement).value;
+		const pressUnit = (document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value;
+
+		// Standard conditions: 0 m, 288.15 K, 101325 Pa — converted to current input units
+		const alt_out = altUnit === 'ft' ? 0 : altUnit === 'mi' ? 0 : altUnit === 'km' ? 0 : 0;
+		const temp_out = tempUnit === 'C' ? 15
+		               : tempUnit === 'F' ? 59
+		               : tempUnit === 'R' ? 518.67
+		               : 288.15;
+		const press_out = pressUnit === 'Pa'   ? 101_325
+		                : pressUnit === 'hPa'  ? 1013.25
+		                : pressUnit === 'kPa'  ? 101.325
+		                : pressUnit === 'mmHg' ? 760
+		                : pressUnit === 'inHg' ? 29.9213
+		                : pressUnit === 'psi'  ? 14.6959
+		                : 1;
+
+		(document.getElementById('altitude') as HTMLInputElement).value = String(alt_out);
+		(document.getElementById('sea-level-temp') as HTMLInputElement).value = String(temp_out);
+		(document.getElementById('sea-level-pressure') as HTMLInputElement).value = String(press_out);
+		calculate();
+	});
+</script>
