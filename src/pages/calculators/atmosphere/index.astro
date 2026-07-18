@@ -307,7 +307,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 	.field {
 		display: grid;
-		grid-template-columns: 10rem 1fr;
+		grid-template-columns: 10rem minmax(0, 1fr);
 		align-items: center;
 		column-gap: 0.75rem;
 		row-gap: 0.15rem;
@@ -324,10 +324,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
+		overflow-x: auto;
 	}
 
 	input[type="number"] {
 		flex: 1;
+		min-width: 5rem;
 		padding: 0.25rem 0.35rem;
 		border: 1px solid var(--color-border);
 		border-radius: 6px;
@@ -337,6 +339,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	}
 
 	select {
+		min-width: 0;
 		padding: 0.25rem 0.35rem;
 		border: 1px solid var(--color-border);
 		border-radius: 6px;
@@ -352,7 +355,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		border: 1px solid var(--color-border);
 		border-radius: 6px;
 		font-size: 1rem;
-		min-width: 0;
+		min-width: 5rem;
 	}
 
 	.error {
@@ -385,6 +388,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	@media (max-width: 700px) {
 		.calculator {
 			grid-template-columns: 1fr;
+		}
+
+		.field {
+			grid-template-columns: 8rem minmax(0, 1fr);
 		}
 	}
 </style>
