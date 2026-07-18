@@ -9,56 +9,98 @@
 		<title>Sanjay Srikanth</title>
 	</head>
 	<body>
-		<slot />
+		<main>
+			<div id="theme-toggle-container">
+				<a id="theme-toggle" href="#">Dark mode</a>
+			</div>
+			<slot />
+		</main>
 		<footer>
-			<p>© Copyright 2026&ndash;<span id="footer-year"></span> Sanjay Srikanth</p>
+			<p>© Copyright 2018-<span id="footer-year"></span> Sanjay Srikanth | Santa Barbara, California</p>
 		</footer>
 	</body>
 </html>
 
 <style is:global>
+	:root {
+		--bg-page: #94b1ff;
+		--bg-main: #ffffff;
+		--color-text: #333333;
+		--color-heading: #000000;
+		--color-h2-border: #e7e7e7;
+		--color-border: #d0d0d0;
+		--color-output-bg: #f0f0f0;
+		--color-input-bg: #ffffff;
+		--color-button-bg: #ffffff;
+		--color-button-hover: #f0f0f0;
+	}
+	[data-theme="dark"] {
+		--bg-page: #21293f;
+		--bg-main: #000000;
+		--color-text: #cccccc;
+		--color-heading: #ffffff;
+		--color-h2-border: #333333;
+		--color-border: #333333;
+		--color-output-bg: #1a1a1a;
+		--color-input-bg: #1a1a1a;
+		--color-button-bg: #1a1a1a;
+		--color-button-hover: #2a2a2a;
+	}
 	html,
 	body {
 		margin: 0;
 		width: 100%;
 		height: 100%;
-		background-color: #94b1ff;
+		background-color: var(--bg-page);
 	}
 	main {
-		background-color: #ffffff;
+		color: var(--color-text);
+		background-color: var(--bg-main);
 		max-width: 1200px;
 		margin: auto;
 		padding: 0.5rem 1.5rem;
 		font-family: Arial, sans-serif;
-		color: #000000;
 	}
 	h1 {
+		color: var(--color-heading);
 		font-size: 2rem;
 		margin-bottom: 0.25rem;
 	}
 	p {
 		margin-top: 0;
 		margin-bottom: 1rem;
-		color: #404040;
+		color: var(--color-text);
 	}
 	.bio {
-		color: #404040;
+		color: var(--color-text);
 		margin-top: 0;
 		margin-bottom: 1.5rem;
 	}
 	h2 {
+		color: var(--color-heading);
 		font-size: 1.25rem;
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--color-h2-border);
 		padding-bottom: 0.4rem;
 		margin-bottom: 0.75rem;
 	}
+	h3 {
+		font-size: 1rem;
+		font-weight: bold;
+		color: var(--color-heading);
+		margin: 1rem 0 0.4rem;
+	}
 	ul {
-		list-style: none;
+		list-style: disc;
 		padding: 0;
 		margin: 0 0 2rem;
+		padding-left: 1.5rem;
+	}
+	ul ul {
+		margin: 0;
 	}
 	li {
-		margin-bottom: 0.4rem;
+		margin-top: 0.2rem;
+		margin-bottom: 0.2rem;
 	}
 	a {
 		color: #3245ff;
@@ -74,13 +116,50 @@
 		text-align: center;
 	}
 	footer p {
-		color: #000000;
+		color: var(--color-heading);
 		font-family: Arial, sans-serif;
 		font-size: 1rem;
 		margin: 0;
+	}
+	#theme-toggle-container {
+		float: right;
+	}
+	#theme-toggle {
+		display: inline-block;
+		font-family: Arial, sans-serif;
+		font-size: 0.875rem;
+		font-weight: bold;
+		color: var(--color-text);
+		background: var(--color-button-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		padding: 0.4rem 1rem;
+		cursor: pointer;
+		text-decoration: none;
+	}
+	#theme-toggle:hover {
+		background: var(--color-button-hover);
+		text-decoration: none;
 	}
 </style>
 
 <script>
 	document.getElementById('footer-year')!.textContent = String(new Date().getFullYear());
+
+	const root = document.documentElement;
+	const toggle = document.getElementById('theme-toggle')!;
+
+	const saved = localStorage.getItem('theme');
+	const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+	const initial = saved ?? (prefersDark ? 'dark' : 'light');
+	root.dataset.theme = initial;
+	toggle.textContent = initial === 'dark' ? 'Light mode' : 'Dark mode';
+
+	toggle.addEventListener('click', (e) => {
+		e.preventDefault();
+		const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+		root.dataset.theme = next;
+		localStorage.setItem('theme', next);
+		toggle.textContent = next === 'dark' ? 'Light mode' : 'Dark mode';
+	});
 </script>

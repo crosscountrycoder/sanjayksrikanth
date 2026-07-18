@@ -3,41 +3,47 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-	<main>
-		<h1>Sanjay Srikanth</h1>
+	<h1>Sanjay Srikanth</h1>
 		<section class="bio">
 		<p>
-		I am a <span id="age"></span>-year-old software engineer based in Santa Barbara, California, United States.
+		I am a <span id="age"></span>-year-old software engineer working in the spaceflight industry, based in Santa Barbara, California, United States.
 		</p>
 		<p>
-		I grew up in Santa Clarita, a suburb north of Los Angeles, where I attended <a href="https://www.sauguscenturions.com/">Saugus High School</a> from
-		2018 to 2022, graduating as salutatorian with a 4.79 GPA and 1520 SAT score (800 math, 720 English). I  
-		attended <a href="https://www.ucsb.edu/">UC Santa Barbara</a> from 2022 to 2026, majoring in computer science, where I participated in 
-		the <a href="https://ersp.cs.ucsb.edu/">Early Research Scholars Program</a> during my 3rd year, and graduated with a 3.64 GPA and honors.
-		I currently work as a software engineer for Santa Barbara-based company <a href="https://umbra.space/">Umbra Space</a>, which manufactures
-		satellites that use synthetic aperture radar to image the Earth at high resolution.
+		I grew up in Santa Clarita, a suburb north of Los Angeles. I attended <a href="https://www.sauguscenturions.com/">Saugus High School</a> in
+		Santa Clarita from 2018 to 2022, graduating as salutatorian with a 4.79 GPA and 1520 SAT score (800 math, 720 English). I  
+		attended <a href="https://www.ucsb.edu/">UC Santa Barbara</a> from 2022 to 2026, majoring in computer science, where I was a regents
+		and honors scholar, participated in the <a href="https://ersp.cs.ucsb.edu/">Early Research Scholars Program</a> during my 3rd year, 
+		and graduated with a 3.64 GPA. I currently work as a software engineer for Santa Barbara-based 
+		company <a href="https://umbra.space/">Umbra Space</a>, which manufactures satellites that use synthetic aperture radar to image the Earth 
+		at high resolution.
 		</p>
 		<p>
-		In addition to software engineering, I am interested in geography, physics, math, and astronomy. I am interested in making maps - I drafted a
+		In addition to software and aerospace, I am interested in geography, physics, math, and astronomy. I like making maps - I drafted a
 		congressional district map of California following the 2020 census, and have made several maps of the world and the United States using QGIS
-		and Inkscape, including demographic, electoral, weather/climate, and topographic maps.
+		and Inkscape, including demographic, electoral, weather/climate, and topographic maps, many of which are showcased on my Wikipedia user page
+		(see Links below). Outside of work, I enjoy running and playing video games like Minecraft. I am a big sports fan, particularly in soccer 
+		and basketball, the sports I played as a child. I still play soccer recreationally.
+		</p>
+		<p>
+		As a person of Indian descent, I enjoy eating Indian food, especially spicy Indian chicken. I speak English and some basic Spanish.
 		</p>
 		</section>
-
-		<style>
-			section ul {
-				list-style: disc;
-				padding-left: 1.5rem;
-			}
-		</style>
-
 		<section>
 			<h2>Links</h2>
 			<ul>
 				<li><a href="https://www.linkedin.com/in/sanjayksrikanth/">LinkedIn</a></li>
 				<li><a href="https://github.com/crosscountrycoder">GitHub</a></li>
-				<li><a href="https://en.wikipedia.org/wiki/User:Crossover1370">Wikipedia user page</a></li>
+				<li>
+					<a href="https://en.wikipedia.org/wiki/User:Crossover1370">Wikipedia user page</a>
+					<ul><li><a href="https://en.wikipedia.org/wiki/Special:Contributions/Crossover1370">My contributions</a></li></ul>
+				</li>
 				<li><a href="http://reddit.com/user/crosscountrycoder">Reddit</a></li>
+				<li>My high school athletic statistics
+					<ul>
+						<li><a href="https://www.athletic.net/athlete/14055188/cross-country/all">Cross country</a></li>
+						<li><a href="https://www.athletic.net/athlete/14055188/track-and-field/all">Track & field</a></li>
+					</ul>
+				</li>
 			</ul>
 		</section>
 		<section>
@@ -50,10 +56,9 @@ import Layout from '../layouts/Layout.astro';
 		<section>
 			<h2>Calculators</h2>
 			<ul>
-				<li><a href="/calculators">View all calculators</a></li>
+				<li><a href="/calculators/atmosphere">U.S. standard atmosphere calculator</a> - pressure, temperature, density, viscosity, speed of sound, boiling point</li>
 			</ul>
 		</section>
-	</main>
 </Layout>
 
 <script>

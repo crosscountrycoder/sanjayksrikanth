@@ -4,20 +4,18 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 ---
 
 <Layout>
-	<main>
-		<Breadcrumb crumbs={[
-			{ label: 'Home', href: '/' },
-			{ label: 'Calculators' },
-		]} />
-		<h1>Calculators</h1>
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Calculators' },
+	]} />
+	<h1>Calculators</h1>
 
-		<section>
-			<h2>Atmosphere</h2>
-			<ul>
-				<li><a href="/calculators/atmosphere">U.S. standard atmosphere calculator</a> — pressure, temperature, density, viscosity, speed of sound, boiling point</li>
-			</ul>
-		</section>
-	</main>
+	<section>
+		<h2>Atmosphere</h2>
+		<ul>
+			<li><a href="/calculators/atmosphere">U.S. standard atmosphere calculator</a> - pressure, temperature, density, viscosity, speed of sound, boiling point</li>
+		</ul>
+	</section>
 </Layout>
 
 <style>

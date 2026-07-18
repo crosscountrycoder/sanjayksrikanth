@@ -1,0 +1,830 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import AtmosphereNav from '../../../components/AtmosphereNav.astro';
+---
+
+<Layout>
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Calculators', href: '/calculators' },
+		{ label: 'U.S. Standard Atmosphere Calculator' },
+	]} />
+	<h1>U.S. Standard Atmosphere Calculator</h1>
+	<p>Tabulate atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
+	<AtmosphereNav active="table" />
+
+	<section class="table-page">
+		<div class="controls">
+			<h2>Settings</h2>
+
+			<h3>Conditions</h3>
+			<div class="field">
+				<label for="cond-alt">Altitude</label>
+				<div class="input-row">
+					<input type="number" id="cond-alt" value="0" />
+					<select id="cond-alt-unit">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-cond-alt"></p>
+			<div class="field">
+				<label for="sl-temp" id="lbl-sl-temp">Sea-level temperature</label>
+				<div class="input-row">
+					<input type="number" id="sl-temp" value="15" />
+					<select id="sl-temp-unit">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+						<option value="R">°R</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-sl-temp"></p>
+			<div class="field">
+				<label for="sl-pressure" id="lbl-sl-pressure">Sea-level pressure</label>
+				<div class="input-row">
+					<input type="number" id="sl-pressure" value="1" />
+					<select id="sl-pressure-unit">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-sl-pressure"></p>
+			<div class="reset-row">
+				<button id="btn-reset">Reset to standard conditions</button>
+			</div>
+
+			<h3>Input settings</h3>
+			<div class="field">
+				<label for="x-var">Altitude</label>
+				<select id="x-var">
+					<option value="geometric" selected>Geometric</option>
+					<option value="geopotential">Geopotential</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="temp-mode">Temperature</label>
+				<select id="temp-mode">
+					<option value="sea-level" selected>Sea-level temperature</option>
+					<option value="air">Air temperature</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="pressure-mode">Pressure</label>
+				<select id="pressure-mode">
+					<option value="sea-level" selected>Sea-level pressure</option>
+					<option value="air">Air pressure</option>
+					<option value="altimeter">Altimeter setting</option>
+				</select>
+			</div>
+
+			<h3>Independent variable</h3>
+			<div class="field">
+				<label>Range</label>
+				<div class="range-row">
+					<input type="number" id="x-min" value="0" />
+					<span>–</span>
+					<input type="number" id="x-max" value="10000" />
+					<select id="x-unit">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-x-range"></p>
+			<div class="field">
+				<label for="x-intervals">Rows</label>
+				<input type="number" id="x-intervals" value="10" min="1" step="1" />
+			</div>
+
+			<h3>Dependent variables</h3>
+			<div class="var-list" id="var-list">
+				<div class="var-row">
+					<input type="checkbox" id="chk-pressure" data-var="pressure" checked />
+					<label for="chk-pressure">Air pressure</label>
+					<select id="unit-pressure">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-altimeter_setting" data-var="altimeter_setting" />
+					<label for="chk-altimeter_setting">Altimeter setting</label>
+					<select id="unit-altimeter_setting">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-sea_level_pressure" data-var="sea_level_pressure" />
+					<label for="chk-sea_level_pressure">Sea-level pressure</label>
+					<select id="unit-sea_level_pressure">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-temperature" data-var="temperature" checked />
+					<label for="chk-temperature">Air temperature</label>
+					<select id="unit-temperature">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+						<option value="R">°R</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-density" data-var="density" />
+					<label for="chk-density">Air density</label>
+					<select id="unit-density">
+						<option value="kg/m3" selected>kg/m³</option>
+						<option value="lb/ft3">lb/ft³</option>
+						<option value="slug/ft3">slug/ft³</option>
+						<option value="sigma">sigma (SL std=1)</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-pressure_altitude" data-var="pressure_altitude" />
+					<label for="chk-pressure_altitude">Pressure altitude</label>
+					<select id="unit-pressure_altitude">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-density_altitude" data-var="density_altitude" />
+					<label for="chk-density_altitude">Density altitude</label>
+					<select id="unit-density_altitude">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-speed_of_sound" data-var="speed_of_sound" />
+					<label for="chk-speed_of_sound">Speed of sound</label>
+					<select id="unit-speed_of_sound">
+						<option value="m/s" selected>m/s</option>
+						<option value="km/h">km/h</option>
+						<option value="mph">mph</option>
+						<option value="ft/s">ft/s</option>
+						<option value="kn">knots</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-viscosity" data-var="viscosity" />
+					<label for="chk-viscosity">Dynamic viscosity</label>
+					<select id="unit-viscosity">
+						<option value="Pa·s" selected>Pa·s</option>
+						<option value="μPa·s">μPa·s</option>
+						<option value="P">poise</option>
+						<option value="cP">centipoise</option>
+						<option value="lbf·s/ft2">lbf·s/ft²</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-geopotential_alt" data-var="geopotential_alt" />
+					<label for="chk-geopotential_alt">Geopotential altitude</label>
+					<select id="unit-geopotential_alt">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-geometric_alt" data-var="geometric_alt" />
+					<label for="chk-geometric_alt">Geometric altitude</label>
+					<select id="unit-geometric_alt">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-partial_pressure" data-var="partial_pressure" />
+					<label for="chk-partial_pressure">Partial pressure</label>
+					<select id="unit-partial_pressure">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+					<select id="species-partial_pressure">
+						<option value="N2" selected>N₂</option>
+						<option value="O2">O₂</option>
+						<option value="Ar">Ar</option>
+						<option value="CO2">CO₂</option>
+						<option value="O">O</option>
+						<option value="He">He</option>
+						<option value="H">H</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-mean_free_path" data-var="mean_free_path" />
+					<label for="chk-mean_free_path">Mean free path</label>
+					<select id="unit-mean_free_path">
+						<option value="nm">nm</option>
+						<option value="μm">μm</option>
+						<option value="mm">mm</option>
+						<option value="m" selected>m</option>
+						<option value="km">km</option>
+						<option value="in">in</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-boiling_point" data-var="boiling_point" />
+					<label for="chk-boiling_point">Boiling point of water</label>
+					<select id="unit-boiling_point">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+						<option value="R">°R</option>
+					</select>
+				</div>
+			</div>
+			<div class="checkbox-row">
+				<input type="checkbox" id="sci-notation" />
+				<label for="sci-notation">Use scientific notation</label>
+			</div>
+		</div>
+
+		<div class="table-area">
+			<div class="table-wrapper">
+				<table id="atm-table">
+					<thead><tr id="table-head"></tr></thead>
+					<tbody id="table-body"></tbody>
+				</table>
+			</div>
+			<div class="table-actions">
+				<button id="btn-export-csv">Export CSV</button>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.table-page {
+		display: grid;
+		grid-template-columns: 1fr 2fr;
+		gap: 1.5rem;
+		align-items: start;
+	}
+
+	.error {
+		color: red;
+		font-size: 0.875rem;
+		margin: 0 0 0.4rem;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 6rem 1fr;
+		align-items: center;
+		column-gap: 0.5rem;
+		margin-bottom: 0.4rem;
+	}
+
+	label {
+		font-size: 1rem;
+		color: var(--color-text);
+	}
+
+	.input-row,
+	.range-row {
+		display: flex;
+		gap: 0.4rem;
+		align-items: center;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		min-width: 0;
+		max-width: 6rem;
+		padding: 0.25rem 0.35rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		font-size: 1rem;
+		color: var(--color-text);
+		background: var(--color-input-bg);
+	}
+
+	select {
+		width: 100%;
+		padding: 0.25rem 0.35rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		font-size: 1rem;
+		background: var(--color-input-bg);
+		color: var(--color-text);
+	}
+
+	.input-row select,
+	.range-row select {
+		width: auto;
+	}
+
+	.range-row input[type="number"] {
+		max-width: 4rem;
+	}
+
+	.checkbox-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.checkbox-row label {
+		margin: 0;
+	}
+
+	.reset-row {
+		margin: 0.4rem 0 0;
+	}
+
+	.reset-row button {
+		padding: 0.4rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-button-bg);
+		font-size: 0.875rem;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.reset-row button:hover {
+		background: var(--color-button-hover);
+	}
+
+	.var-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		max-height: 24rem;
+		overflow-y: auto;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		padding: 0.4rem 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.var-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.var-row input[type="checkbox"] {
+		flex-shrink: 0;
+	}
+
+	.var-row label {
+		flex: 1;
+		min-width: 0;
+		font-size: 0.9375rem;
+	}
+
+	.var-row select {
+		width: auto;
+		flex-shrink: 0;
+		font-size: 0.9375rem;
+		padding: 0.15rem 0.25rem;
+	}
+
+	.table-area {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
+	.table-wrapper {
+		overflow-x: auto;
+	}
+
+	.table-actions button {
+		padding: 0.4rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-button-bg);
+		font-size: 1rem;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.table-actions button:hover {
+		background: var(--color-button-hover);
+	}
+
+	@media (max-width: 700px) {
+		.table-page {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+
+<style is:global>
+	#atm-table {
+		border-collapse: collapse;
+		width: auto;
+		font-size: 1rem;
+		border: 1px solid var(--color-text);
+	}
+
+	#atm-table th,
+	#atm-table td {
+		padding: 0.25rem 0.6rem;
+		border: 1px solid var(--color-text);
+		text-align: center;
+		vertical-align: middle;
+		white-space: nowrap;
+	}
+
+	#atm-table th {
+		background: var(--color-output-bg);
+		font-weight: bold;
+		color: var(--color-heading);
+	}
+
+	#atm-table td {
+		color: var(--color-text);
+	}
+
+	#atm-table tr:nth-child(even) td {
+		background: var(--color-output-bg);
+	}
+</style>
+
+<script>
+	import {
+		geometricToGeopotential, geopotentialToGeometric,
+		getPressure, getTemperature, getSeaLevelTemperature, getDensity,
+		getSeaLevelPressure, getAltimeterSetting,
+		getPressureAltitude, getDensityAltitude, getBoilingPoint,
+		LOWER_MOLE_FRACTIONS, UPPER_SPECIES_INDEX,
+		buildUpperTable, getUpperAtmosphere,
+		getMeanFreePath,
+		getSpeedOfSound,
+	} from '../../../lib/atmosphere.ts';
+	import {
+		altToM, altFromM, tempToK, tempFromK,
+		pressureToPa, pressureFromPa,
+		densityFromKgM3, speedFromMS, viscosityFromPaS, mfpFromM,
+	} from '../../../lib/convert.ts';
+
+	const SPECIES_DISPLAY: Record<string, string> = {
+		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂', O: 'O', He: 'He', H: 'H',
+	};
+
+	const Y_LABELS: Record<string, string> = {
+		pressure:          'Air pressure',
+		altimeter_setting: 'Altimeter setting',
+		sea_level_pressure:'Sea-level pressure',
+		temperature:       'Air temperature',
+		density:           'Air density',
+		pressure_altitude: 'Pressure altitude',
+		density_altitude:  'Density altitude',
+		speed_of_sound:    'Speed of sound',
+		viscosity:         'Dynamic viscosity',
+		geopotential_alt:  'Geopotential altitude',
+		geometric_alt:     'Geometric altitude',
+		partial_pressure:  'Partial pressure',
+		mean_free_path:    'Mean free path',
+		boiling_point:     'Boiling point of water',
+	};
+
+	interface VarConfig {
+		key: string;
+		unit: string;
+		species: string;
+		label: string;
+	}
+
+	function getCheckedVars(): VarConfig[] {
+		return Array.from(
+			document.querySelectorAll<HTMLInputElement>('#var-list input[type=checkbox]:checked')
+		).map(chk => {
+			const key = chk.dataset.var!;
+			const unitSel = document.getElementById(`unit-${key}`) as HTMLSelectElement;
+			const unit = unitSel.value;
+			const unitLabel = unitSel.options[unitSel.selectedIndex].text;
+			const speciesSel = document.getElementById(`species-${key}`) as HTMLSelectElement | null;
+			const species = speciesSel?.value ?? '';
+			const label = key === 'partial_pressure'
+				? `Partial pressure (${unitLabel}) ${SPECIES_DISPLAY[species]}`
+				: `${Y_LABELS[key]} (${unitLabel})`;
+			return { key, unit, species, label };
+		});
+	}
+
+	function fmt6(v: number): string {
+		return parseFloat(v.toPrecision(6)).toString();
+	}
+
+	function fmtTemp(v: number, unit: string, sigFigs = 6): string {
+		if (unit === 'K' || unit === 'R') return v.toPrecision(sigFigs);
+		const T_abs = v + (unit === 'C' ? 273.15 : 459.67);
+		const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
+		return v.toFixed(digits);
+	}
+
+	// Altitude-derived inversions can produce floating-point artifacts (~1e-8 m) when the
+	// true answer is exactly 0. Snap those to 0 before formatting.
+	const SNAP_ZERO_KEYS = new Set(['pressure_altitude', 'density_altitude', 'geopotential_alt', 'geometric_alt']);
+
+	function fmtY(v: number, key: string, unit: string): string {
+		const sci = (document.getElementById('sci-notation') as HTMLInputElement).checked;
+		if (sci) return v.toExponential(5);
+		if (key === 'temperature' || key === 'boiling_point') return fmtTemp(v, unit);
+		if (SNAP_ZERO_KEYS.has(key) && Math.abs(v) < 5e-7) return '0';
+		return v.toPrecision(6);
+	}
+
+	let tableData: { x: number; ys: (number | null)[] }[] = [];
+	let tableXLabel = '';
+	let tableYConfigs: VarConfig[] = [];
+
+	function generateTable() {
+		const condAltVal  = parseFloat((document.getElementById('cond-alt') as HTMLInputElement).value);
+		const condAltUnit = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
+		const slTempVal   = parseFloat((document.getElementById('sl-temp') as HTMLInputElement).value);
+		const slTempUnit  = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
+		const slPressVal  = parseFloat((document.getElementById('sl-pressure') as HTMLInputElement).value);
+		const slPressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
+		const xVar        = (document.getElementById('x-var') as HTMLSelectElement).value;
+		const tempMode    = (document.getElementById('temp-mode') as HTMLSelectElement).value;
+		const pressMode   = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
+		const xUnit       = (document.getElementById('x-unit') as HTMLSelectElement).value;
+		const xMin        = parseFloat((document.getElementById('x-min') as HTMLInputElement).value);
+		const xMax        = parseFloat((document.getElementById('x-max') as HTMLInputElement).value);
+		const N           = Math.max(1, parseInt((document.getElementById('x-intervals') as HTMLInputElement).value) || 10);
+
+		const vars = getCheckedVars();
+
+		const errCondAlt    = document.getElementById('err-cond-alt') as HTMLElement;
+		const errSlTemp     = document.getElementById('err-sl-temp') as HTMLElement;
+		const errSlPressure = document.getElementById('err-sl-pressure') as HTMLElement;
+		const errXRange     = document.getElementById('err-x-range') as HTMLElement;
+		errCondAlt.textContent = '';
+		errSlTemp.textContent = '';
+		errSlPressure.textContent = '';
+		errXRange.textContent = '';
+
+		const thead = document.getElementById('table-head') as HTMLElement;
+		const tbody = document.getElementById('table-body') as HTMLElement;
+
+		if ([condAltVal, slTempVal, slPressVal, xMin, xMax].some(isNaN) || xMin >= xMax || vars.length === 0) {
+			thead.innerHTML = '';
+			tbody.innerHTML = '';
+			return;
+		}
+
+		// Conditions altitude → geopotential
+		const condAlt_m = altToM(condAltVal, condAltUnit);
+		const H_cond = xVar === 'geopotential' ? condAlt_m : geometricToGeopotential(condAlt_m);
+		const loH = xVar === 'geopotential' ? -5004 : -5000;
+		const hiH = xVar === 'geopotential' ? 84852 : 86000;
+		if (condAlt_m < loH || condAlt_m > hiH) {
+			const factor = altFromM(1, condAltUnit);
+			errCondAlt.textContent = `Altitude must be between ${fmt6(loH * factor)} and ${fmt6(hiH * factor)} ${condAltUnit}.`;
+			thead.innerHTML = ''; tbody.innerHTML = '';
+			return;
+		}
+
+		// Derive T0_K
+		const T_input_K = tempToK(slTempVal, slTempUnit);
+		const T0_K = tempMode === 'air' ? getSeaLevelTemperature(H_cond, T_input_K) : T_input_K;
+		if (T0_K < 173.15 || T0_K > 373.15) {
+			const fmt = (K: number) => fmt6(tempFromK(K, slTempUnit));
+			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
+			errSlTemp.textContent = `Sea-level temperature must be between ${fmt(173.15)} and ${fmt(373.15)} ${unitLabel[slTempUnit]}.`;
+			thead.innerHTML = ''; tbody.innerHTML = '';
+			return;
+		}
+
+		// Derive P0_Pa
+		const P_input_Pa = pressureToPa(slPressVal, slPressUnit);
+		let P0_Pa: number;
+		if (pressMode === 'sea-level') {
+			P0_Pa = P_input_Pa;
+		} else if (pressMode === 'air') {
+			P0_Pa = getSeaLevelPressure(H_cond, P_input_Pa, T0_K);
+		} else {
+			const P_at_cond = P_input_Pa * getPressure(H_cond, 1, 288.15);
+			P0_Pa = getSeaLevelPressure(H_cond, P_at_cond, T0_K);
+		}
+		const fmtP = (Pa: number) => fmt6(pressureFromPa(Pa, slPressUnit));
+		if (pressMode === 'altimeter') {
+			if (P_input_Pa < 0.5 * 101325 || P_input_Pa > 1.5 * 101325) {
+				errSlPressure.textContent = `Altimeter setting must be between ${fmtP(0.5 * 101325)} and ${fmtP(1.5 * 101325)} ${slPressUnit}.`;
+				thead.innerHTML = ''; tbody.innerHTML = '';
+				return;
+			}
+		} else {
+			if (P0_Pa < 0.5 * 101325 || P0_Pa > 1.5 * 101325) {
+				errSlPressure.textContent = `Sea-level pressure must be between ${fmtP(0.5 * 101325)} and ${fmtP(1.5 * 101325)} ${slPressUnit}.`;
+				thead.innerHTML = ''; tbody.innerHTML = '';
+				return;
+			}
+		}
+
+		// Range limits — allow upper atmosphere if any var uses it
+		const needsUpper = vars.some(v => v.key === 'partial_pressure' || v.key === 'mean_free_path');
+		const xMin_m = altToM(xMin, xUnit);
+		const xMax_m = altToM(xMax, xUnit);
+		const loX = xVar === 'geopotential' ? -5004 : -5000;
+		const hiX = needsUpper
+			? (xVar === 'geopotential' ? 864071 : 1000000)
+			: (xVar === 'geopotential' ? 84852 : 86000);
+		if (xMin_m < loX || xMax_m > hiX) {
+			const factor = altFromM(1, xUnit);
+			const lo = parseFloat((loX * factor).toPrecision(6));
+			const hi = parseFloat((hiX * factor).toPrecision(6));
+			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
+			thead.innerHTML = ''; tbody.innerHTML = '';
+			return;
+		}
+
+		const xLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
+		tableXLabel = xLabel;
+		tableYConfigs = vars;
+
+		// Build upper atmosphere table if needed
+		const Z86 = 86000;
+		const T_bc86 = getTemperature(geometricToGeopotential(Z86), T0_K);
+		const P_bc86 = getPressure(geometricToGeopotential(Z86), P0_Pa, T0_K);
+		const upperTable = (needsUpper && xMax_m > Z86)
+			? buildUpperTable(xMax_m, T_bc86, P_bc86) : null;
+
+		type Snap = { T: number; P: number; rho: number; partialP: [number,number,number,number,number,number] };
+
+		tableData = [];
+		for (let i = 0; i <= N; i++) {
+			const frac = i / N;
+			const xVal = xMin + (xMax - xMin) * frac;
+			const x_m  = xMin_m + (xMax_m - xMin_m) * frac;
+
+			let h_m: number, H: number;
+			if (xVar === 'geometric') {
+				h_m = x_m; H = geometricToGeopotential(h_m);
+			} else {
+				H = x_m; h_m = geopotentialToGeometric(H);
+			}
+
+			let P_Pa: number, T_K: number, rho: number;
+			let snap: Snap | undefined;
+
+			if (h_m <= Z86 + 1e-9) {
+				if (H < -5000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
+				P_Pa = getPressure(H, P0_Pa, T0_K);
+				T_K  = getTemperature(H, T0_K);
+				rho  = getDensity(P_Pa, T_K);
+			} else {
+				snap = upperTable?.get(Math.round(h_m));
+				if (!snap) {
+					const res = getUpperAtmosphere(h_m, T_bc86, P_bc86);
+					snap = { T: res.T, P: res.P, rho: res.rho, partialP: res.partialP };
+				}
+				P_Pa = snap.P; T_K = snap.T; rho = snap.rho;
+			}
+
+			const ys = vars.map(v => {
+				switch (v.key) {
+					case 'pressure':           return pressureFromPa(P_Pa, v.unit);
+					case 'altimeter_setting':  return h_m <= Z86 ? pressureFromPa(getAltimeterSetting(H, P_Pa), v.unit) : null;
+					case 'sea_level_pressure': return h_m <= Z86 ? pressureFromPa(getSeaLevelPressure(H, P_Pa, T0_K), v.unit) : null;
+					case 'temperature':        return tempFromK(T_K, v.unit);
+					case 'density':            return densityFromKgM3(rho, v.unit);
+					case 'pressure_altitude':  return h_m <= Z86 ? altFromM(getPressureAltitude(P_Pa), v.unit) : null;
+					case 'density_altitude':   return h_m <= Z86 ? altFromM(getDensityAltitude(rho), v.unit) : null;
+					case 'speed_of_sound':     return speedFromMS(getSpeedOfSound(P_Pa, rho), v.unit);
+					case 'viscosity':          return viscosityFromPaS(1.458e-6 * Math.pow(T_K, 1.5) / (T_K + 110.4), v.unit);
+					case 'geopotential_alt':   return altFromM(H, v.unit);
+					case 'geometric_alt':      return altFromM(h_m, v.unit);
+					case 'partial_pressure': {
+						let pp_Pa: number;
+						if (h_m <= Z86 + 1e-9) {
+							pp_Pa = P_Pa * (LOWER_MOLE_FRACTIONS[v.species] ?? 0);
+						} else {
+							const idx = UPPER_SPECIES_INDEX[v.species];
+							pp_Pa = (idx >= 0 && snap) ? snap.partialP[idx] : 0;
+						}
+						return pressureFromPa(pp_Pa, v.unit);
+					}
+					case 'mean_free_path':     return mfpFromM(getMeanFreePath(P_Pa, T_K), v.unit);
+					case 'boiling_point': {
+						const bp = getBoilingPoint(P_Pa);
+						return bp >= 273.16 ? tempFromK(bp, v.unit) : null;
+					}
+					default: return null;
+				}
+			});
+			tableData.push({ x: xVal, ys });
+		}
+
+		// Render
+		thead.innerHTML = `<th>${xLabel}</th>` + vars.map(v => `<th>${v.label}</th>`).join('');
+		tbody.innerHTML = tableData.map(row =>
+			`<tr><td>${fmt6(row.x)}</td>${row.ys.map((y, i) =>
+				`<td>${y !== null ? fmtY(y, vars[i].key, vars[i].unit) : 'N/A'}</td>`
+			).join('')}</tr>`
+		).join('');
+	}
+
+	function updateConditionLabels() {
+		const tMode = (document.getElementById('temp-mode') as HTMLSelectElement).value;
+		(document.getElementById('lbl-sl-temp') as HTMLElement).textContent =
+			tMode === 'air' ? 'Air temperature' : 'Sea-level temperature';
+		const pMode = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
+		(document.getElementById('lbl-sl-pressure') as HTMLElement).textContent =
+			pMode === 'air' ? 'Air pressure' : pMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+	}
+
+	// Initial render
+	generateTable();
+	updateConditionLabels();
+
+	document.getElementById('temp-mode')!.addEventListener('change', () => { updateConditionLabels(); generateTable(); });
+	document.getElementById('pressure-mode')!.addEventListener('change', () => { updateConditionLabels(); generateTable(); });
+	document.getElementById('x-unit')!.addEventListener('change', generateTable);
+	document.getElementById('sci-notation')!.addEventListener('change', generateTable);
+
+	for (const id of ['cond-alt', 'cond-alt-unit', 'sl-temp', 'sl-temp-unit', 'sl-pressure', 'sl-pressure-unit',
+		'x-var', 'x-min', 'x-max', 'x-intervals']) {
+		const el = document.getElementById(id)!;
+		el.addEventListener('input', generateTable);
+		el.addEventListener('change', generateTable);
+	}
+
+	// Single delegated listener for all var-list checkboxes and selects
+	document.getElementById('var-list')!.addEventListener('change', generateTable);
+
+	// Reset to standard conditions
+	document.getElementById('btn-reset')!.addEventListener('click', () => {
+		const altUnit   = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
+		const tempUnit  = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
+		const pressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
+		(document.getElementById('cond-alt') as HTMLInputElement).value =
+			parseFloat(altFromM(0, altUnit).toPrecision(6)).toString();
+		(document.getElementById('sl-temp') as HTMLInputElement).value =
+			parseFloat(tempFromK(288.15, tempUnit).toPrecision(6)).toString();
+		(document.getElementById('sl-pressure') as HTMLInputElement).value =
+			parseFloat(pressureFromPa(101325, pressUnit).toPrecision(6)).toString();
+		generateTable();
+	});
+
+	// Export CSV
+	document.getElementById('btn-export-csv')!.addEventListener('click', () => {
+		if (tableData.length === 0 || tableYConfigs.length === 0) return;
+		let csv = `"${tableXLabel}",${tableYConfigs.map(v => `"${v.label}"`).join(',')}\n`;
+		for (const row of tableData) {
+			csv += `${fmt6(row.x)},${row.ys.map((y, i) =>
+				y !== null ? fmtY(y, tableYConfigs[i].key, tableYConfigs[i].unit) : 'N/A'
+			).join(',')}\n`;
+		}
+		const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+		const a = Object.assign(document.createElement('a'), { href: url, download: 'atmosphere-table.csv' });
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	});
+</script>

@@ -1,0 +1,883 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import AtmosphereNav from '../../../components/AtmosphereNav.astro';
+---
+
+<Layout>
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Calculators', href: '/calculators' },
+		{ label: 'U.S. Standard Atmosphere Calculator' },
+	]} />
+	<h1>U.S. Standard Atmosphere Calculator</h1>
+	<p>Graph atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
+	<AtmosphereNav active="graph" />
+
+	<section class="graph-page">
+		<div class="controls">
+			<h2>Settings</h2>
+
+			<h3>Conditions</h3>
+			<div class="field">
+				<label for="cond-alt">Altitude</label>
+				<div class="input-row">
+					<input type="number" id="cond-alt" value="0" />
+					<select id="cond-alt-unit">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-cond-alt"></p>
+			<div class="field">
+				<label for="sl-temp" id="lbl-sl-temp">Sea-level temperature</label>
+				<div class="input-row">
+					<input type="number" id="sl-temp" value="15" />
+					<select id="sl-temp-unit">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+						<option value="R">°R</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-sl-temp"></p>
+			<div class="field">
+				<label for="sl-pressure" id="lbl-sl-pressure">Sea-level pressure</label>
+				<div class="input-row">
+					<input type="number" id="sl-pressure" value="1" />
+					<select id="sl-pressure-unit">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-sl-pressure"></p>
+			<div class="reset-row">
+				<button id="btn-reset">Reset to standard conditions</button>
+			</div>
+
+			<h3>Input settings</h3>
+			<div class="field">
+				<label for="x-var">Altitude</label>
+				<select id="x-var">
+					<option value="geometric" selected>Geometric</option>
+					<option value="geopotential">Geopotential</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="temp-mode">Temperature</label>
+				<select id="temp-mode">
+					<option value="sea-level" selected>Sea-level temperature</option>
+					<option value="air">Air temperature</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="pressure-mode">Pressure</label>
+				<select id="pressure-mode">
+					<option value="sea-level" selected>Sea-level pressure</option>
+					<option value="air">Air pressure</option>
+					<option value="altimeter">Altimeter setting</option>
+				</select>
+			</div>
+
+			<h3>X-axis</h3>
+			<div class="field">
+				<label>Range</label>
+				<div class="range-row">
+					<input type="number" id="x-min" value="0" />
+					<span>–</span>
+					<input type="number" id="x-max" value="10000" />
+					<select id="x-unit">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+			</div>
+			<p class="error" id="err-x-range"></p>
+			<div class="field">
+				<label for="x-intervals">Intervals</label>
+				<input type="number" id="x-intervals" value="5" min="1" step="1" />
+			</div>
+
+			<h3>Y-axis</h3>
+			<div class="field">
+				<label for="y-var">Variable</label>
+				<select id="y-var">
+					<option value="pressure" selected>Air pressure</option>
+					<option value="altimeter_setting">Altimeter setting</option>
+					<option value="sea_level_pressure">Sea-level pressure</option>
+					<option value="temperature">Air temperature</option>
+					<option value="density">Air density</option>
+					<option value="pressure_altitude">Pressure altitude</option>
+					<option value="density_altitude">Density altitude</option>
+					<option value="speed_of_sound">Speed of sound</option>
+					<option value="viscosity">Dynamic viscosity</option>
+					<option value="geopotential_alt">Geopotential altitude</option>
+					<option value="geometric_alt">Geometric altitude</option>
+					<option value="partial_pressure">Partial pressure</option>
+					<option value="mean_free_path">Mean free path</option>
+					<option value="boiling_point">Boiling point of water</option>
+				</select>
+			</div>
+			<div class="field" id="y-species-field" style="display:none;">
+				<label for="y-species">Gas</label>
+				<select id="y-species">
+					<option value="N2" selected>N₂</option>
+					<option value="O2">O₂</option>
+					<option value="Ar">Ar</option>
+					<option value="CO2">CO₂</option>
+					<option value="O">O</option>
+					<option value="He">He</option>
+					<option value="H">H</option>
+				</select>
+			</div>
+			<div class="field">
+				<label>Range</label>
+				<div class="range-row">
+					<input type="number" id="y-min" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="y-max" placeholder="auto" />
+					<select id="y-unit">
+						<!-- populated by JS -->
+					</select>
+				</div>
+			</div>
+			<div class="field">
+				<label for="y-intervals">Intervals</label>
+				<input type="number" id="y-intervals" value="5" min="1" step="1" />
+			</div>
+			<div class="checkbox-row">
+				<input type="checkbox" id="y-log" />
+				<label for="y-log">Logarithmic y-axis</label>
+			</div>
+			<p class="error" id="err-y-log"></p>
+		</div>
+
+		<div class="graph-area">
+			<svg id="graph-svg" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg"></svg>
+			<div class="graph-actions">
+				<button id="btn-download">Download SVG</button>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.graph-page {
+		display: grid;
+		grid-template-columns: 1fr 2fr;
+		gap: 1.5rem;
+		align-items: start;
+	}
+
+.error {
+		color: red;
+		font-size: 0.875rem;
+		margin: 0 0 0.4rem;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 6rem 1fr;
+		align-items: center;
+		column-gap: 0.5rem;
+		margin-bottom: 0.4rem;
+	}
+
+	label {
+		font-size: 1rem;
+		color: var(--color-text);
+	}
+
+	.input-row,
+	.range-row {
+		display: flex;
+		gap: 0.4rem;
+		align-items: center;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		min-width: 0;
+		max-width: 6rem;
+		padding: 0.25rem 0.35rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		font-size: 1rem;
+		color: var(--color-text);
+		background: var(--color-input-bg);
+	}
+
+	select {
+		width: 100%;
+		padding: 0.25rem 0.35rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		font-size: 1rem;
+		background: var(--color-input-bg);
+		color: var(--color-text);
+	}
+
+	.input-row select,
+	.range-row select {
+		width: auto;
+	}
+
+	.range-row input[type="number"] {
+		max-width: 4rem;
+	}
+
+	.checkbox-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.checkbox-row label {
+		margin: 0;
+	}
+
+	.reset-row {
+		margin: 0.4rem 0 0;
+	}
+
+	.reset-row button {
+		padding: 0.4rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-button-bg);
+		font-size: 0.875rem;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.reset-row button:hover {
+		background: var(--color-button-hover);
+	}
+
+	.graph-area {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	#graph-svg {
+		width: 100%;
+		height: auto;
+		display: block;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+	}
+
+	.graph-actions button {
+		padding: 0.4rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: var(--color-button-bg);
+		font-size: 1rem;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.graph-actions button:hover {
+		background: var(--color-button-hover);
+	}
+
+	@media (max-width: 700px) {
+		.graph-page {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+
+<script>
+	import {
+		geometricToGeopotential, geopotentialToGeometric,
+		getPressure, getTemperature, getSeaLevelTemperature, getDensity,
+		getSeaLevelPressure, getAltimeterSetting,
+		getPressureAltitude, getDensityAltitude, getBoilingPoint,
+		getUpperAtmosphere, buildUpperTable,
+		LOWER_MOLE_FRACTIONS, UPPER_SPECIES_INDEX,
+		getMeanFreePath,
+		getSpeedOfSound,
+	} from '../../../lib/atmosphere.ts';
+	import {
+		altToM, altFromM, tempToK, tempFromK,
+		pressureToPa, pressureFromPa,
+		densityFromKgM3, speedFromMS, viscosityFromPaS, mfpFromM,
+	} from '../../../lib/convert.ts';
+
+	// Tick helpers
+	function linearTicks(min: number, max: number, n: number): number[] {
+		const ticks: number[] = [];
+		for (let i = 0; i <= n; i++)
+			ticks.push(parseFloat((min + (max - min) * i / n).toPrecision(10)));
+		return ticks;
+	}
+	// Returns n+1 ticks evenly spaced in log10 space between lo and hi (both must be > 0).
+	function logTicks(lo: number, hi: number, n: number): number[] {
+		const logLo = Math.log10(lo), logHi = Math.log10(hi);
+		const ticks: number[] = [];
+		for (let i = 0; i <= n; i++)
+			ticks.push(Math.pow(10, logLo + (logHi - logLo) * i / n));
+		return ticks;
+	}
+	function fmtTemp(v: number, unit: string, sigFigs = 6): string {
+		if (unit === 'K' || unit === 'R') return v.toPrecision(sigFigs);
+		const T_abs = v + (unit === 'C' ? 273.15 : 459.67);
+		const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
+		return v.toFixed(digits);
+	}
+
+	function formatTick(v: number): string {
+		if (v === 0) return '0';
+		const abs = Math.abs(v);
+		if (abs >= 1e6 || abs < 1e-3) return parseFloat(v.toPrecision(4)).toExponential();
+		if (Number.isInteger(v)) return v.toString();
+		const sig4 = parseFloat(v.toPrecision(4));
+		const rounded = Math.round(v);
+		const sig4Decimals = (sig4.toString().split('.')[1] ?? '').length;
+		return sig4Decimals > 0 ? sig4.toString() : rounded.toString();
+	}
+
+	// Y-axis unit options per variable
+	const PRESSURE_UNITS = [
+		{ value: 'atm',  label: 'atm' }, { value: 'Pa',   label: 'Pa'        },
+		{ value: 'hPa',  label: 'hPa (mbar)' }, { value: 'kPa', label: 'kPa' },
+		{ value: 'mmHg', label: 'mmHg (Torr)' }, { value: 'inHg', label: 'inHg' },
+		{ value: 'psi',  label: 'psi' },
+	];
+	const MFP_UNITS = [
+		{ value: 'nm', label: 'nm' }, { value: 'μm', label: 'μm' },
+		{ value: 'mm', label: 'mm' }, { value: 'm',  label: 'm'  },
+		{ value: 'km', label: 'km' }, { value: 'in', label: 'in' },
+		{ value: 'ft', label: 'ft' }, { value: 'mi', label: 'mi' },
+	];
+	const ALT_UNITS = [
+		{ value: 'm', label: 'm' }, { value: 'ft', label: 'ft' },
+		{ value: 'mi', label: 'mi' }, { value: 'km', label: 'km' },
+	];
+
+	const Y_UNITS: Record<string, { value: string; label: string }[]> = {
+		pressure:         PRESSURE_UNITS,
+		altimeter_setting: PRESSURE_UNITS,
+		sea_level_pressure: PRESSURE_UNITS,
+		temperature:      [
+			{ value: 'C', label: '°C' }, { value: 'F', label: '°F' },
+			{ value: 'K', label: 'K' },       { value: 'R', label: '°R' },
+		],
+		density:          [
+			{ value: 'kg/m3',    label: 'kg/m³' },
+			{ value: 'lb/ft3',   label: 'lb/ft³' },
+			{ value: 'slug/ft3', label: 'slug/ft³' },
+			{ value: 'sigma',    label: 'sigma (SL std=1)' },
+		],
+		pressure_altitude: ALT_UNITS,
+		density_altitude: ALT_UNITS,
+		speed_of_sound:   [
+			{ value: 'm/s',  label: 'm/s' },   { value: 'km/h', label: 'km/h' },
+			{ value: 'mph',  label: 'mph' },   { value: 'ft/s', label: 'ft/s' },
+			{ value: 'kn',   label: 'knots' },
+		],
+		viscosity:        [
+			{ value: 'Pa·s',     label: 'Pa·s' },
+			{ value: 'μPa·s', label: 'μPa·s' },
+			{ value: 'P',             label: 'poise' },
+			{ value: 'cP',            label: 'centipoise' },
+			{ value: 'lbf·s/ft2', label: 'lbf·s/ft²' },
+		],
+		boiling_point:    [
+			{ value: 'C', label: '°C' }, { value: 'F', label: '°F' },
+			{ value: 'K', label: 'K' },       { value: 'R', label: '°R' },
+		],
+		geopotential_alt: ALT_UNITS,
+		geometric_alt:    ALT_UNITS,
+		partial_pressure: PRESSURE_UNITS,
+		mean_free_path:   MFP_UNITS,
+	};
+
+	const SPECIES_DISPLAY: Record<string, string> = {
+		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂', O: 'O', He: 'He', H: 'H',
+	};
+
+	const Y_LABELS: Record<string, string> = {
+		pressure:          'Air pressure',
+		altimeter_setting: 'Altimeter setting',
+		sea_level_pressure:'Sea-level pressure',
+		temperature:       'Air temperature',
+		density:           'Air density',
+		pressure_altitude: 'Pressure altitude',
+		density_altitude:  'Density altitude',
+		speed_of_sound:    'Speed of sound',
+		viscosity:         'Dynamic viscosity',
+		boiling_point:     'Boiling point of water',
+		geopotential_alt:  'Geopotential altitude',
+		geometric_alt:     'Geometric altitude',
+		partial_pressure:  'Partial pressure',
+		mean_free_path:    'Mean free path',
+	};
+
+	function isLogDisabled(): boolean {
+		const yVar  = (document.getElementById('y-var') as HTMLSelectElement).value;
+		const yUnit = (document.getElementById('y-unit') as HTMLSelectElement).value;
+		return yVar === 'temperature' && (yUnit === 'C' || yUnit === 'F');
+	}
+
+	function updateLogCheckbox() {
+		const cb = document.getElementById('y-log') as HTMLInputElement;
+		const disabled = isLogDisabled();
+		cb.disabled = disabled;
+		if (disabled) cb.checked = false;
+		(document.getElementById('err-y-log') as HTMLElement).textContent = '';
+	}
+
+	function populateYUnits() {
+		const yVar = (document.getElementById('y-var') as HTMLSelectElement).value;
+		const sel  = document.getElementById('y-unit') as HTMLSelectElement;
+		const prev = sel.value;
+		sel.innerHTML = '';
+		for (const opt of Y_UNITS[yVar]) {
+			const o = document.createElement('option');
+			o.value = opt.value; o.textContent = opt.label;
+			sel.appendChild(o);
+		}
+		if (Y_UNITS[yVar].some(o => o.value === prev)) sel.value = prev;
+		(document.getElementById('y-species-field') as HTMLElement).style.display =
+			yVar === 'partial_pressure' ? '' : 'none';
+		updateLogCheckbox();
+	}
+
+	function generateGraph() {
+		const condAltVal  = parseFloat((document.getElementById('cond-alt') as HTMLInputElement).value);
+		const condAltUnit = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
+		const slTempVal   = parseFloat((document.getElementById('sl-temp') as HTMLInputElement).value);
+		const slTempUnit  = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
+		const slPressVal  = parseFloat((document.getElementById('sl-pressure') as HTMLInputElement).value);
+		const slPressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
+		const xVar        = (document.getElementById('x-var') as HTMLSelectElement).value;
+		const tempMode    = (document.getElementById('temp-mode') as HTMLSelectElement).value;
+		const pressMode   = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
+		const xUnit       = (document.getElementById('x-unit') as HTMLSelectElement).value;
+		const xMin        = parseFloat((document.getElementById('x-min') as HTMLInputElement).value);
+		const xMax        = parseFloat((document.getElementById('x-max') as HTMLInputElement).value);
+		const xIntervals  = parseInt((document.getElementById('x-intervals') as HTMLInputElement).value) || 5;
+		const yVar        = (document.getElementById('y-var') as HTMLSelectElement).value;
+		const yUnit       = (document.getElementById('y-unit') as HTMLSelectElement).value;
+		const ySpecies    = (document.getElementById('y-species') as HTMLSelectElement).value;
+		const yMinRaw     = (document.getElementById('y-min') as HTMLInputElement).value;
+		const yMaxRaw     = (document.getElementById('y-max') as HTMLInputElement).value;
+		const yMinUser    = yMinRaw !== '' ? parseFloat(yMinRaw) : null;
+		const yMaxUser    = yMaxRaw !== '' ? parseFloat(yMaxRaw) : null;
+		const yIntervals  = parseInt((document.getElementById('y-intervals') as HTMLInputElement).value) || 5;
+		const yLog        = (document.getElementById('y-log') as HTMLInputElement).checked && !isLogDisabled();
+
+		const errCondAlt    = document.getElementById('err-cond-alt') as HTMLElement;
+		const errSlTemp     = document.getElementById('err-sl-temp') as HTMLElement;
+		const errSlPressure = document.getElementById('err-sl-pressure') as HTMLElement;
+		const errXRange     = document.getElementById('err-x-range') as HTMLElement;
+		errCondAlt.textContent = '';
+		errSlTemp.textContent = '';
+		errSlPressure.textContent = '';
+		errXRange.textContent = '';
+
+		if ([condAltVal, slTempVal, slPressVal, xMin, xMax].some(isNaN) || xMin >= xMax) return;
+
+		// Conditions altitude → geopotential
+		const condAlt_m = altToM(condAltVal, condAltUnit);
+		const H_cond = xVar === 'geopotential' ? condAlt_m : geometricToGeopotential(condAlt_m);
+		const loH = xVar === 'geopotential' ? -5004 : -5000;
+		const hiH = xVar === 'geopotential' ? 84852 : 86000;
+		if (condAlt_m < loH || condAlt_m > hiH) {
+			const factor = altFromM(1, condAltUnit);
+			errCondAlt.textContent = `Altitude must be between ${parseFloat((loH * factor).toPrecision(6))} and ${parseFloat((hiH * factor).toPrecision(6))} ${condAltUnit}.`;
+			return;
+		}
+
+		// Derive T0_K from temp mode
+		const T_input_K = tempToK(slTempVal, slTempUnit);
+		const T0_K = tempMode === 'air' ? getSeaLevelTemperature(H_cond, T_input_K) : T_input_K;
+		if (T0_K < 173.15 || T0_K > 373.15) {
+			const fmt = (K: number) => parseFloat(tempFromK(K, slTempUnit).toPrecision(6)).toString();
+			const lo = fmt(173.15), hi = fmt(373.15);
+			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
+			errSlTemp.textContent = `Sea-level temperature must be between ${lo} and ${hi} ${unitLabel[slTempUnit]}.`;
+			return;
+		}
+
+		// Derive P0_Pa from pressure mode
+		const P_input_Pa = pressureToPa(slPressVal, slPressUnit);
+		let P0_Pa: number;
+		if (pressMode === 'sea-level') {
+			P0_Pa = P_input_Pa;
+		} else if (pressMode === 'air') {
+			P0_Pa = getSeaLevelPressure(H_cond, P_input_Pa, T0_K);
+		} else { // altimeter
+			const P_at_cond = P_input_Pa * getPressure(H_cond, 1, 288.15);
+			P0_Pa = getSeaLevelPressure(H_cond, P_at_cond, T0_K);
+		}
+		const fmt6p = (Pa: number) => parseFloat(pressureFromPa(Pa, slPressUnit).toPrecision(6)).toString();
+		if (pressMode === 'altimeter') {
+			if (P_input_Pa < 0.5 * 101325 || P_input_Pa > 1.5 * 101325) {
+				errSlPressure.textContent = `Altimeter setting must be between ${fmt6p(0.5 * 101325)} and ${fmt6p(1.5 * 101325)} ${slPressUnit}.`;
+				return;
+			}
+		} else {
+			if (P0_Pa < 0.5 * 101325 || P0_Pa > 1.5 * 101325) {
+				errSlPressure.textContent = `Sea-level pressure must be between ${fmt6p(0.5 * 101325)} and ${fmt6p(1.5 * 101325)} ${slPressUnit}.`;
+				return;
+			}
+		}
+
+		const xMin_m = altToM(xMin, xUnit);
+		const xMax_m = altToM(xMax, xUnit);
+		const loX = xVar === 'geopotential' ? -5004 : -5000;
+		const hiX = xVar === 'geopotential' ? 864071 : 1000000;
+		if (xMin_m < loX || xMax_m > hiX) {
+			const factor = altFromM(1, xUnit);
+			const lo = parseFloat((loX * factor).toPrecision(6));
+			const hi = parseFloat((hiX * factor).toPrecision(6));
+			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
+			return;
+		}
+
+		// Geometric altitude extent of the graph
+		const h_min = xVar === 'geometric' ? xMin_m : geopotentialToGeometric(xMin_m);
+		const h_max = xVar === 'geometric' ? xMax_m : geopotentialToGeometric(xMax_m);
+
+		// Build 100 m geometric grid: [h_min, …100 m steps…, h_max]
+		const geoZ: number[] = [h_min];
+		const firstGrid = Math.ceil((h_min + 1e-9) / 100) * 100;
+		for (let z = firstGrid; z < h_max - 1e-9; z += 100) geoZ.push(z);
+		if (h_max - geoZ[geoZ.length - 1] > 1e-6) geoZ.push(h_max);
+
+		// Pre-compute 86 km boundary conditions for upper atmosphere
+		const Z86 = 86000;
+		const H86 = geometricToGeopotential(Z86);
+		const T_bc86 = getTemperature(H86, T0_K);
+		const P_bc86 = getPressure(H86, P0_Pa, T0_K);
+
+		// Integrate the upper atmosphere once if any graph points exceed 86 km
+		const upperTable = h_max > Z86
+			? buildUpperTable(h_max, T_bc86, P_bc86)
+			: null;
+
+		const pts: { x: number; y: number | null }[] = [];
+
+		for (let i = 0; i < geoZ.length; i++) {
+			const h_m = geoZ[i];
+			const H = geometricToGeopotential(h_m);
+
+			// x-axis value: exact endpoints use xMin/xMax to avoid float drift
+			const xVal = i === 0 ? xMin
+				: i === geoZ.length - 1 ? xMax
+				: xVar === 'geometric' ? altFromM(h_m, xUnit) : altFromM(H, xUnit);
+
+			let P_Pa: number, T_K: number, rho: number;
+			let snap: { T: number; P: number; rho: number; partialP: [number,number,number,number,number,number] } | undefined;
+
+			if (h_m <= Z86 + 1e-9) {
+				// Lower atmosphere
+				if (H < -5000) { pts.push({ x: xVal, y: null }); continue; }
+				P_Pa = getPressure(H, P0_Pa, T0_K);
+				T_K  = getTemperature(H, T0_K);
+				rho  = getDensity(P_Pa, T_K);
+			} else {
+				// Upper atmosphere: look up from table; fall back to full integration
+				// for endpoints not aligned to the 100 m grid from 86 km
+				snap = upperTable?.get(Math.round(h_m));
+				if (!snap) {
+					const res = getUpperAtmosphere(h_m, T_bc86, P_bc86);
+					snap = { T: res.T, P: res.P, rho: res.rho, partialP: res.partialP };
+				}
+				P_Pa = snap.P; T_K = snap.T; rho = snap.rho;
+			}
+
+			let y: number | null = null;
+			switch (yVar) {
+				case 'pressure':
+					y = pressureFromPa(P_Pa, yUnit); break;
+				case 'altimeter_setting':
+					if (h_m <= Z86) y = pressureFromPa(getAltimeterSetting(H, P_Pa), yUnit);
+					break;
+				case 'sea_level_pressure':
+					if (h_m <= Z86) y = pressureFromPa(getSeaLevelPressure(H, P_Pa, T0_K), yUnit);
+					break;
+				case 'temperature':
+					y = tempFromK(T_K, yUnit); break;
+				case 'density':
+					y = densityFromKgM3(rho, yUnit); break;
+				case 'pressure_altitude':
+					y = altFromM(getPressureAltitude(P_Pa), yUnit); break;
+				case 'density_altitude':
+					y = altFromM(getDensityAltitude(rho), yUnit); break;
+				case 'speed_of_sound': {
+					const sos = getSpeedOfSound(P_Pa, rho);
+					y = speedFromMS(sos, yUnit); break;
+				}
+				case 'viscosity': {
+					const mu = 1.458e-6 * Math.pow(T_K, 1.5) / (T_K + 110.4);
+					y = viscosityFromPaS(mu, yUnit); break;
+				}
+				case 'boiling_point': {
+					const bp = getBoilingPoint(P_Pa);
+					if (bp >= 273.16) y = tempFromK(bp, yUnit);
+					break;
+				}
+				case 'geopotential_alt':
+					y = altFromM(H, yUnit); break;
+				case 'geometric_alt':
+					y = altFromM(h_m, yUnit); break;
+				case 'partial_pressure': {
+					let pp_Pa: number;
+					if (h_m <= Z86) {
+						pp_Pa = P_Pa * (LOWER_MOLE_FRACTIONS[ySpecies] ?? 0);
+					} else {
+						const idx = UPPER_SPECIES_INDEX[ySpecies];
+						pp_Pa = (idx >= 0 && snap) ? snap.partialP[idx] : 0;
+					}
+					y = pressureFromPa(pp_Pa, yUnit); break;
+				}
+				case 'mean_free_path':
+					y = mfpFromM(getMeanFreePath(P_Pa, T_K), yUnit); break;
+			}
+			pts.push({ x: xVal, y });
+		}
+
+		const validY = pts.filter(p => p.y !== null).map(p => p.y as number);
+		if (validY.length < 2) return;
+		const yDataMin = Math.min(...validY), yDataMax = Math.max(...validY);
+		if (yDataMin === yDataMax) return;
+
+		const errYLog = document.getElementById('err-y-log') as HTMLElement;
+		errYLog.textContent = '';
+
+		let yLo: number, yHi: number;
+		let yTicks: number[];
+		let my: (v: number) => number;
+
+		if (yLog) {
+			// For log scale, data must be strictly positive
+			const posY = validY.filter(v => v > 0);
+			if (posY.length < 2) {
+				errYLog.textContent = 'Logarithmic scale requires all y-values to be positive.';
+				return;
+			}
+			const logDataMin = Math.min(...posY), logDataMax = Math.max(...posY);
+			yLo = yMinUser !== null && yMinUser > 0 ? yMinUser : logDataMin;
+			yHi = yMaxUser !== null && yMaxUser > 0 ? yMaxUser : logDataMax;
+			if (yMinUser !== null && yMinUser <= 0) {
+				errYLog.textContent = 'Y-axis minimum must be positive for logarithmic scale.';
+				return;
+			}
+			if (yLo >= yHi) return;
+			yTicks = logTicks(yLo, yHi, yIntervals);
+			const logLo = Math.log10(yLo), logHi = Math.log10(yHi);
+			// SVG layout constants (defined later, but my closure captures pB/pH below)
+			const W = 600, HS = 400;
+			const pL = 62, pR = W - 20, pT = 35, pB = HS - 50;
+			const pW = pR - pL, pH = pB - pT;
+			const mx = (v: number) => pL + (v - xMin) / (xMax - xMin) * pW;
+			my = (v: number) => v > 0 ? pB - (Math.log10(v) - logLo) / (logHi - logLo) * pH : pB + 999;
+
+			const xTicks = linearTicks(xMin, xMax, xIntervals);
+			const yUnitLabel = (document.getElementById('y-unit') as HTMLSelectElement)
+				.options[(document.getElementById('y-unit') as HTMLSelectElement).selectedIndex].text;
+			const xLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
+			const yLabel = yVar === 'partial_pressure'
+				? `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
+				: `${Y_LABELS[yVar]} (${yUnitLabel})`;
+
+			let s = '';
+			s += `<rect width="${W}" height="${HS}" fill="white"/>`;
+			s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="#f8f8f8"/>`;
+			s += `<defs><clipPath id="c"><rect x="${pL}" y="${pT}" width="${pW}" height="${pH}"/></clipPath></defs>`;
+
+			for (const xt of xTicks) {
+				const x = mx(xt).toFixed(1);
+				s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="#e0e0e0" stroke-width="1"/>`;
+			}
+			for (const yt of yTicks) {
+				const y = my(yt).toFixed(1);
+				s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+			}
+
+			s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
+			s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
+
+			for (const xt of xTicks) {
+				const x = mx(xt).toFixed(1);
+				s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="#333333" stroke-width="1"/>`;
+				s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#333333">${formatTick(xt)}</text>`;
+			}
+			for (const yt of yTicks) {
+				const y = my(yt).toFixed(1);
+				s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="#333333" stroke-width="1"/>`;
+				s += `<text x="${pL - 8}" y="${(my(yt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#333333">${(yVar === 'temperature' || yVar === 'boiling_point') ? fmtTemp(yt, yUnit, 4) : formatTick(yt)}</text>`;
+			}
+
+			s += `<text x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${xLabel}</text>`;
+			s += `<text transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${yLabel}</text>`;
+
+			let d = '';
+			let started = false;
+			for (const p of pts) {
+				if (p.y === null || p.y <= 0) { started = false; continue; }
+				const x = mx(p.x).toFixed(2), y = my(p.y).toFixed(2);
+				d += started ? ` L${x},${y}` : `M${x},${y}`;
+				started = true;
+			}
+			if (d) s += `<path d="${d}" fill="none" stroke="#3245ff" stroke-width="2" clip-path="url(#c)"/>`;
+			(document.getElementById('graph-svg') as Element).innerHTML = s;
+			return;
+		}
+
+		// ── Linear scale ───────────────────────────────────────────────────────
+		const autoYMin = (yDataMin >= 0 && yDataMax > yDataMin * 2) ? 0 : yDataMin;
+		yLo = yMinUser !== null ? yMinUser : autoYMin;
+		yHi = yMaxUser !== null ? yMaxUser : yDataMax;
+		if (yLo >= yHi) return;
+
+		yTicks = linearTicks(yLo, yHi, yIntervals);
+		const xTicks = linearTicks(xMin, xMax, xIntervals);
+		const xT0 = xMin, xT1 = xMax;
+		const yT0 = yLo,  yT1 = yHi;
+
+		// SVG layout constants
+		const W = 600, HS = 400;
+		const pL = 62, pR = W - 20, pT = 35, pB = HS - 50;
+		const pW = pR - pL, pH = pB - pT;
+
+		const mx = (v: number) => pL + (v - xT0) / (xT1 - xT0) * pW;
+		my = (v: number) => pB - (v - yT0) / (yT1 - yT0) * pH;
+
+		const yUnitLabel = (document.getElementById('y-unit') as HTMLSelectElement)
+			.options[(document.getElementById('y-unit') as HTMLSelectElement).selectedIndex].text;
+		const xLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
+		const yLabel = yVar === 'partial_pressure'
+			? `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
+			: `${Y_LABELS[yVar]} (${yUnitLabel})`;
+
+		let s = '';
+		s += `<rect width="${W}" height="${HS}" fill="white"/>`;
+		s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="#f8f8f8"/>`;
+		s += `<defs><clipPath id="c"><rect x="${pL}" y="${pT}" width="${pW}" height="${pH}"/></clipPath></defs>`;
+
+		// Grid lines
+		for (const xt of xTicks) {
+			const x = mx(xt).toFixed(1);
+			s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="#e0e0e0" stroke-width="1"/>`;
+		}
+		for (const yt of yTicks) {
+			const y = my(yt).toFixed(1);
+			s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+		}
+
+		// Axes
+		s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
+		s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
+
+		// X ticks and labels
+		for (const xt of xTicks) {
+			const x = mx(xt).toFixed(1);
+			s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="#333333" stroke-width="1"/>`;
+			s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#333333">${formatTick(xt)}</text>`;
+		}
+
+		// Y ticks and labels
+		for (const yt of yTicks) {
+			const y = my(yt).toFixed(1);
+			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="#333333" stroke-width="1"/>`;
+			s += `<text x="${pL - 8}" y="${(my(yt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#333333">${(yVar === 'temperature' || yVar === 'boiling_point') ? fmtTemp(yt, yUnit, 4) : formatTick(yt)}</text>`;
+		}
+
+		// Axis labels
+		s += `<text x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${xLabel}</text>`;
+		s += `<text transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${yLabel}</text>`;
+
+		// Data line
+		let d = '';
+		let started = false;
+		for (const p of pts) {
+			if (p.y === null) { started = false; continue; }
+			const x = mx(p.x).toFixed(2), y = my(p.y).toFixed(2);
+			d += started ? ` L${x},${y}` : `M${x},${y}`;
+			started = true;
+		}
+		if (d) s += `<path d="${d}" fill="none" stroke="#3245ff" stroke-width="2" clip-path="url(#c)"/>`;
+
+		(document.getElementById('graph-svg') as Element).innerHTML = s;
+	}
+
+	// Initial population and render
+	populateYUnits();
+	generateGraph();
+
+	// y-var: repopulate units then redraw
+	document.getElementById('y-var')!.addEventListener('change', () => {
+		populateYUnits();
+		generateGraph();
+	});
+
+	(document.getElementById('x-unit') as HTMLSelectElement).addEventListener('change', generateGraph);
+
+	function updateConditionLabels() {
+		const tMode = (document.getElementById('temp-mode') as HTMLSelectElement).value;
+		(document.getElementById('lbl-sl-temp') as HTMLElement).textContent =
+			tMode === 'air' ? 'Air temperature' : 'Sea-level temperature';
+		const pMode = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
+		(document.getElementById('lbl-sl-pressure') as HTMLElement).textContent =
+			pMode === 'air' ? 'Air pressure' : pMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+	}
+
+	document.getElementById('temp-mode')!.addEventListener('change', () => { updateConditionLabels(); generateGraph(); });
+	document.getElementById('pressure-mode')!.addEventListener('change', () => { updateConditionLabels(); generateGraph(); });
+	updateConditionLabels();
+
+	// All other inputs
+	// y-unit change also affects log-checkbox disability
+	document.getElementById('y-unit')!.addEventListener('change', updateLogCheckbox);
+
+	for (const id of ['cond-alt', 'cond-alt-unit', 'sl-temp', 'sl-temp-unit', 'sl-pressure', 'sl-pressure-unit', 'x-var', 'x-min', 'x-max', 'x-intervals', 'y-unit', 'y-min', 'y-max', 'y-intervals', 'y-species', 'y-log']) {
+		const el = document.getElementById(id)!;
+		el.addEventListener('input', generateGraph);
+		el.addEventListener('change', generateGraph);
+	}
+
+	// Reset to standard conditions
+	document.getElementById('btn-reset')!.addEventListener('click', () => {
+		const altUnit  = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
+		const tempUnit = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
+		const pressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
+		(document.getElementById('cond-alt') as HTMLInputElement).value =
+			parseFloat(altFromM(0, altUnit).toPrecision(6)).toString();
+		(document.getElementById('sl-temp') as HTMLInputElement).value =
+			parseFloat(tempFromK(288.15, tempUnit).toPrecision(6)).toString();
+		(document.getElementById('sl-pressure') as HTMLInputElement).value =
+			parseFloat(pressureFromPa(101325, pressUnit).toPrecision(6)).toString();
+		generateGraph();
+	});
+
+	// Download
+	document.getElementById('btn-download')!.addEventListener('click', () => {
+		const svg = document.getElementById('graph-svg') as unknown as SVGGraphicsElement;
+		const str = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg);
+		const url = URL.createObjectURL(new Blob([str], { type: 'image/svg+xml' }));
+		const a = Object.assign(document.createElement('a'), { href: url, download: 'atmosphere-graph.svg' });
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	});
+</script>

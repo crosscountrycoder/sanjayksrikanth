@@ -25,3 +25,7 @@ pnpm-debug.log*
 
 # claude folder
 .claude/
+
+# U.S. standard atmosphere PDF
+us-standard-atmosphere_st76-1562_noaa.pdf
+ussa1976.dpr

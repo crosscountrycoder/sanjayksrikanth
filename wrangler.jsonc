@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sanjayksrikanth",
+  "compatibility_date": "2026-07-18",
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    {
+      "pattern": "sanjayksrikanth.com",
+      "custom_domain": true
+    }
+  ]
+}

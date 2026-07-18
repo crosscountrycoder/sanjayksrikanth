@@ -1,0 +1,63 @@
+---
+interface Props {
+	active: 'calculator' | 'graph' | 'table' | 'notes';
+}
+const { active } = Astro.props;
+
+const tabs = [
+	{ id: 'calculator', label: 'Calculator', href: '/calculators/atmosphere' },
+	{ id: 'graph',      label: 'Graph',      href: '/calculators/atmosphere/graph' },
+	{ id: 'table',      label: 'Table',      href: '/calculators/atmosphere/table' },
+	{ id: 'notes',      label: 'Notes',      href: '/calculators/atmosphere/notes' },
+];
+---
+
+<nav class="atm-nav">
+	{tabs.map(tab => (
+		<a
+			href={tab.href}
+			class:list={['atm-nav-tab', { active: active === tab.id }]}
+			data-label={tab.label}
+		>{tab.label}</a>
+	))}
+</nav>
+
+<style>
+	.atm-nav {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1.25rem;
+	}
+	.atm-nav-tab {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		font-family: Arial, sans-serif;
+		font-size: 0.875rem;
+		font-weight: normal;
+		color: var(--color-text);
+		background: var(--color-button-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		padding: 0.4rem 1rem;
+		text-decoration: none;
+		cursor: pointer;
+	}
+	/* Reserve bold width so button size doesn't shift */
+	.atm-nav-tab::after {
+		content: attr(data-label);
+		font-weight: bold;
+		height: 0;
+		visibility: hidden;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	.atm-nav-tab:hover {
+		background: var(--color-button-hover);
+		text-decoration: none;
+	}
+	.atm-nav-tab.active {
+		font-weight: bold;
+		background: var(--color-output-bg);
+	}
+</style>
