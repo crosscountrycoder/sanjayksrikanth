@@ -250,7 +250,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<option value="O2">O₂</option>
 						<option value="Ar">Ar</option>
 						<option value="CO2">CO₂</option>
+						<option value="Ne">Ne</option>
+						<option value="CH4">CH₄</option>
+						<option value="Kr">Kr</option>
+						<option value="H2">H₂</option>
+						<option value="N2O">N₂O</option>
+						<option value="Xe">Xe</option>
 						<option value="O">O</option>
+						<option value="O3">O₃</option>
 						<option value="He">He</option>
 						<option value="H">H</option>
 					</select>
@@ -496,13 +503,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <script>
 	import {
 		geometricToGeopotential, geopotentialToGeometric,
-		getPressure, getTemperature, getSeaLevelTemperature, getDensity,
+		getPressureNonstd, getTemperature, getSeaLevelTemperature, getDensityFromPT,
 		getSeaLevelPressure, getAltimeterSetting,
 		getPressureAltitude, getDensityAltitude, getBoilingPoint,
-		LOWER_MOLE_FRACTIONS, UPPER_SPECIES_INDEX,
-		buildUpperTable, getUpperAtmosphere,
-		getMeanFreePath,
-		getSpeedOfSound,
+		getMoleFractions, getMeanFreePath, getSpeedOfSound,
 	} from '../../../lib/atmosphere.ts';
 	import {
 		altToM, altFromM, tempToK, tempFromK,
@@ -511,7 +515,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	} from '../../../lib/convert.ts';
 
 	const SPECIES_DISPLAY: Record<string, string> = {
-		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂', O: 'O', He: 'He', H: 'H',
+		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂',
+		Ne: 'Ne', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
+		O: 'O', He: 'He', H: 'H',
 	};
 
 	const Y_LABELS: Record<string, string> = {
@@ -631,7 +637,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		// Derive T0_K
 		const T_input_K = tempToK(slTempVal, slTempUnit);
-		const T0_K = tempMode === 'air' ? getSeaLevelTemperature(H_cond, T_input_K) : T_input_K;
+		const z_cond = xVar === 'geopotential' ? geopotentialToGeometric(condAlt_m) : condAlt_m;
+		const T0_K = tempMode === 'air' ? getSeaLevelTemperature(Math.min(z_cond, 86000), T_input_K) : T_input_K;
 		if (T0_K < 173.15 || T0_K > 373.15) {
 			const fmt = (K: number) => fmt6(tempFromK(K, slTempUnit));
 			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
@@ -646,10 +653,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if (pressMode === 'sea-level') {
 			P0_Pa = P_input_Pa;
 		} else if (pressMode === 'air') {
-			P0_Pa = getSeaLevelPressure(H_cond, P_input_Pa, T0_K);
+			P0_Pa = getSeaLevelPressure(z_cond, P_input_Pa, T0_K);
 		} else {
-			const P_at_cond = P_input_Pa * getPressure(H_cond, 1, 288.15);
-			P0_Pa = getSeaLevelPressure(H_cond, P_at_cond, T0_K);
+			const P_at_cond = P_input_Pa * getPressureNonstd(z_cond, 1, 288.15);
+			P0_Pa = getSeaLevelPressure(z_cond, P_at_cond, T0_K);
 		}
 		const fmtP = (Pa: number) => fmt6(pressureFromPa(Pa, slPressUnit));
 		if (pressMode === 'altimeter') {
@@ -687,14 +694,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		tableXLabel = xLabel;
 		tableYConfigs = vars;
 
-		// Build upper atmosphere table if needed
-		const Z86 = 86000;
-		const T_bc86 = getTemperature(geometricToGeopotential(Z86), T0_K);
-		const P_bc86 = getPressure(geometricToGeopotential(Z86), P0_Pa, T0_K);
-		const upperTable = (needsUpper && xMax_m > Z86)
-			? buildUpperTable(xMax_m, T_bc86, P_bc86) : null;
-
-		type Snap = { T: number; P: number; rho: number; partialP: [number,number,number,number,number,number] };
+		// Warm up non-standard upper atmosphere cache before the loop if needed.
+		if (needsUpper && xMax_m > 86000) getPressureNonstd(xMax_m, P0_Pa, T0_K);
 
 		tableData = [];
 		for (let i = 0; i <= N; i++) {
@@ -702,53 +703,29 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const xVal = xMin + (xMax - xMin) * frac;
 			const x_m  = xMin_m + (xMax_m - xMin_m) * frac;
 
-			let h_m: number, H: number;
-			if (xVar === 'geometric') {
-				h_m = x_m; H = geometricToGeopotential(h_m);
-			} else {
-				H = x_m; h_m = geopotentialToGeometric(H);
-			}
+			const h_m = xVar === 'geometric' ? x_m : geopotentialToGeometric(x_m);
+			const H   = geometricToGeopotential(h_m);
 
-			let P_Pa: number, T_K: number, rho: number;
-			let snap: Snap | undefined;
+			if (h_m < -6000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
 
-			if (h_m <= Z86 + 1e-9) {
-				if (H < -5000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
-				P_Pa = getPressure(H, P0_Pa, T0_K);
-				T_K  = getTemperature(H, T0_K);
-				rho  = getDensity(P_Pa, T_K);
-			} else {
-				snap = upperTable?.get(Math.round(h_m));
-				if (!snap) {
-					const res = getUpperAtmosphere(h_m, T_bc86, P_bc86);
-					snap = { T: res.T, P: res.P, rho: res.rho, partialP: res.partialP };
-				}
-				P_Pa = snap.P; T_K = snap.T; rho = snap.rho;
-			}
+			const P_Pa = getPressureNonstd(h_m, P0_Pa, T0_K);
+			const T_K  = getTemperature(h_m) + (T0_K - 288.15);
+			const rho  = getDensityFromPT(P_Pa, T_K, h_m);
 
 			const ys = vars.map(v => {
 				switch (v.key) {
 					case 'pressure':           return pressureFromPa(P_Pa, v.unit);
-					case 'altimeter_setting':  return h_m <= Z86 ? pressureFromPa(getAltimeterSetting(H, P_Pa), v.unit) : null;
-					case 'sea_level_pressure': return h_m <= Z86 ? pressureFromPa(getSeaLevelPressure(H, P_Pa, T0_K), v.unit) : null;
+					case 'altimeter_setting':  return pressureFromPa(getAltimeterSetting(h_m, P_Pa), v.unit);
+					case 'sea_level_pressure': return h_m <= 86000 ? pressureFromPa(getSeaLevelPressure(h_m, P_Pa, T0_K), v.unit) : null;
 					case 'temperature':        return tempFromK(T_K, v.unit);
 					case 'density':            return densityFromKgM3(rho, v.unit);
-					case 'pressure_altitude':  return h_m <= Z86 ? altFromM(getPressureAltitude(P_Pa), v.unit) : null;
-					case 'density_altitude':   return h_m <= Z86 ? altFromM(getDensityAltitude(rho), v.unit) : null;
-					case 'speed_of_sound':     return speedFromMS(getSpeedOfSound(P_Pa, rho), v.unit);
+					case 'pressure_altitude':  return altFromM(getPressureAltitude(P_Pa), v.unit);
+					case 'density_altitude':   return altFromM(getDensityAltitude(rho), v.unit);
+					case 'speed_of_sound': { const sos = getSpeedOfSound(P_Pa, rho); return sos === null ? null : speedFromMS(sos, v.unit); }
 					case 'viscosity':          return viscosityFromPaS(1.458e-6 * Math.pow(T_K, 1.5) / (T_K + 110.4), v.unit);
 					case 'geopotential_alt':   return altFromM(H, v.unit);
 					case 'geometric_alt':      return altFromM(h_m, v.unit);
-					case 'partial_pressure': {
-						let pp_Pa: number;
-						if (h_m <= Z86 + 1e-9) {
-							pp_Pa = P_Pa * (LOWER_MOLE_FRACTIONS[v.species] ?? 0);
-						} else {
-							const idx = UPPER_SPECIES_INDEX[v.species];
-							pp_Pa = (idx >= 0 && snap) ? snap.partialP[idx] : 0;
-						}
-						return pressureFromPa(pp_Pa, v.unit);
-					}
+					case 'partial_pressure':   return pressureFromPa(P_Pa * (getMoleFractions(h_m)[v.species] ?? 0), v.unit);
 					case 'mean_free_path':     return mfpFromM(getMeanFreePath(P_Pa, T_K), v.unit);
 					case 'boiling_point': {
 						const bp = getBoilingPoint(P_Pa);

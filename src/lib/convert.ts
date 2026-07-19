@@ -50,7 +50,7 @@ export function pressureFromPa(Pa: number, unit: string): number {
 export function densityFromKgM3(rho: number, unit: string): number {
 	return unit === 'lb/ft3'   ? rho * 0.062427960576145
 	     : unit === 'slug/ft3' ? rho * 0.0019403203
-	     : unit === 'sigma'    ? rho / 1.224978143
+	     : unit === 'sigma'    ? rho / 1.225034902
 	     : rho;
 }
 
