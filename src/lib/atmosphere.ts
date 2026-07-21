@@ -85,31 +85,31 @@ export function getTemperature(z: number): number {
 }
 
 // ── Lower-atmosphere composition ─────────────────────────────────────────────
+// All boundaries in geometric altitude (meters).
 
-const H_TROP      = 11000;
-const L_CH4       = 17000;
-const L_N2O       = 11000;
-const H_O_START   = 80000;
+const Z_TROP      = 11000;  // geometric tropopause
+const L_CH4       = 17000;  // CH4 decay scale length (geometric m)
+const L_N2O       = 11000;  // N2O decay scale length (geometric m)
+const Z_O_START   = 80000;  // geometric altitude where O dissociation begins
 const X_O_AT_86KM = 5.942e-4;
 const MI_O        = 0.0159994;
-const H_86KM = EARTH_RADIUS_M * 86000 / (EARTH_RADIUS_M + 86000);
 const _xi_CH4 = LOWER_COMPOSITION[6].xi;
 const _xi_N2O = LOWER_COMPOSITION[9].xi;
 
-function _lowerXi(H: number): Record<string, number> {
+function _lowerXi(z: number): Record<string, number> {
     const fracs: Record<string, number> = {};
     for (const c of LOWER_COMPOSITION) fracs[c.key] = c.xi;
     fracs['O'] = 0; fracs['H'] = 0;
-    if (H > H_TROP) {
-        const dH = H - H_TROP;
-        const fCH4 = Math.exp(-dH / L_CH4);
-        const fN2O = Math.exp(-dH / L_N2O);
+    if (z > Z_TROP) {
+        const dz = z - Z_TROP;
+        const fCH4 = Math.exp(-dz / L_CH4);
+        const fN2O = Math.exp(-dz / L_N2O);
         fracs['CH4'] = _xi_CH4 * fCH4;
         fracs['N2O'] = _xi_N2O * fN2O;
         fracs['N2']  = LOWER_COMPOSITION[0].xi + _xi_CH4 * (1 - fCH4) + _xi_N2O * (1 - fN2O);
     }
-    if (H >= H_O_START) {
-        const t = Math.min((H - H_O_START) / (H_86KM - H_O_START), 1.0);
+    if (z >= Z_O_START) {
+        const t = Math.min((z - Z_O_START) / (Z_86K - Z_O_START), 1.0);
         const smooth = t * t * (3 - 2 * t);
         fracs['O']  = X_O_AT_86KM * smooth;
         fracs['O2'] = LOWER_COMPOSITION[1].xi - fracs['O'] / 2;
@@ -121,8 +121,8 @@ function _lowerXi(H: number): Record<string, number> {
     return fracs;
 }
 
-function _lowerMeff(H: number): number {
-    const fracs = _lowerXi(H);
+function _lowerMeff(z: number): number {
+    const fracs = _lowerXi(z);
     let M = 0;
     for (const c of LOWER_COMPOSITION) M += fracs[c.key] * c.Mi;
     M += fracs['O'] * MI_O;
@@ -136,7 +136,7 @@ function _g(z: number): number {
 }
 
 function _hydroF(z: number, dT: number): number {
-    return _lowerMeff(geometricToGeopotential(z)) * _g(z) / (R * (getTemperature(z) + dT));
+    return _lowerMeff(z) * _g(z) / (R * (getTemperature(z) + dT));
 }
 
 function _rk4P(z: number, P: number, h: number, dT: number): number {
@@ -253,6 +253,7 @@ function _fcalc(Z: number, g: number, K: number, T: number, dTdz: number, s: num
 const _UN  = (_ZMAX - _Z7) / Z_STEP + 1; // 9141
 const _uStdP   = new Float64Array(_UN);
 const _uStdRho = new Float64Array(_UN);
+const _uHydroP = new Float64Array(_UN); // hydrostatic pressure (satisfies dP/dz = -ρg exactly)
 const _uStdXi: [Float64Array,Float64Array,Float64Array,Float64Array,Float64Array,Float64Array] = [
     new Float64Array(_UN), new Float64Array(_UN), new Float64Array(_UN),
     new Float64Array(_UN), new Float64Array(_UN), new Float64Array(_UN),
@@ -319,8 +320,25 @@ function _runUpperODE(
     }
 }
 
-// Run standard upper atmosphere table at init (P_bc = standard lower pressure at 86 km).
-const _P86std = _LP[_LN - 1];
+// ── Trace gas decay above 86 km ───────────────────────────────────────────────
+// CO2, Ne, CH4, Kr, H2, N2O, Xe are absent from the upper-atmosphere ODE.
+// Above 86 km they decay with diffusive scale heights H_s = R·T86 / (M_s·g86),
+// anchored to their absolute number densities at 86 km from the lower model.
+
+const _TRACE_KEYS = ['CO2', 'Ne', 'CH4', 'Kr', 'H2', 'N2O', 'Xe'] as const;
+const _TRACE_MKG  = [0.04400950, 0.02017970, 0.01604246, 0.08379800, 0.00201588, 0.04401280, 0.13129300] as const;
+const _g86 = 9.80665 * (EARTH_RADIUS_M / (EARTH_RADIUS_M + Z_86K)) ** 2;
+const _TRACE_HS = (_TRACE_MKG as readonly number[]).map(M => R * _T7 / (M * _g86));
+
+const _P86std    = _LP[_LN - 1];
+const _n_total_86 = _P86std / (k_B * _T7);
+const _TRACE_N86 = (() => {
+    const f = _lowerXi(Z_86K);
+    return (_TRACE_KEYS as readonly string[]).map(k => (f[k] ?? 0) * _n_total_86);
+})();
+
+// Run upper ODE to get composition (mole fractions in _uStdXi). The boundary pressure
+// only scales number densities uniformly, so mole fractions are independent of P_bc.
 _runUpperODE(_P86std, _T7, _uStdP, _uStdRho, _uStdXi);
 
 // Non-standard upper atmosphere cache (one slot keyed by P0,T0)
@@ -352,36 +370,58 @@ function _upperXi(s: number, z: number): number {
     return a[i] + (idx - i) * (a[i+1] - a[i]);
 }
 
-// ── Trace gas decay above 86 km ───────────────────────────────────────────────
-// CO2, Ne, CH4, Kr, H2, N2O, Xe are absent from the upper-atmosphere ODE.
-// Above 86 km they decay with diffusive scale heights H_s = R·T86 / (M_s·g86).
-// Their budget is removed from the 6 ODE species proportionally so fractions sum to 1.
-
-const _TRACE_KEYS = ['CO2', 'Ne', 'CH4', 'Kr', 'H2', 'N2O', 'Xe'] as const;
-const _TRACE_MKG  = [0.04400950, 0.02017970, 0.01604246, 0.08379800, 0.00201588, 0.04401280, 0.13129300] as const;
-const _g86 = 9.80665 * (EARTH_RADIUS_M / (EARTH_RADIUS_M + Z_86K)) ** 2;
-const _TRACE_HS = (_TRACE_MKG as readonly number[]).map(M => R * _T7 / (M * _g86));
-// Mole fractions of trace gases at exactly 86 km, from the lower-atmosphere model
-const _TRACE_XI86 = (() => {
-    const f = _lowerXi(H_86KM);
-    return (_TRACE_KEYS as readonly string[]).map(k => f[k] ?? 0);
-})();
-
-function _traceDecay(dz: number): number[] {
-    return _TRACE_XI86.map((xi0, i) => xi0 * Math.exp(-dz / _TRACE_HS[i]));
-}
-
 // Blend zone 86–87 km: lower-model composition (frozen at 86 km) transitions smoothly
 // to the ODE upper model. Ensures M is continuous at 86 km so density stays monotonic.
 const _BLEND_TOP = 87000;
-const _LXI_86 = _lowerXi(H_86KM); // lower-model composition at exactly 86 km
+const _LXI_86 = _lowerXi(Z_86K); // lower-model composition at exactly 86 km
+
+// ── Upper hydrostatic pressure (exact dP/dz = -ρg) ───────────────────────────
+// The upper ODE gives composition (ξ_s_ODE in _uStdXi). Pressure is computed
+// separately by integrating hydrostatics, making dP/dz = -ρ_total·g exact.
+//
+// At each step, M_eff accounts for both ODE species (via ξ_s_ODE from _upperXi,
+// which is scale-invariant) and trace gases (fixed number densities from _TRACE_N86).
+//   n_total    = P / (k_B · T)
+//   n_ode      = n_total − n_trace_total
+//   M_eff      = (n_ode · M_ODE_eff + Σ n_trace_i · M_trace_i) / n_total
+// This is mildly P-dependent through n_trace/n_total; RK4 handles it correctly.
+
+function _mEffUpper(z: number, P: number): number {
+    const T  = getTemperature(z);
+    const dz = z - Z_86K;
+    let n_tr = 0, n_tr_M = 0;
+    for (let i = 0; i < _TRACE_N86.length; i++) {
+        const n = _TRACE_N86[i] * Math.exp(-dz / _TRACE_HS[i]);
+        n_tr   += n;
+        n_tr_M += n * _TRACE_MKG[i];
+    }
+    const n_total = P / (k_B * T);
+    const n_ode   = n_total - n_tr;
+    let M_ode = 0;
+    for (let s = 0; s < 6; s++) M_ode += _upperXi(s, z) * _uMkg[s];
+    return (n_ode * M_ode + n_tr_M) / n_total;
+}
+
+(function _buildUHydroP() {
+    _uHydroP[0] = _P86std;
+    for (let i = 0; i < _UN - 1; i++) {
+        const z = _Z7 + i * Z_STEP;
+        const P = _uHydroP[i];
+        const f = (zz: number, pp: number) => _mEffUpper(zz, pp) * _uGrav(zz) / (R * getTemperature(zz));
+        const k1 = -P              * f(z,             P);
+        const k2 = -(P+0.5*Z_STEP*k1) * f(z+0.5*Z_STEP, P+0.5*Z_STEP*k1);
+        const k3 = -(P+0.5*Z_STEP*k2) * f(z+0.5*Z_STEP, P+0.5*Z_STEP*k2);
+        const k4 = -(P+Z_STEP*k3)     * f(z+Z_STEP,     P+Z_STEP*k3);
+        _uHydroP[i+1] = P + (Z_STEP/6)*(k1 + 2*k2 + 2*k3 + k4);
+    }
+}());
 
 // ── Unified public API ────────────────────────────────────────────────────────
 // All functions accept geometric altitude z in meters. No 86 km branch visible to callers.
 
 export function getPressure(z: number): number {
     if (z <= Z_86K) return _lowerLookup(_LP, z);
-    return _upperLookup(_uStdP, z);
+    return _upperLookup(_uHydroP, z);
 }
 
 // Pressure with non-standard sea-level conditions.
@@ -396,7 +436,7 @@ export function getPressureNonstd(z: number, P0: number, T0: number): number {
 export function getDensity(z: number): number {
     if (z <= Z_86K) {
         const P = _lowerLookup(_LP, z);
-        return P * _lowerMeff(geometricToGeopotential(z)) / (R * getTemperature(z));
+        return P * _lowerMeff(z) / (R * getTemperature(z));
     }
     // Use P·M/RT so getDensity is consistent with getDensityFromPT and getMolarMass
     // (which now includes trace-gas contributions above 86 km).
@@ -409,40 +449,42 @@ export function getDensityFromPT(P_Pa: number, T_K: number, z: number): number {
 }
 
 export function getMolarMass(z: number): number {
-    if (z <= Z_86K) return _lowerMeff(geometricToGeopotential(z));
-    const f = getMoleFractions(z);
-    const UPPER_KEYS = ['N2','O','O2','Ar','He','H'] as const;
-    let M = 0;
-    for (let s = 0; s < 6; s++) M += (f[UPPER_KEYS[s]] ?? 0) * _uMkg[s];
-    for (let i = 0; i < _TRACE_KEYS.length; i++) M += (f[_TRACE_KEYS[i]] ?? 0) * _TRACE_MKG[i];
-    return M;
+    if (z <= Z_86K) return _lowerMeff(z);
+    const T   = getTemperature(z);
+    const dz  = z - Z_86K;
+    const n_trace = (_TRACE_N86 as readonly number[]).map((n0, i) => n0 * Math.exp(-dz / _TRACE_HS[i]));
+    const n_trace_total = n_trace.reduce((s, x) => s + x, 0);
+    const n_total = _upperLookup(_uHydroP, z) / (k_B * T);
+    const n_ode_total = n_total - n_trace_total;
+    let Mnum = 0;
+    for (let s = 0; s < 6; s++) Mnum += _upperXi(s, z) * n_ode_total * _uMkg[s];
+    for (let i = 0; i < _TRACE_KEYS.length; i++) Mnum += n_trace[i] * _TRACE_MKG[i];
+    const M_upper = Mnum / n_total;
+    if (z >= _BLEND_TOP) return M_upper;
+    const t = (z - Z_86K) / (_BLEND_TOP - Z_86K);
+    const alpha = t * t * (3 - 2 * t);
+    return (1 - alpha) * _lowerMeff(Z_86K) + alpha * M_upper;
 }
 
 // Mole fractions at z. Always sums to exactly 1.
-// Above 87 km: 6 ODE species + trace gases decaying with diffusive scale heights.
-// 86–87 km: smoothly blended from lower model (at 86 km) to ODE+trace model,
+// Above 86 km: 6 ODE species (number densities from upper ODE tables) plus trace gases
+//   decaying with diffusive scale heights, all converted to mole fractions via n_total.
+// 86–87 km: smoothly blended from lower model (frozen at 86 km) to upper model,
 //   ensuring molar mass is continuous at 86 km so density remains monotonic.
 export function getMoleFractions(z: number): Record<string, number> {
-    if (z <= Z_86K) return _lowerXi(geometricToGeopotential(z));
+    if (z <= Z_86K) return _lowerXi(z);
     const UPPER_KEYS = ['N2','O','O2','Ar','He','H'] as const;
-
-    // Build pure upper-model fractions
+    const T   = getTemperature(z);
+    const dz  = z - Z_86K;
+    const n_trace = (_TRACE_N86 as readonly number[]).map((n0, i) => n0 * Math.exp(-dz / _TRACE_HS[i]));
+    const n_total = _upperLookup(_uHydroP, z) / (k_B * T);
+    const n_ode_total = n_total - n_trace.reduce((s, x) => s + x, 0);
     const f_upper: Record<string, number> = {};
-    for (let s = 0; s < 6; s++) f_upper[UPPER_KEYS[s]] = _upperXi(s, z);
-    const trace = _traceDecay(z - Z_86K);
-    let traceTot = 0;
-    for (let i = 0; i < _TRACE_KEYS.length; i++) {
-        f_upper[_TRACE_KEYS[i]] = trace[i];
-        traceTot += trace[i];
-    }
-    const upperScale = 1 - traceTot;
-    for (const k of UPPER_KEYS) f_upper[k] *= upperScale;
-
+    for (let s = 0; s < 6; s++) f_upper[UPPER_KEYS[s]] = _upperXi(s, z) * n_ode_total / n_total;
+    for (let i = 0; i < _TRACE_KEYS.length; i++) f_upper[_TRACE_KEYS[i]] = n_trace[i] / n_total;
     if (z >= _BLEND_TOP) return f_upper;
-
-    // Blend zone: mix lower-model composition (frozen at 86 km) with upper model
     const t = (z - Z_86K) / (_BLEND_TOP - Z_86K);
-    const alpha = t * t * (3 - 2 * t); // smoothstep
+    const alpha = t * t * (3 - 2 * t);
     const f: Record<string, number> = {};
     let tot = 0;
     for (const k of Object.keys(f_upper)) {
