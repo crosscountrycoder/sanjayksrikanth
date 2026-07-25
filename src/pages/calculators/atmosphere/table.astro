@@ -11,8 +11,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		{ label: 'U.S. Standard Atmosphere Calculator' },
 	]} />
 	<h1>U.S. Standard Atmosphere Calculator</h1>
-	<p>Tabulate atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 	<AtmosphereNav active="table" />
+	<p>Tabulate atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 
 	<section class="table-page">
 		<div class="controls">
@@ -244,6 +244,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<option value="mmHg">mmHg (Torr)</option>
 						<option value="inHg">inHg</option>
 						<option value="psi">psi</option>
+						<option value="fraction">fraction</option>
 					</select>
 					<select id="species-partial_pressure">
 						<option value="N2" selected>N₂</option>
@@ -329,38 +330,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		margin-bottom: 0.4rem;
 	}
 
-	label {
-		font-size: 1rem;
-		color: var(--color-text);
-	}
-
-	.input-row,
-	.range-row {
-		display: flex;
-		gap: 0.4rem;
-		align-items: center;
-	}
-
 	input[type="number"] {
 		flex: 1;
 		min-width: 0;
 		max-width: 6rem;
-		padding: 0.25rem 0.35rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		font-size: 1rem;
-		color: var(--color-text);
-		background: var(--color-input-bg);
 	}
 
 	select {
 		width: 100%;
-		padding: 0.25rem 0.35rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		font-size: 1rem;
-		background: var(--color-input-bg);
-		color: var(--color-text);
 	}
 
 	.input-row select,
@@ -373,32 +350,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	}
 
 	.checkbox-row {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
 		margin-bottom: 0.4rem;
-	}
-
-	.checkbox-row label {
-		margin: 0;
-	}
-
-	.reset-row {
-		margin: 0.4rem 0 0;
-	}
-
-	.reset-row button {
-		padding: 0.4rem 1rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		background: var(--color-button-bg);
-		font-size: 0.875rem;
-		color: var(--color-text);
-		cursor: pointer;
-	}
-
-	.reset-row button:hover {
-		background: var(--color-button-hover);
 	}
 
 	.var-list {
@@ -408,7 +360,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		max-height: 24rem;
 		overflow-y: auto;
 		border: 1px solid var(--color-border);
-		border-radius: 6px;
+		border-radius: 0;
 		padding: 0.4rem 0.5rem;
 		margin-bottom: 0.5rem;
 	}
@@ -448,17 +400,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	}
 
 	.table-actions button {
-		padding: 0.4rem 1rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		background: var(--color-button-bg);
 		font-size: 1rem;
-		color: var(--color-text);
-		cursor: pointer;
-	}
-
-	.table-actions button:hover {
-		background: var(--color-button-hover);
 	}
 
 	@media (max-width: 700px) {
@@ -555,7 +497,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const speciesSel = document.getElementById(`species-${key}`) as HTMLSelectElement | null;
 			const species = speciesSel?.value ?? '';
 			const label = key === 'partial_pressure'
-				? `Partial pressure (${unitLabel}) ${SPECIES_DISPLAY[species]}`
+				? unit === 'fraction'
+					? `Mole fraction ${SPECIES_DISPLAY[species]}`
+					: `Partial pressure (${unitLabel}) ${SPECIES_DISPLAY[species]}`
 				: `${Y_LABELS[key]} (${unitLabel})`;
 			return { key, unit, species, label };
 		});
@@ -725,7 +669,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					case 'viscosity':          return viscosityFromPaS(1.458e-6 * Math.pow(T_K, 1.5) / (T_K + 110.4), v.unit);
 					case 'geopotential_alt':   return altFromM(H, v.unit);
 					case 'geometric_alt':      return altFromM(h_m, v.unit);
-					case 'partial_pressure':   return pressureFromPa(P_Pa * (getMoleFractions(h_m)[v.species] ?? 0), v.unit);
+					case 'partial_pressure': {
+						const mf = getMoleFractions(h_m)[v.species] ?? 0;
+						const val = mf < 1e-20 ? 0 : mf;
+						return v.unit === 'fraction' ? val : pressureFromPa(val * P_Pa, v.unit);
+					}
 					case 'mean_free_path':     return mfpFromM(getMeanFreePath(P_Pa, T_K), v.unit);
 					case 'boiling_point': {
 						const bp = getBoilingPoint(P_Pa);

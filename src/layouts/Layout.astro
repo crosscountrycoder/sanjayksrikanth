@@ -149,6 +149,88 @@
 		background: var(--color-button-hover);
 		text-decoration: none;
 	}
+
+	/* ── Form controls (shared across all calculator pages) ── */
+	label {
+		font-size: 1rem;
+		color: var(--color-text);
+	}
+
+	input[type="number"] {
+		padding: 0.15rem 0.25rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		font-size: 1rem;
+		color: var(--color-text);
+		background: var(--color-input-bg);
+	}
+
+	select {
+		padding: 0.15rem 0.25rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		font-size: 1rem;
+		background: var(--color-input-bg);
+		color: var(--color-text);
+	}
+
+	.output-row span {
+		flex: 1;
+		min-width: 5rem;
+		padding: 0.15rem 0.25rem;
+		background: var(--color-output-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		font-size: 1rem;
+	}
+
+	.input-row,
+	.output-row,
+	.range-row {
+		display: flex;
+		gap: 0.4rem;
+		align-items: center;
+	}
+
+	.error {
+		color: red;
+		font-size: 0.875rem;
+		margin: 0;
+	}
+
+	.checkbox-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.checkbox-row label {
+		margin: 0;
+	}
+
+	.reset-row {
+		margin: 0.4rem 0 0;
+	}
+
+	.reset-row button,
+	.unit-buttons button,
+	.table-actions button,
+	.graph-actions button {
+		padding: 0.25rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		background: var(--color-button-bg);
+		font-size: 0.875rem;
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.reset-row button:hover,
+	.unit-buttons button:hover,
+	.table-actions button:hover,
+	.graph-actions button:hover {
+		background: var(--color-button-hover);
+	}
 </style>
 
 <script>

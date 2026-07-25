@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
+import CalculatorsList from '../../components/CalculatorsList.astro';
 ---
 
 <Layout>
@@ -9,12 +10,8 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		{ label: 'Calculators' },
 	]} />
 	<h1>Calculators</h1>
-
 	<section>
-		<h2>Atmosphere</h2>
-		<ul>
-			<li><a href="/calculators/atmosphere">U.S. standard atmosphere calculator</a> - pressure, temperature, density, viscosity, speed of sound, boiling point</li>
-		</ul>
+		<CalculatorsList />
 	</section>
 </Layout>
 

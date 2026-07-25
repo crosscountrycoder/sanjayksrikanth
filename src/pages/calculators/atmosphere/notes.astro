@@ -11,24 +11,30 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		{ label: 'U.S. Standard Atmosphere Calculator' },
 	]} />
 	<h1>U.S. Standard Atmosphere Calculator</h1>
-	<p>Tabulate atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 	<AtmosphereNav active="notes" />
+	<p>Tabulate atmospheric properties as a function of altitude using an updated, modified version of 
+	the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 
 	<h2>About the U.S. Standard Atmosphere</h2>
 	<p>
-	The <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere</a> models atmospheric 
-	pressure, temperature, and other properties by altitude from -5 to 1000 km 
-	(-16404 to 3280840 ft, -3.11 to 621.37 mi). Formulas are derived
-	from <a href="https://www.pdas.com/atmosdownload.html" target="_blank">the 1976 U.S. Standard Atmosphere of 1976</a>, covering the lower atmosphere
-	from -5 to 86 km and the upper atmosphere from 86 to 1000 km. This calculator uses the updated values of the Avogadro and gas constants fixed in 
-	the 2019 SI revision, rather than the values used in the 1976 U.S. standard atmosphere. In addition, it uses updated gas concentrations from NOAA's
-	GML to better represent current atmospheric chemistry, particularly the increase in CO<sub>2</sub>, resulting in a slightly higher molar mass at
-	sea level (28.9657 g/mol, rather than 28.9644).
+	The <a href="https://www.pdas.com/atmosdownload.html" target="_blank">U.S. Standard Atmosphere</a> (USSA) models atmospheric properties by altitude 
+	from -5 to 1000 km (-16404 to 3280840 ft, -3.11 to 621.37 mi), representing typical mid-latitude conditions. This calculator uses the values of 
+	the Avogadro and gas constants fixed in the 2019 SI revision, rather than those used in the 1976 USSA, as well as updated gas concentrations from
+	NOAA's Global Monitoring Laboratory to better represent current atmospheric chemistry, particularly the increase in CO<sub>2</sub>. This results in 
+	a slightly higher molar mass (28.9657 g/mol rather than 28.9644) and slightly different values for density and the speed of sound. Properties are 
+	calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure.
 	</p>
 	<p>
 	The boiling point of water is calculated 
 	using <a href="https://www.iapws.org/relguide/IF97-Rev.html" target="_blank">IAPWS-95</a> and is accurate to 0.01°C (0.02°F). At pressures below 
 	water's triple point of 611.657 Pa, the boiling point is undefined because liquid water cannot exist.
+	</p>
+	<p>
+	The U.S. Standard Atmosphere models a typical mid-latitude profile. At a given altitude, it generally underestimates pressure in the tropics and 
+	in summer, and overestimates it in polar regions and in winter. It is not a weather model, and it does not account for local variations in pressure, 
+	temperature, or humidity (it assumes 0% humidity throughout). Water vapor and ozone are not included because their concentrations vary drastically 
+	based on weather conditions, latitude, and season. Above the stratopause (50 km), predicted conditions at a given sea-level temperature and pressure
+	may vary widely from actual conditions.
 	</p>
 	<h2>Standard sea-level conditions</h2>
 	<ul>
@@ -38,29 +44,20 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	</ul>
 	<h2>Changes with altitude</h2>
 	<p>
-	In the troposphere (below 11 km), temperature decreases with altitude at the lapse rate - about 6.5°C/km (0.00357°F/ft) - while pressure decreases
-	roughly exponentially, dropping by half about every 5500 m (18000 ft). Above that, the stratosphere (11-51 km) holds steady before warming 
-	with altitude; the mesosphere (51-86 km) cools again; and the thermosphere (86-1000 km) warms again. Pressure keeps falling roughly exponentially 
-	throughout.
+	In the troposphere (below 11 km), temperature decreases with altitude at the lapse rate. Above that, the stratosphere warms with altitude due to the
+	presence of UV-absorbing ozone; the mesosphere (50-86 km) cools again; and the thermosphere (86-1000 km) warms again. Pressure decreases roughly
+	exponentially throughout the atmosphere.
 	</p>
 	<p>
-	Sea-level pressure is reported two ways. Sea-level pressure proper extrapolates a station's observed pressure down using its actual temperature and 
-	the standard lapse rate. Altimeter setting instead assumes sea level is always at the standard 15°C, regardless of the real temperature. Since warm air
-	expands the column and raises pressure aloft relative to cold air at the same sea-level pressure, altimeter setting usually reads higher than 
-	sea-level pressure in summer and lower in winter.
+	Pressure is adjusted to sea-level two ways: <b>sea-level pressure</b> and <b>altimeter setting</b>. Sea-level pressure computes the air pressure
+	at sea-level given the measured pressure and temperature, standard lapse rate, the altitude of the measurement, and the ideal gas law. Altimeter
+	setting does the same, but assumes a constant sea-level temperature of 15°C (59°F) with the same lapse rate.
 	</p>
 	<p>
-	Example: at Everest's summit (8849 m, 29032 ft), typical summer conditions 
+	Example: at Mount Everest (8849 m, 29032 ft), typical summer conditions 
 	are <a href="https://rmets.onlinelibrary.wiley.com/doi/10.1002/wea.3931" target="_blank">-19°C (-2°F)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/10066724/" target="_blank">336 hPa (0.332 atm)</a>. 
 	Extrapolating -19°C to sea level with the standard lapse rate gives 37.4°C (99.3°F) - far above the standard 15°C - and a sea-level pressure of 980 
 	hPa. Altimeter setting instead assumes the standard 15°C at sea level and asks what pressure would produce that same 336 hPa at 8849 m: 1081 hPa.
-	</p>
-	<p>
-	The U.S. Standard Atmosphere models a "typical" mid-latitude profile. At a given altitude, it underestimates pressure in the tropics and in summer, 
-	and overestimates it in polar regions and in winter. Above the troposphere, it is most accurate when anchored to standard sea-level conditions: 
-	15°C and 1 atm. Due to the break between the lower atmosphere below 86 km and the upper atmosphere above, some properties (such as density) have
-	discontinuities at this point. The U.S. Standard Atmosphere is not a weather model, and it does not account for local variations in pressure, 
-	temperature, or humidity (it assumes 0% humidity throughout).
 	</p>
 	<h2>Geometric versus geopotential altitude</h2>
 	<p>

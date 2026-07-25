@@ -68,22 +68,6 @@ function _upperDTdZ(Z: number): number {
     return lambda * b * b * (Tinf - T10) * Math.exp(-lambda * (Z - Z10) * b);
 }
 
-export function getTemperature(z: number): number {
-    if (z > 86000) return _upperT(z);
-    const L = TEMP_LAYERS;
-    if (z <= L[0].z) {
-        const dTdz = (L[1].T - L[0].T) / (L[1].z - L[0].z);
-        return L[0].T + dTdz * (z - L[0].z);
-    }
-    for (let i = 0; i < L.length - 1; i++) {
-        if (z <= L[i + 1].z) {
-            const t = (z - L[i].z) / (L[i + 1].z - L[i].z);
-            return L[i].T + t * (L[i + 1].T - L[i].T);
-        }
-    }
-    return L[L.length - 1].T;
-}
-
 // ── Lower-atmosphere composition ─────────────────────────────────────────────
 // All boundaries in geometric altitude (meters).
 
@@ -203,7 +187,7 @@ const _Pn7 = _n7.reduce((s, ni) => s + ni, 0) * k_B * _T7;
 
 const _Zh = 150000, _Zm = 100000, _Zk = 115000;
 const _Z11 = 500000, _ZMAX = 1000000;
-const _taui = 0.40463343, _Hi = 9.8776951e10, _T11 = 999.2356;
+const _taui = 0.40463343, _Hi = 9.8776951e10, _T11 = 999.2356; // USSA 1976 fitting constants for atomic H escape flux
 
 function _uGrav(Z: number): number { return g0 * (EARTH_RADIUS_M / (EARTH_RADIUS_M + Z)) ** 2; }
 
@@ -309,10 +293,8 @@ function _runUpperODE(
                 tauint += Z_STEP * (tauPrev + tauNext) / 2;
                 tauPrev = tauNext;
             }
-            n[5] = Znext < _Z11
-                ? (_n7[5]*nscale + _Hi - fint[5]) *
-                  Math.exp((1 + _alpha[5]) * Math.log(_T11 / Tnext) + _taui - tauint)
-                : 0;
+            n[5] = (_n7[5]*nscale + _Hi - fint[5]) *
+                Math.exp((1 + _alpha[5]) * Math.log(_T11 / Tnext) + _taui - tauint);
         }
 
         store(step + 1, n, Tnext);
@@ -418,6 +400,22 @@ function _mEffUpper(z: number, P: number): number {
 
 // ── Unified public API ────────────────────────────────────────────────────────
 // All functions accept geometric altitude z in meters. No 86 km branch visible to callers.
+
+export function getTemperature(z: number): number {
+    if (z > 86000) return _upperT(z);
+    const L = TEMP_LAYERS;
+    if (z <= L[0].z) {
+        const dTdz = (L[1].T - L[0].T) / (L[1].z - L[0].z);
+        return L[0].T + dTdz * (z - L[0].z);
+    }
+    for (let i = 0; i < L.length - 1; i++) {
+        if (z <= L[i + 1].z) {
+            const t = (z - L[i].z) / (L[i + 1].z - L[i].z);
+            return L[i].T + t * (L[i + 1].T - L[i].T);
+        }
+    }
+    return L[L.length - 1].T;
+}
 
 export function getPressure(z: number): number {
     if (z <= Z_86K) return _lowerLookup(_LP, z);

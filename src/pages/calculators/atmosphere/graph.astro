@@ -11,8 +11,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		{ label: 'U.S. Standard Atmosphere Calculator' },
 	]} />
 	<h1>U.S. Standard Atmosphere Calculator</h1>
-	<p>Graph atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 	<AtmosphereNav active="graph" />
+	<p>Graph atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 
 	<section class="graph-page">
 		<div class="controls">
@@ -202,38 +202,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		margin-bottom: 0.4rem;
 	}
 
-	label {
-		font-size: 1rem;
-		color: var(--color-text);
-	}
-
-	.input-row,
-	.range-row {
-		display: flex;
-		gap: 0.4rem;
-		align-items: center;
-	}
-
 	input[type="number"] {
 		flex: 1;
 		min-width: 0;
 		max-width: 6rem;
-		padding: 0.25rem 0.35rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		font-size: 1rem;
-		color: var(--color-text);
-		background: var(--color-input-bg);
 	}
 
 	select {
 		width: 100%;
-		padding: 0.25rem 0.35rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		font-size: 1rem;
-		background: var(--color-input-bg);
-		color: var(--color-text);
 	}
 
 	.input-row select,
@@ -246,32 +222,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	}
 
 	.checkbox-row {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
 		margin-bottom: 0.4rem;
-	}
-
-	.checkbox-row label {
-		margin: 0;
-	}
-
-	.reset-row {
-		margin: 0.4rem 0 0;
-	}
-
-	.reset-row button {
-		padding: 0.4rem 1rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		background: var(--color-button-bg);
-		font-size: 0.875rem;
-		color: var(--color-text);
-		cursor: pointer;
-	}
-
-	.reset-row button:hover {
-		background: var(--color-button-hover);
 	}
 
 	.graph-area {
@@ -285,21 +236,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		height: auto;
 		display: block;
 		border: 1px solid var(--color-border);
-		border-radius: 6px;
+		border-radius: 0;
 	}
 
 	.graph-actions button {
-		padding: 0.4rem 1rem;
-		border: 1px solid var(--color-border);
-		border-radius: 6px;
-		background: var(--color-button-bg);
 		font-size: 1rem;
-		color: var(--color-text);
-		cursor: pointer;
-	}
-
-	.graph-actions button:hover {
-		background: var(--color-button-hover);
 	}
 
 	@media (max-width: 700px) {
@@ -408,7 +349,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		],
 		geopotential_alt: ALT_UNITS,
 		geometric_alt:    ALT_UNITS,
-		partial_pressure: PRESSURE_UNITS,
+		partial_pressure: [...PRESSURE_UNITS, { value: 'fraction', label: 'fraction' }],
 		mean_free_path:   MFP_UNITS,
 	};
 
@@ -465,7 +406,20 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		updateLogCheckbox();
 	}
 
+	function graphColors() {
+		const dark = document.documentElement.dataset.theme === 'dark';
+		return {
+			bg:      dark ? '#000000' : '#ffffff',
+			plotBg:  dark ? '#111111' : '#f8f8f8',
+			grid:    dark ? '#333333' : '#e0e0e0',
+			axis:    dark ? '#cccccc' : '#333333',
+			text:    dark ? '#cccccc' : '#333333',
+			line:    '#3245ff',
+		};
+	}
+
 	function generateGraph() {
+		const C = graphColors();
 		const condAltVal  = parseFloat((document.getElementById('cond-alt') as HTMLInputElement).value);
 		const condAltUnit = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
 		const slTempVal   = parseFloat((document.getElementById('sl-temp') as HTMLInputElement).value);
@@ -623,8 +577,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					y = altFromM(H, yUnit); break;
 				case 'geometric_alt':
 					y = altFromM(h_m, yUnit); break;
-				case 'partial_pressure':
-					y = pressureFromPa(P_Pa * (getMoleFractions(h_m)[ySpecies] ?? 0), yUnit); break;
+				case 'partial_pressure': {
+					const mf = getMoleFractions(h_m)[ySpecies] ?? 0;
+					const val = mf < 1e-20 ? 0 : mf;
+					y = yUnit === 'fraction' ? val : pressureFromPa(val * P_Pa, yUnit);
+					break;
+				}
 				case 'mean_free_path':
 					y = mfpFromM(getMeanFreePath(P_Pa, T_K), yUnit); break;
 			}
@@ -672,39 +630,41 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				.options[(document.getElementById('y-unit') as HTMLSelectElement).selectedIndex].text;
 			const xLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
 			const yLabel = yVar === 'partial_pressure'
-				? `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
+				? yUnit === 'fraction'
+					? `Mole fraction ${SPECIES_DISPLAY[ySpecies]}`
+					: `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
 				: `${Y_LABELS[yVar]} (${yUnitLabel})`;
 
 			let s = '';
-			s += `<rect width="${W}" height="${HS}" fill="white"/>`;
-			s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="#f8f8f8"/>`;
+			s += `<rect width="${W}" height="${HS}" fill="${C.bg}"/>`;
+			s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="${C.plotBg}"/>`;
 			s += `<defs><clipPath id="c"><rect x="${pL}" y="${pT}" width="${pW}" height="${pH}"/></clipPath></defs>`;
 
 			for (const xt of xTicks) {
 				const x = mx(xt).toFixed(1);
-				s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="#e0e0e0" stroke-width="1"/>`;
+				s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="${C.grid}" stroke-width="1"/>`;
 			}
 			for (const yt of yTicks) {
 				const y = my(yt).toFixed(1);
-				s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+				s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="${C.grid}" stroke-width="1"/>`;
 			}
 
-			s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
-			s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
+			s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
+			s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
 
 			for (const xt of xTicks) {
 				const x = mx(xt).toFixed(1);
-				s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="#333333" stroke-width="1"/>`;
-				s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#333333">${formatTick(xt)}</text>`;
+				s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
+				s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${formatTick(xt)}</text>`;
 			}
 			for (const yt of yTicks) {
 				const y = my(yt).toFixed(1);
-				s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="#333333" stroke-width="1"/>`;
-				s += `<text x="${pL - 8}" y="${(my(yt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#333333">${(yVar === 'temperature' || yVar === 'boiling_point') ? fmtTemp(yt, yUnit, 4) : formatTick(yt)}</text>`;
+				s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
+				s += `<text x="${pL - 8}" y="${(my(yt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${(yVar === 'temperature' || yVar === 'boiling_point') ? fmtTemp(yt, yUnit, 4) : formatTick(yt)}</text>`;
 			}
 
-			s += `<text x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${xLabel}</text>`;
-			s += `<text transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${yLabel}</text>`;
+			s += `<text x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="${C.text}">${xLabel}</text>`;
+			s += `<text transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="${C.text}">${yLabel}</text>`;
 
 			let d = '';
 			let started = false;
@@ -714,7 +674,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				d += started ? ` L${x},${y}` : `M${x},${y}`;
 				started = true;
 			}
-			if (d) s += `<path d="${d}" fill="none" stroke="#3245ff" stroke-width="2" clip-path="url(#c)"/>`;
+			if (d) s += `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="2" clip-path="url(#c)"/>`;
 			(document.getElementById('graph-svg') as Element).innerHTML = s;
 			return;
 		}
@@ -746,41 +706,41 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			: `${Y_LABELS[yVar]} (${yUnitLabel})`;
 
 		let s = '';
-		s += `<rect width="${W}" height="${HS}" fill="white"/>`;
-		s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="#f8f8f8"/>`;
+		s += `<rect width="${W}" height="${HS}" fill="${C.bg}"/>`;
+		s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="${C.plotBg}"/>`;
 		s += `<defs><clipPath id="c"><rect x="${pL}" y="${pT}" width="${pW}" height="${pH}"/></clipPath></defs>`;
 
 		// Grid lines
 		for (const xt of xTicks) {
 			const x = mx(xt).toFixed(1);
-			s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="#e0e0e0" stroke-width="1"/>`;
+			s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="${C.grid}" stroke-width="1"/>`;
 		}
 		for (const yt of yTicks) {
 			const y = my(yt).toFixed(1);
-			s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+			s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="${C.grid}" stroke-width="1"/>`;
 		}
 
 		// Axes
-		s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
-		s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="#333333" stroke-width="1.5"/>`;
+		s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
+		s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
 
 		// X ticks and labels
 		for (const xt of xTicks) {
 			const x = mx(xt).toFixed(1);
-			s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="#333333" stroke-width="1"/>`;
-			s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#333333">${formatTick(xt)}</text>`;
+			s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
+			s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${formatTick(xt)}</text>`;
 		}
 
 		// Y ticks and labels
 		for (const yt of yTicks) {
 			const y = my(yt).toFixed(1);
-			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="#333333" stroke-width="1"/>`;
-			s += `<text x="${pL - 8}" y="${(my(yt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#333333">${(yVar === 'temperature' || yVar === 'boiling_point') ? fmtTemp(yt, yUnit, 4) : formatTick(yt)}</text>`;
+			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
+			s += `<text x="${pL - 8}" y="${(my(yt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${(yVar === 'temperature' || yVar === 'boiling_point') ? fmtTemp(yt, yUnit, 4) : formatTick(yt)}</text>`;
 		}
 
 		// Axis labels
-		s += `<text x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${xLabel}</text>`;
-		s += `<text transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#333333">${yLabel}</text>`;
+		s += `<text x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="${C.text}">${xLabel}</text>`;
+		s += `<text transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="${C.text}">${yLabel}</text>`;
 
 		// Data line
 		let d = '';
@@ -791,7 +751,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			d += started ? ` L${x},${y}` : `M${x},${y}`;
 			started = true;
 		}
-		if (d) s += `<path d="${d}" fill="none" stroke="#3245ff" stroke-width="2" clip-path="url(#c)"/>`;
+		if (d) s += `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="2" clip-path="url(#c)"/>`;
 
 		(document.getElementById('graph-svg') as Element).innerHTML = s;
 	}
@@ -799,6 +759,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	// Initial population and render
 	populateYUnits();
 	generateGraph();
+
+	// Re-render graph when dark mode is toggled
+	document.getElementById('theme-toggle')
+		?.addEventListener('click', () => setTimeout(generateGraph, 0));
 
 	// y-var: repopulate units then redraw
 	document.getElementById('y-var')!.addEventListener('change', () => {

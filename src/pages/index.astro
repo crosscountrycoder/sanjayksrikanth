@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CalculatorsList from '../components/CalculatorsList.astro';
 ---
 
 <Layout>
@@ -21,8 +22,8 @@ import Layout from '../layouts/Layout.astro';
 		In addition to software and aerospace, I am interested in geography, physics, math, and astronomy. I like making maps - I drafted a
 		congressional district map of California following the 2020 census, and have made several maps of the world and the United States using QGIS
 		and Inkscape, including demographic, electoral, weather/climate, and topographic maps, many of which are showcased on my Wikipedia user page
-		(see Links below). Outside of work, I enjoy running and playing video games like Minecraft. I am a big sports fan, particularly in soccer 
-		and basketball. I still play soccer recreationally.
+		(see Links below). Outside of work, I enjoy running, playing soccer, and playing video games like Minecraft. I am a big sports fan, particularly 
+		in soccer and basketball.
 		</p>
 		</section>
 		<section>
@@ -52,9 +53,7 @@ import Layout from '../layouts/Layout.astro';
 
 		<section>
 			<h2>Calculators</h2>
-			<ul>
-				<li><a href="/calculators/atmosphere">U.S. standard atmosphere calculator</a> - pressure, temperature, density, viscosity, speed of sound, boiling point</li>
-			</ul>
+			<CalculatorsList />
 		</section>
 </Layout>
 
