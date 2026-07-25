@@ -2,6 +2,8 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sanjayksrikanth",
   "compatibility_date": "2026-07-18",
+  "workers_dev": true,
+  "preview_urls": true,
   "assets": {
     "directory": "./dist"
   },
