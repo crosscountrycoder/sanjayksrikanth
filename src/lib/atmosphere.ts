@@ -81,7 +81,7 @@ export const LOWER_COMPOSITION = [
 
 export const M0 = LOWER_COMPOSITION.reduce((s, c) => s + c.xi * c.Mi, 0);
 
-const MF_Z_MIN  = -6000;
+const MF_Z_MIN  = -5000;
 const MF_Z_STEP = 1000;
 
 // Interpolate a single column from MF_DATA at altitude z (m).
@@ -126,7 +126,7 @@ export function getDensity(P_Pa: number, T_K: number, z: number): number {
 // M(z) is read from the pre-computed table via getMolarMass().
 
 const Z_STEP = 100;   // integration step (m)
-const Z_MIN  = -6000;
+const Z_MIN  = -5000;
 const Z_MAX  = 1000000;
 
 // One RK4 step of the unified hydrostatic equation.

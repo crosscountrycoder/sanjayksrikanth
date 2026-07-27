@@ -653,7 +653,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const h_m = xVar === 'geometric' ? x_m : geopotentialToGeometric(x_m);
 			const H   = geometricToGeopotential(h_m);
 
-			if (h_m < -6000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
+			if (h_m < -5000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
 
 			const P_Pa = getPressure(h_m, P0_Pa, T0_K);
 			const T_K  = getTemperature(h_m) + (T0_K - 288.15);

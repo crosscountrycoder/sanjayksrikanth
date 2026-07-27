@@ -523,8 +523,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		// Build 100 m geometric grid and integrate the atmosphere in one pass.
 		const geoZ    = buildGraphAltitudes(h_min, h_max);
-		const profZ   = geoZ.filter(z => z >= -6000);
-		const profOff = geoZ.length - profZ.length; // # of sub-(-6000) points at the start
+		const profZ   = geoZ.filter(z => z >= -5000);
+		const profOff = geoZ.length - profZ.length; // # of sub-(-5000) points at the start
 		const prof    = buildAtmosphereProfile(profZ, P0_Pa, T0_K);
 		const rhoArr  = profileDensity(prof);
 
@@ -537,7 +537,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				: i === geoZ.length - 1 ? xMax
 				: xVar === 'geometric' ? altFromM(h_m, xUnit) : altFromM(H, xUnit);
 
-			if (h_m < -6000) { pts.push({ x: xVal, y: null }); continue; }
+			if (h_m < -5000) { pts.push({ x: xVal, y: null }); continue; }
 
 			const pi   = i - profOff;
 			const P_Pa = prof.P[pi];

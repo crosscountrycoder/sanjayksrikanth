@@ -57,8 +57,7 @@ npm run preview   # preview the build locally
 The site is deployed as a static site served by a Cloudflare Worker to `sanjayksrikanth.com`.
 
 ```sh
-npm run build
-npx wrangler deploy
+npm run deploy
 ```
 
 To test the Worker locally before deploying:
