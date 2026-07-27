@@ -238,7 +238,7 @@ export function getDensityAltitude(rho: number, fast = false): number {
 }
 
 export function getSpeedOfSound(P_Pa: number, rho: number): number | null {
-    if (P_Pa < 3e-4) return null;
+    if (P_Pa < 5e-4) return null; // anacoustic zone
     return Math.sqrt(1.4 * P_Pa / rho);
 }
 

@@ -581,8 +581,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					const mf = getMoleFraction(ySpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
 					const pp_Pa = mf * P_Pa;
 					y = yUnit === 'fraction'
-						? (pp_Pa < 1e-20 ? 0 : mf)
-						: pressureFromPa(pp_Pa < 1e-20 ? 0 : pp_Pa, yUnit);
+						? mf
+						: pressureFromPa(pp_Pa, yUnit);
 					break;
 				}
 				case 'mean_free_path':

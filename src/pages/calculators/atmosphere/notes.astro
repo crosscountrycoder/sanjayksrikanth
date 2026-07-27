@@ -15,13 +15,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<h2>About the U.S. Standard Atmosphere</h2>
 	<p>
 	The <a href="https://www.pdas.com/atmosdownload.html" target="_blank">U.S. Standard Atmosphere</a> (USSA) models atmospheric properties by 
-	altitude from -5 to 1000 km (-16404 to 3280840 ft, -3.11 to 621.37 mi), representing typical mid-latitude conditions. Formulas are 
-	from the file ussa1976.dpr in <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a>. This calculator uses the 
-	values of the Avogadro and gas constants fixed in the 2019 SI revision, rather than those used in the 1976 USSA, as well as updated gas 
-	concentrations from NOAA's Global Monitoring Laboratory to better represent current atmospheric chemistry, particularly the increase in 
-	CO<sub>2</sub>. This results in a slightly higher molar mass (28.9657 g/mol rather than 28.9644) and slightly different values for density 
-	and the speed of sound. Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and 
-	pressure.
+	altitude from -5 to 1000 km (-16404 to 3280840 ft, -3.11 to 621.37 mi), representing typical mid-latitude conditions. Formulas are from the 
+	file ussa1976.dpr in <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a>. This calculator uses updated gas concentrations
+	from NOAA's Global Monitoring Laboratory to better represent current atmospheric chemistry, particularly the increase in CO<sub>2</sub>. 
+	Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure.
 	</p>
 	<p>
 	The boiling point of water is calculated 
@@ -30,10 +27,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	</p>
 	<p>
 	The U.S. Standard Atmosphere models a typical mid-latitude profile. At a given altitude, it generally underestimates pressure in the tropics and 
-	in summer, and overestimates it in polar regions and in winter. It is not a weather model, and it does not account for local variations in pressure, 
-	temperature, or humidity (it assumes 0% humidity throughout). Water vapor and ozone are not included because their concentrations vary drastically 
-	based on weather conditions, latitude, and season. Above the stratopause (50 km), predicted conditions at a given sea-level temperature and pressure
-	may vary widely from actual conditions.
+	in summer, and overestimates it in polar regions and in winter. It is not a weather model, and it does not account for local variations in 
+	pressure, temperature, or humidity (it assumes 0% humidity throughout). Water vapor and ozone are not included because their concentrations vary
+	drastically based on weather conditions, latitude, and season. Above the stratopause (50 km), predicted conditions at a given sea-level
+	temperature and pressure may vary widely from actual conditions.
 	</p>
 	<h2>Standard sea-level conditions</h2>
 	<ul>
