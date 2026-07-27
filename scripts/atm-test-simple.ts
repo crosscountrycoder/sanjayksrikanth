@@ -10,7 +10,7 @@ import {
 
 const G0 = 9.80665;               // standard gravity (m/s²)
 const R  = 8.31446261815324;      // gas constant J/(mol·K)
-const M  = 0.028965742;           // USSA 1976 sea-level molar mass (kg/mol)
+const M  = 0.028965742;           // USSA 1976 sea-level molar mass (kg/mol), updated to 2026
 const RE = 6356766;               // USSA 1976 Earth radius (m)
 
 // Temperature layers: geopotential altitude (m), base temperature (K), lapse rate (K/m).

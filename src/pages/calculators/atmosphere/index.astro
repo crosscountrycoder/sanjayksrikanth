@@ -4,13 +4,13 @@ import Breadcrumb from '../../../components/Breadcrumb.astro';
 import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 ---
 
-<Layout>
+<Layout title="Standard Atmosphere Calculator">
 	<Breadcrumb crumbs={[
 			{ label: 'Home', href: '/' },
 			{ label: 'Calculators', href: '/calculators' },
 			{ label: 'U.S. Standard Atmosphere Calculator' },
 		]} />
-		<h1>U.S. Standard Atmosphere Calculator</h1>
+		<h1>Standard Atmosphere Calculator</h1>
 		<AtmosphereNav active="calculator" />
 		<p>
 		Calculates atmospheric properties at a given altitude using a version of
