@@ -13,7 +13,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		<h1>U.S. Standard Atmosphere Calculator</h1>
 		<AtmosphereNav active="calculator" />
 		<p>
-		Calculates atmospheric properties at a given altitude using an updated, modified version of
+		Calculates atmospheric properties at a given altitude using a version of
 		the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>, with adjustable 
 		sea-level conditions.
 		</p>
@@ -369,8 +369,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <script>
 	import {
 		geometricToGeopotential, geopotentialToGeometric,
-		getPressureNonstd, getTemperature, getSeaLevelTemperature, getSeaLevelPressure, getAltimeterSetting,
-		getDensityFromPT, getMoleFractions,
+		getPressure, getTemperature, getSeaLevelTemperature, getSeaLevelPressure, getAltimeterSetting,
+		getDensity, getMoleFraction,
 		getPressureAltitude, getDensityAltitude, getBoilingPoint,
 		getMeanFreePath, getSpeedOfSound,
 	} from '../../../lib/atmosphere.ts';
@@ -520,7 +520,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		let P_Pa: number, P0_Pa: number, altimeter_Pa: number | null;
 		if (pressMode === 'sea-level') {
 			P0_Pa        = P_input_Pa;
-			P_Pa         = getPressureNonstd(h_m, P0_Pa, T0_K);
+			P_Pa         = getPressure(h_m, P0_Pa, T0_K);
 			altimeter_Pa = getAltimeterSetting(h_m, P_Pa);
 		} else if (pressMode === 'air') {
 			P_Pa         = P_input_Pa;
@@ -528,12 +528,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			altimeter_Pa = getAltimeterSetting(h_m, P_Pa);
 		} else { // altimeter
 			altimeter_Pa = P_input_Pa;
-			P_Pa         = altimeter_Pa * getPressureNonstd(h_m, 1, 288.15);
+			P_Pa         = altimeter_Pa * getPressure(h_m, 1, 288.15);
 			P0_Pa        = getSeaLevelPressure(h_m, P_Pa, T0_K);
 		}
 
 		const T_K = getTemperature(h_m) + (T0_K - 288.15);
-		const rho = getDensityFromPT(P_Pa, T_K, h_m);
+		const rho = getDensity(P_Pa, T_K, h_m);
 
 		const out1_Pa = pressMode === 'air' ? P0_Pa : P_Pa;
 		const pUnit = (document.getElementById('out-pressure-unit') as HTMLSelectElement).value;
@@ -585,9 +585,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const ppSpecies = (document.getElementById('out-partial-pressure-species') as HTMLSelectElement).value;
 		const ppUnit    = (document.getElementById('out-partial-pressure-unit') as HTMLSelectElement).value;
-		const mf_raw = getMoleFractions(h_m)[ppSpecies] ?? 0;
-		const mf = mf_raw < 1e-20 ? 0 : mf_raw;
-		const ppVal = ppUnit === 'fraction' ? fmt6(mf) : fmt6(pressureFromPa(mf * P_Pa, ppUnit));
+		const mf = getMoleFraction(ppSpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+		const pp_Pa = mf * P_Pa;
+		const ppVal = ppUnit === 'fraction'
+			? fmt6(pp_Pa < 1e-20 ? 0 : mf)
+			: fmt6(pressureFromPa(pp_Pa < 1e-20 ? 0 : pp_Pa, ppUnit));
 		(document.getElementById('out-partial-pressure') as HTMLElement).textContent = ppVal;
 
 		const mfpUnit = (document.getElementById('out-mfp-unit') as HTMLSelectElement).value;

@@ -253,11 +253,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <script>
 	import {
 		geometricToGeopotential, geopotentialToGeometric,
-		getPressureNonstd, getTemperature, getSeaLevelTemperature, getDensityFromPT,
+		getPressure, getTemperature, getSeaLevelTemperature, getDensity,
 		getSeaLevelPressure, getAltimeterSetting,
 		getPressureAltitude, getDensityAltitude, getBoilingPoint,
-		getMoleFractions, getMeanFreePath, getSpeedOfSound,
+		getMeanFreePath, getSpeedOfSound, getMoleFraction,
 	} from '../../../lib/atmosphere.ts';
+	import {
+		buildGraphAltitudes, buildAtmosphereProfile,
+		profileDensity, profilePressureAltitude, profileDensityAltitude,
+	} from '../../../lib/atmosphere-graph.ts';
 	import {
 		altToM, altFromM, tempToK, tempFromK,
 		pressureToPa, pressureFromPa,
@@ -485,7 +489,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		} else if (pressMode === 'air') {
 			P0_Pa = getSeaLevelPressure(z_cond, P_input_Pa, T0_K);
 		} else { // altimeter
-			const P_at_cond = P_input_Pa * getPressureNonstd(z_cond, 1, 288.15);
+			const P_at_cond = P_input_Pa * getPressure(z_cond, 1, 288.15);
 			P0_Pa = getSeaLevelPressure(z_cond, P_at_cond, T0_K);
 		}
 		const fmt6p = (Pa: number) => parseFloat(pressureFromPa(Pa, slPressUnit).toPrecision(6)).toString();
@@ -517,32 +521,28 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const h_min = xVar === 'geometric' ? xMin_m : geopotentialToGeometric(xMin_m);
 		const h_max = xVar === 'geometric' ? xMax_m : geopotentialToGeometric(xMax_m);
 
-		// Build 100 m geometric grid: [h_min, …100 m steps…, h_max]
-		const geoZ: number[] = [h_min];
-		const firstGrid = Math.ceil((h_min + 1e-9) / 100) * 100;
-		for (let z = firstGrid; z < h_max - 1e-9; z += 100) geoZ.push(z);
-		if (h_max - geoZ[geoZ.length - 1] > 1e-6) geoZ.push(h_max);
-
-		// Warm up non-standard upper atmosphere cache before the loop if needed.
-		// getPressureNonstd handles caching internally; this call at h_max ensures
-		// the table is built once rather than on the first upper-atmosphere point.
-		if (h_max > 86000) getPressureNonstd(h_max, P0_Pa, T0_K);
+		// Build 100 m geometric grid and integrate the atmosphere in one pass.
+		const geoZ    = buildGraphAltitudes(h_min, h_max);
+		const profZ   = geoZ.filter(z => z >= -6000);
+		const profOff = geoZ.length - profZ.length; // # of sub-(-6000) points at the start
+		const prof    = buildAtmosphereProfile(profZ, P0_Pa, T0_K);
+		const rhoArr  = profileDensity(prof);
 
 		const pts: { x: number; y: number | null }[] = [];
 
 		for (let i = 0; i < geoZ.length; i++) {
-			const h_m = geoZ[i];
-			const H   = geometricToGeopotential(h_m);
-
+			const h_m  = geoZ[i];
+			const H    = geometricToGeopotential(h_m);
 			const xVal = i === 0 ? xMin
 				: i === geoZ.length - 1 ? xMax
 				: xVar === 'geometric' ? altFromM(h_m, xUnit) : altFromM(H, xUnit);
 
 			if (h_m < -6000) { pts.push({ x: xVal, y: null }); continue; }
 
-			const P_Pa = getPressureNonstd(h_m, P0_Pa, T0_K);
-			const T_K  = getTemperature(h_m) + (T0_K - 288.15);
-			const rho  = getDensityFromPT(P_Pa, T_K, h_m);
+			const pi   = i - profOff;
+			const P_Pa = prof.P[pi];
+			const T_K  = prof.T[pi];
+			const rho  = rhoArr[pi];
 
 			let y: number | null = null;
 			switch (yVar) {
@@ -559,9 +559,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				case 'density':
 					y = densityFromKgM3(rho, yUnit); break;
 				case 'pressure_altitude':
-					y = altFromM(getPressureAltitude(P_Pa), yUnit); break;
+					y = altFromM(getPressureAltitude(P_Pa, true), yUnit); break;
 				case 'density_altitude':
-					y = altFromM(getDensityAltitude(rho), yUnit); break;
+					y = altFromM(getDensityAltitude(rho, true), yUnit); break;
 				case 'speed_of_sound': {
 					const sos = getSpeedOfSound(P_Pa, rho);
 					y = sos === null ? null : speedFromMS(sos, yUnit); break;
@@ -578,9 +578,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				case 'geometric_alt':
 					y = altFromM(h_m, yUnit); break;
 				case 'partial_pressure': {
-					const mf = getMoleFractions(h_m)[ySpecies] ?? 0;
-					const val = mf < 1e-20 ? 0 : mf;
-					y = yUnit === 'fraction' ? val : pressureFromPa(val * P_Pa, yUnit);
+					const mf = getMoleFraction(ySpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+					const pp_Pa = mf * P_Pa;
+					y = yUnit === 'fraction'
+						? (pp_Pa < 1e-20 ? 0 : mf)
+						: pressureFromPa(pp_Pa < 1e-20 ? 0 : pp_Pa, yUnit);
 					break;
 				}
 				case 'mean_free_path':

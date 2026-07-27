@@ -109,6 +109,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				<label for="x-intervals">Rows</label>
 				<input type="number" id="x-intervals" value="10" min="1" step="1" />
 			</div>
+			<p class="error" id="err-x-intervals"></p>
 
 			<h3>Dependent variables</h3>
 			<div class="var-list" id="var-list">
@@ -445,10 +446,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <script>
 	import {
 		geometricToGeopotential, geopotentialToGeometric,
-		getPressureNonstd, getTemperature, getSeaLevelTemperature, getDensityFromPT,
+		getPressure, getTemperature, getSeaLevelTemperature, getDensity,
 		getSeaLevelPressure, getAltimeterSetting,
 		getPressureAltitude, getDensityAltitude, getBoilingPoint,
-		getMoleFractions, getMeanFreePath, getSpeedOfSound,
+		getMeanFreePath, getSpeedOfSound, getMoleFraction,
 	} from '../../../lib/atmosphere.ts';
 	import {
 		altToM, altFromM, tempToK, tempFromK,
@@ -545,7 +546,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const xUnit       = (document.getElementById('x-unit') as HTMLSelectElement).value;
 		const xMin        = parseFloat((document.getElementById('x-min') as HTMLInputElement).value);
 		const xMax        = parseFloat((document.getElementById('x-max') as HTMLInputElement).value);
-		const N           = Math.max(1, parseInt((document.getElementById('x-intervals') as HTMLInputElement).value) || 10);
+		const N_raw       = parseInt((document.getElementById('x-intervals') as HTMLInputElement).value);
+		const N           = isNaN(N_raw) ? 10 : N_raw;
 
 		const vars = getCheckedVars();
 
@@ -553,13 +555,21 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const errSlTemp     = document.getElementById('err-sl-temp') as HTMLElement;
 		const errSlPressure = document.getElementById('err-sl-pressure') as HTMLElement;
 		const errXRange     = document.getElementById('err-x-range') as HTMLElement;
+		const errXIntervals = document.getElementById('err-x-intervals') as HTMLElement;
 		errCondAlt.textContent = '';
 		errSlTemp.textContent = '';
 		errSlPressure.textContent = '';
 		errXRange.textContent = '';
+		errXIntervals.textContent = '';
 
 		const thead = document.getElementById('table-head') as HTMLElement;
 		const tbody = document.getElementById('table-body') as HTMLElement;
+
+		if (N < 1 || N > 1000) {
+			errXIntervals.textContent = 'Number of rows must be between 1 and 1000.';
+			thead.innerHTML = ''; tbody.innerHTML = '';
+			return;
+		}
 
 		if ([condAltVal, slTempVal, slPressVal, xMin, xMax].some(isNaN) || xMin >= xMax || vars.length === 0) {
 			thead.innerHTML = '';
@@ -571,7 +581,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const condAlt_m = altToM(condAltVal, condAltUnit);
 		const H_cond = xVar === 'geopotential' ? condAlt_m : geometricToGeopotential(condAlt_m);
 		const loH = xVar === 'geopotential' ? -5004 : -5000;
-		const hiH = xVar === 'geopotential' ? 84852 : 86000;
+		const hiH = xVar === 'geopotential' ? 864071 : 1000000;
 		if (condAlt_m < loH || condAlt_m > hiH) {
 			const factor = altFromM(1, condAltUnit);
 			errCondAlt.textContent = `Altitude must be between ${fmt6(loH * factor)} and ${fmt6(hiH * factor)} ${condAltUnit}.`;
@@ -599,7 +609,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		} else if (pressMode === 'air') {
 			P0_Pa = getSeaLevelPressure(z_cond, P_input_Pa, T0_K);
 		} else {
-			const P_at_cond = P_input_Pa * getPressureNonstd(z_cond, 1, 288.15);
+			const P_at_cond = P_input_Pa * getPressure(z_cond, 1, 288.15);
 			P0_Pa = getSeaLevelPressure(z_cond, P_at_cond, T0_K);
 		}
 		const fmtP = (Pa: number) => fmt6(pressureFromPa(Pa, slPressUnit));
@@ -617,14 +627,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			}
 		}
 
-		// Range limits — allow upper atmosphere if any var uses it
-		const needsUpper = vars.some(v => v.key === 'partial_pressure' || v.key === 'mean_free_path');
 		const xMin_m = altToM(xMin, xUnit);
 		const xMax_m = altToM(xMax, xUnit);
 		const loX = xVar === 'geopotential' ? -5004 : -5000;
-		const hiX = needsUpper
-			? (xVar === 'geopotential' ? 864071 : 1000000)
-			: (xVar === 'geopotential' ? 84852 : 86000);
+		const hiX = xVar === 'geopotential' ? 864071 : 1000000;
 		if (xMin_m < loX || xMax_m > hiX) {
 			const factor = altFromM(1, xUnit);
 			const lo = parseFloat((loX * factor).toPrecision(6));
@@ -638,9 +644,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		tableXLabel = xLabel;
 		tableYConfigs = vars;
 
-		// Warm up non-standard upper atmosphere cache before the loop if needed.
-		if (needsUpper && xMax_m > 86000) getPressureNonstd(xMax_m, P0_Pa, T0_K);
-
 		tableData = [];
 		for (let i = 0; i <= N; i++) {
 			const frac = i / N;
@@ -652,9 +655,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 			if (h_m < -6000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
 
-			const P_Pa = getPressureNonstd(h_m, P0_Pa, T0_K);
+			const P_Pa = getPressure(h_m, P0_Pa, T0_K);
 			const T_K  = getTemperature(h_m) + (T0_K - 288.15);
-			const rho  = getDensityFromPT(P_Pa, T_K, h_m);
+			const rho  = getDensity(P_Pa, T_K, h_m);
 
 			const ys = vars.map(v => {
 				switch (v.key) {
@@ -670,9 +673,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					case 'geopotential_alt':   return altFromM(H, v.unit);
 					case 'geometric_alt':      return altFromM(h_m, v.unit);
 					case 'partial_pressure': {
-						const mf = getMoleFractions(h_m)[v.species] ?? 0;
-						const val = mf < 1e-20 ? 0 : mf;
-						return v.unit === 'fraction' ? val : pressureFromPa(val * P_Pa, v.unit);
+						const mf = getMoleFraction(v.species as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+						const pp_Pa = mf * P_Pa;
+						if (v.unit === 'fraction') return pp_Pa < 1e-20 ? 0 : mf;
+						return pressureFromPa(pp_Pa < 1e-20 ? 0 : pp_Pa, v.unit);
 					}
 					case 'mean_free_path':     return mfpFromM(getMeanFreePath(P_Pa, T_K), v.unit);
 					case 'boiling_point': {
