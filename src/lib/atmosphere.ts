@@ -209,7 +209,7 @@ export function getPressureAltitude(P_Pa: number, fast = false): number {
     const P_lo = _stdP[i];
     if (fast) {
         const t = Math.log(P_Pa / P_lo) / Math.log(_stdP[i + 1] / P_lo);
-        return z_lo + t * Z_STEP;
+        return Math.max(Z_MIN, Math.min(z_lo + t * Z_STEP, Z_MAX));
     }
     let lo = 0, hi = Z_STEP;
     while (hi - lo > 1e-6) {
@@ -226,7 +226,7 @@ export function getDensityAltitude(rho: number, fast = false): number {
     const P_lo = _stdP[i];
     if (fast) {
         const t = Math.log(rho / _stdRho[i]) / Math.log(_stdRho[i + 1] / _stdRho[i]);
-        return z_lo + t * Z_STEP;
+        return Math.max(Z_MIN, Math.min(z_lo + t * Z_STEP, Z_MAX));
     }
     let lo = 0, hi = Z_STEP;
     while (hi - lo > 1e-6) {
