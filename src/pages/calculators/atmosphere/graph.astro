@@ -570,7 +570,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					y = viscosityFromPaS(1.458e-6 * Math.pow(T_K, 1.5) / (T_K + 110.4), yUnit); break;
 				case 'boiling_point': {
 					const bp = getBoilingPoint(P_Pa);
-					if (bp >= 273.16) y = tempFromK(bp, yUnit);
+					if (bp !== null) y = tempFromK(bp, yUnit);
 					break;
 				}
 				case 'geopotential_alt':

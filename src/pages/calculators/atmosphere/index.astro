@@ -573,7 +573,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const bp_K = getBoilingPoint(P_Pa);
 		const bpEl = document.getElementById('out-boiling-point') as HTMLElement;
-		bpEl.textContent = bp_K >= 273.16
+		bpEl.textContent = bp_K !== null
 			? (() => { const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value; return fmtTemp(tempFromK(bp_K, u), u); })()
 			: 'N/A';
 

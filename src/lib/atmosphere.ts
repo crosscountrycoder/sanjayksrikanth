@@ -289,9 +289,10 @@ export function waterVaporPressure(T: number): number {
     ));
 }
 
-export function getBoilingPoint(P_Pa: number): number {
+export function getBoilingPoint(P_Pa: number): number | null {
+    if (P_Pa < 611.657 || P_Pa > 22064000) return null;
     let lo = 273, hi = 647.096;
-    for (let i = 0; i < 30; i++) {
+    while (hi - lo > 1e-6) {
         const mid = (lo + hi) / 2;
         waterVaporPressure(mid) < P_Pa ? lo = mid : hi = mid;
     }
