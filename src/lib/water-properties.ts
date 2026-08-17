@@ -49,7 +49,7 @@ export function getDewPoint(T: number, RH: number): number {
 
 /** Returns temperature given dew point in kelvins and relative humidity in range [0, 1]. 
  * Value is in kelvins. */
-export function getTempFromRHAndDewPoint(T_d: number, RH: number): number {
+export function getTempFromDewPointAndRH(T_d: number, RH: number): number {
     const e = waterVaporPressure(T_d) / RH;
     return getBoilingPoint(e);
 }
