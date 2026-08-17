@@ -1,4 +1,4 @@
----
+﻿---
 import Layout from '../../../layouts/Layout.astro';
 import Breadcrumb from '../../../components/Breadcrumb.astro';
 import AtmosphereNav from '../../../components/AtmosphereNav.astro';
@@ -288,6 +288,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="O">O</option>
 											<option value="He">He</option>
 							<option value="H">H</option>
+							<option value="N">N</option>
 						</select>
 					</div>
 				</div>
@@ -371,9 +372,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		geometricToGeopotential, geopotentialToGeometric,
 		getPressure, getTemperature, getSeaLevelTemperature, getSeaLevelPressure, getAltimeterSetting,
 		getDensity, getMoleFraction,
-		getPressureAltitude, getDensityAltitude, getBoilingPoint,
+		getPressureAltitude, getDensityAltitude,
 		getMeanFreePath, getSpeedOfSound,
 	} from '../../../lib/atmosphere.ts';
+	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import {
 		altToM, altFromM, tempToK, tempFromK,
 		pressureToPa, pressureFromPa,
@@ -573,7 +575,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const bp_K = getBoilingPoint(P_Pa);
 		const bpEl = document.getElementById('out-boiling-point') as HTMLElement;
-		bpEl.textContent = bp_K !== null
+		bpEl.textContent = bp_K >= 273.16
 			? (() => { const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value; return fmtTemp(tempFromK(bp_K, u), u); })()
 			: 'N/A';
 

@@ -5,8 +5,9 @@ import {
     getAltimeterSetting,
     getPressureAltitude, getDensityAltitude,
     getMoleFraction, getMolarMass, getMeanFreePath,
-    getSpeedOfSound, getBoilingPoint,
+    getSpeedOfSound,
 } from '../src/lib/atmosphere.ts';
+import { getBoilingPoint } from '../src/lib/water-properties.ts';
 
 const args = process.argv.slice(2);
 
@@ -80,7 +81,7 @@ console.log(`  Geopotential alt   : ${sf6(H)} m`);
 console.log(`  Speed of sound     : ${sos !== null ? sf6(sos) + ' m/s' : 'N/A'}`);
 console.log(`  Dynamic viscosity  : ${sf6(mu)} Pa·s`);
 console.log(`  Mean free path     : ${sf6(mfp)} m`);
-if (bp >= 273.16) tempLine(`  Boiling point      `, bp);
+if (bp !== null) tempLine(`  Boiling point      `, bp);
 else console.log(`  Boiling point      : N/A (below triple point)`);
 
 console.log(`\nMole fractions`);

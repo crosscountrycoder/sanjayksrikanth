@@ -17,8 +17,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	The <a href="https://www.pdas.com/atmosdownload.html" target="_blank">U.S. Standard Atmosphere</a> (USSA) models atmospheric properties by 
 	altitude from -5 to 1000 km (-16404 to 3280840 ft, -3.11 to 621.37 mi), representing typical mid-latitude conditions. Formulas are from the 
 	file ussa1976.dpr in <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a>. This calculator uses updated gas concentrations
-	from NOAA's Global Monitoring Laboratory to better represent current atmospheric chemistry, particularly the increase in CO<sub>2</sub>. 
-	Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure.
+	from NOAA GML, NRLMSIS 2.1, WACCM, and diffusion models to better represent current atmospheric chemistry, particularly the increase 
+	in CO<sub>2</sub>. Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure.
 	</p>
 	<p>
 	The boiling point of water is calculated 
@@ -28,9 +28,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<p>
 	The U.S. Standard Atmosphere models a typical mid-latitude profile. At a given altitude, it generally underestimates pressure in the tropics and 
 	in summer, and overestimates it in polar regions and in winter. It is not a weather model, and it does not account for local variations in 
-	pressure, temperature, or humidity (it assumes 0% humidity throughout). Water vapor and ozone are not included because their concentrations vary
-	drastically based on weather conditions, latitude, and season. Above the stratopause (50 km), predicted conditions at a given sea-level
-	temperature and pressure may vary widely from actual conditions.
+	pressure, temperature, or humidity. Water vapor and ozone are not included because their concentrations vary drastically based on weather, 
+	latitude, and season. Above the stratopause (50 km), predicted conditions at a given sea-level temperature and pressure may vary widely from 
+	actual conditions.
 	</p>
 	<h2>Standard sea-level conditions</h2>
 	<ul>
@@ -52,8 +52,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<p>
 	Example: at Mount Everest (8849 m, 29032 ft), typical summer conditions 
 	are <a href="https://rmets.onlinelibrary.wiley.com/doi/10.1002/wea.3931" target="_blank">-19°C (-2°F)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/10066724/" target="_blank">336 hPa (0.332 atm)</a>. 
-	Extrapolating -19°C to sea level with the standard lapse rate gives 37.4°C (99.3°F) - far above the standard 15°C - and a sea-level pressure of 980 
-	hPa. Altimeter setting instead assumes the standard 15°C at sea level and asks what pressure would produce that same 336 hPa at 8849 m: 1081 hPa.
+	Extrapolating -19°C to sea level with the standard lapse rate gives 38.5°C (101.3°F) - far above the standard 15°C - and a sea-level pressure of 980 
+	hPa. Altimeter setting instead asks what sea-level pressure would produce the same pressure ratio (ratio of ambient to sea-level pressure) as would
+	be expected at 8849 m under standard temperatures and lapse rates - 1081 hPa.
 	</p>
 	<h2>Geometric versus geopotential altitude</h2>
 	<p>
