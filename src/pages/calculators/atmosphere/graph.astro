@@ -580,7 +580,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				case 'geometric_alt':
 					y = altFromM(h_m, yUnit); break;
 				case 'partial_pressure': {
-					const mf = getMoleFraction(ySpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+					let mf = getMoleFraction(ySpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+					if (mf < 1e-20) mf = 0;
 					const pp_Pa = mf * P_Pa;
 					y = yUnit === 'fraction'
 						? mf

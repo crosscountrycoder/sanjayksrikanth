@@ -675,7 +675,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					case 'geopotential_alt':   return altFromM(H, v.unit);
 					case 'geometric_alt':      return altFromM(h_m, v.unit);
 					case 'partial_pressure': {
-						const mf = getMoleFraction(v.species as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+						let mf = getMoleFraction(v.species as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+						if (mf < 1e-20) mf = 0;
 						const pp_Pa = mf * P_Pa;
 						if (v.unit === 'fraction') return mf;
 						return pressureFromPa(pp_Pa, v.unit);

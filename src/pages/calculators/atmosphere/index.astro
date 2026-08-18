@@ -587,7 +587,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const ppSpecies = (document.getElementById('out-partial-pressure-species') as HTMLSelectElement).value;
 		const ppUnit    = (document.getElementById('out-partial-pressure-unit') as HTMLSelectElement).value;
-		const mf = getMoleFraction(ppSpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+		let mf = getMoleFraction(ppSpecies as Parameters<typeof getMoleFraction>[0], h_m) ?? 0;
+			if (mf < 1e-20) mf = 0;
 		const pp_Pa = mf * P_Pa;
 		const ppVal = ppUnit === 'fraction'
 			? fmt6(mf)
