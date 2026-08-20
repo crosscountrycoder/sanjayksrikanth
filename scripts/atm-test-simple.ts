@@ -1,14 +1,14 @@
 // USSA 1976 reference implementation using the standard analytical formulas.
 // Constant molar mass, geopotential-based temperature layers, no integration.
-// Range: −5 000 m to 86 000 m geometric altitude.
+// Range: −5000 m to 86000 m geometric altitude.
 // Usage: node scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
 
-import {getSpeedOfSound, getMeanFreePath, geometricToGeopotential,} from '../src/lib/atmosphere.ts';
+import {getSpeedOfSound, getMeanFreePath, geometricToGeopotential, getViscosity,} from '../src/lib/atmosphere.ts';
 import {getBoilingPoint} from '../src/lib/water-properties.ts';
 
 const G0 = 9.80665;               // standard gravity (m/s²)
 const R  = 8314.46261815324;      // gas constant J/(kmol·K)
-const M  = 28.9659;           // USSA 1976 sea-level molar mass (g/mol = kg/kmol), updated to 2026
+const M  = 28.9659;               // Sea-level molar mass (g/mol = kg/kmol), updated to 2026
 const RE = 6356766;               // USSA 1976 Earth radius (m)
 
 // Temperature layers: geopotential altitude (m), base temperature (K), lapse rate (K/m).
@@ -97,8 +97,8 @@ const rho = P * M / (R * T);
 const pa  = _pressureAltitude(P);
 const da  = _densityAltitude(rho);
 const alt = P * 101325 / _P(H, 101325, 0);  // altimeter setting
-const mu  = 1.458e-6 * T ** 1.5 / (T + 110.4);
-const sos = getSpeedOfSound(P, rho);
+const mu  = getViscosity(T);
+const sos = getSpeedOfSound(T, M);
 const bp  = getBoilingPoint(P);
 const mfp = getMeanFreePath(P, T);
 const Geo = geometricToGeopotential(z);

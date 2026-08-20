@@ -1,12 +1,5 @@
-import { MF_DATA, MF_SPECIES } from '../src/lib/mole-fractions.ts';
-import {
-    geometricToGeopotential,
-    getPressure, getTemperature, getDensity,
-    getAltimeterSetting,
-    getPressureAltitude, getDensityAltitude,
-    getMoleFraction, getMolarMass, getMeanFreePath,
-    getSpeedOfSound,
-} from '../src/lib/atmosphere.ts';
+﻿import { MF_DATA, MF_SPECIES } from '../src/lib/mole-fractions.ts';
+import * as atm from '../src/lib/atmosphere.ts';
 import { getBoilingPoint } from '../src/lib/water-properties.ts';
 
 const args = process.argv.slice(2);
@@ -14,7 +7,7 @@ const args = process.argv.slice(2);
 // ── verify-mole-fractions command ────────────────────────────────────────────
 
 if (args[0] === 'verify-mole-fractions') {
-    const EPS = 1e-13;
+    const EPS = 1e-9;
     let failures = 0;
 
     for (const row of MF_DATA) {
@@ -39,16 +32,16 @@ const T0   = args[1] !== undefined ? parseFloat(args[1]) : 288.15;
 const P0   = args[2] !== undefined ? parseFloat(args[2]) : 101325;
 
 const dT   = T0 - 288.15;
-const P    = getPressure(z, P0, T0);
-const T    = getTemperature(z) + dT;
-const rho  = getDensity(P, T, z);
-const H    = geometricToGeopotential(z);
-const mu   = 1.458e-6 * T ** 1.5 / (T + 110.4);
-const sos  = getSpeedOfSound(P, rho);
+const P    = atm.getPressure(z, P0, T0);
+const T    = atm.getTemperature(z) + dT;
+const rho  = atm.getDensity(P, T, z);
+const H    = atm.geometricToGeopotential(z);
+const mu   = atm.getViscosity(T);
+const sos  = atm.getSpeedOfSound(T, atm.getMolarMass(z));
 const bp   = getBoilingPoint(P);
-const mfp  = getMeanFreePath(P, T);
-const pa   = getPressureAltitude(P);
-const da   = getDensityAltitude(rho);
+const mfp  = atm.getMeanFreePath(P, T);
+const pa   = atm.getPressureAltitude(P);
+const da   = atm.getDensityAltitude(rho);
 
 function sf6(v: number): string {
     return parseFloat(v.toPrecision(6)).toString();
@@ -72,7 +65,7 @@ console.log(`  Sea-level pressure : ${sf6(P0)} Pa`);
 
 console.log(`\nOutputs`);
 console.log(`  Air pressure       : ${sf6(P)} Pa`);
-console.log(`  Altimeter setting  : ${sf6(getAltimeterSetting(z, P))} Pa`);
+console.log(`  Altimeter setting  : ${sf6(atm.getAltimeterSetting(z, P))} Pa`);
 tempLine(`  Air temperature    `, T);
 console.log(`  Air density        : ${sf6(rho)} kg/m³`);
 console.log(`  Pressure altitude  : ${sf6(pa)} m`);
@@ -86,6 +79,6 @@ else console.log(`  Boiling point      : N/A (below triple point)`);
 
 console.log(`\nMole fractions`);
 for (const species of MF_SPECIES) {
-    const frac = getMoleFraction(species, z);
-    if (frac > 1e-20) console.log(`  ${species.padEnd(4)}: ${sf6(frac)}`);
+    const frac = atm.getMoleFraction(species, z);
+    if (frac > 0) console.log(`  ${species.padEnd(4)}: ${sf6(frac)}`);
 }

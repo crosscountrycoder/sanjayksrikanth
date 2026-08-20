@@ -1,4 +1,4 @@
-import { MF_DATA, MF_SPECIES, type MFSpecies } from './mole-fractions.ts';
+import { MF_DATA, MF_SPECIES } from './mole-fractions.ts';
 
 // ── Section 1: Geodesy ────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ export function getTemperature(z: number): number {
 // mole-fractions.ts, which covers −6000 m to 1 000 000 m in 1 km steps.
 // Values are linearly interpolated between table rows.
 
-export const R   = 8314.46261815324; // J/(kmol·K) — SI 2019; molar masses are in g/mol = kg/kmol
+export const R = 8314.46261815324; // J/(kmol·K) — SI 2019; molar masses are in g/mol = kg/kmol
 const k_B = 1.380649e-23;            // J/K        — SI 2019 exact
 
 // Sea-level dry-air composition (reference data). Molar masses in g/mol (= kg/kmol).
@@ -108,7 +108,7 @@ export function getMolarMass(z: number): number {
 }
 
 // Mole fraction of a species at geometric altitude z (m).
-export function getMoleFraction(species: MFSpecies, z: number): number {
+export function getMoleFraction(species: string, z: number): number {
     const si = (MF_SPECIES as readonly string[]).indexOf(species);
     if (si < 0) return 0;
     return _mfInterp(z, si + 2);
@@ -240,9 +240,13 @@ export function getDensityAltitude(rho: number, fast = false): number {
     return z_lo + lo;
 }
 
-export function getSpeedOfSound(P_Pa: number, rho: number): number | null {
-    if (P_Pa < 5e-4) return null; // anacoustic zone
-    return Math.sqrt(1.4 * P_Pa / rho);
+export function getSpeedOfSound(T_K: number, M: number): number {
+    return Math.sqrt(1.4 * R * T_K / M);
+}
+
+// Sutherland's formula for dynamic viscosity of air (Pa·s).
+export function getViscosity(T_K: number): number {
+    return 1.458e-6 * T_K ** 1.5 / (T_K + 110.4);
 }
 
 const SIGMA_MFP = 3.65e-10;
