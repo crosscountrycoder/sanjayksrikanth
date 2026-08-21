@@ -63,34 +63,12 @@ export function getTemperature(z: number): number {
 export const R = 8314.46261815324; // J/(kmol·K) — SI 2019; molar masses are in g/mol = kg/kmol
 const k_B = 1.380649e-23;            // J/K        — SI 2019 exact
 
-// Sea-level dry-air composition (reference data). Molar masses in g/mol (= kg/kmol).
-// Sources: mole-fractions.csv (sea-level row).
-export const LOWER_COMPOSITION = [
-    { key: 'N2',  xi: 0.780829557, Mi: 28.01340 },
-    { key: 'O2',  xi: 0.209385213, Mi: 31.99880 },
-    { key: 'Ar',  xi: 0.009331795, Mi: 39.94800 },
-    { key: 'CO2', xi: 0.000426000, Mi: 44.00950 },
-    { key: 'Ne',  xi: 0.000018180, Mi: 20.17970 },
-    { key: 'He',  xi: 0.000005200, Mi:  4.00260 },
-    { key: 'CH4', xi: 0.000001936, Mi: 16.04246 },
-    { key: 'Kr',  xi: 0.000001140, Mi: 83.79800 },
-    { key: 'H2',  xi: 0.000000553, Mi:  2.01588 },
-    { key: 'N2O', xi: 0.000000339, Mi: 44.01280 },
-    { key: 'Xe',  xi: 0.000000087, Mi: 131.29300 },
-    { key: 'O',   xi: 0.000000000, Mi: 15.99940 },
-    { key: 'H',   xi: 0.000000000, Mi:  1.00794 },
-    { key: 'N',   xi: 0.000000000, Mi: 14.00670 },
-] as const;
-
-export const M0 = LOWER_COMPOSITION.reduce((s, c) => s + c.xi * c.Mi, 0);
-
 const MF_Z_MIN  = 0; // CSV starts at sea level; negative altitudes clamp to sea-level composition
 const MF_Z_STEP = 1000;
 
 // Interpolate a single column from MF_DATA at altitude z (m).
 // col 1 = molar mass, col 2+ = mole fractions in MF_SPECIES order.
 function _mfInterp(z: number, col: number): number {
-    if (MF_DATA.length === 0) return col === 1 ? M0 : 0;
     const z_lo = Math.floor(z / MF_Z_STEP) * MF_Z_STEP;
     const idx  = (z_lo - MF_Z_MIN) / MF_Z_STEP;
     // Clamp to table bounds

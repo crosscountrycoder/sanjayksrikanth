@@ -483,6 +483,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const outputIds = [
 			'out-pressure', 'out-press-out-2', 'out-temperature', 'out-density',
 			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
+			'out-mfp', 'out-partial-pressure',
 		];
 		if (!validate()) {
 			for (const id of outputIds) (document.getElementById(id) as HTMLElement).textContent = '—';
