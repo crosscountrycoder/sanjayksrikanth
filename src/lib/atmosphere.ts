@@ -18,22 +18,31 @@ function _g(z: number): number {
 }
 
 // ── Section 2: Temperature ────────────────────────────────────────────────────
-// Below 86 km: piecewise linear lapse-rate layers in geometric altitude.
-// Above 86 km: USSA 1976 empirical formula with five segments.
-// Extrapolates below 0 m using the tropospheric lapse rate.
+// Below 20 km geopotential: sea-level temp T0 sets the baseline, cooling at the
+// standard -6.5 K/km lapse rate until it hits 216.65 K, then holding there.
+// 20 km to 86 km: piecewise linear lapse-rate layers in geopotential altitude
+// (USSA 1976 Table 4), unaffected by T0.
+// Above 86 km: USSA 1976 empirical formula defined in geometric altitude.
 
+const KM_86 = geometricToGeopotential(86000);
 const TEMP_LAYERS = [
-    { z:     0, T: 288.15   },
-    { z: 11000, T: 216.65   },
-    { z: 20100, T: 216.65   },
-    { z: 32200, T: 228.65   },
-    { z: 47400, T: 270.65   },
-    { z: 51400, T: 270.65   },
-    { z: 71800, T: 214.65   },
-    { z: 86000, T: 186.8673 },
+    { H:     0, T: 288.15  },
+    { H: 11000, T: 216.65  },
+    { H: 20000, T: 216.65  },
+    { H: 32000, T: 228.65  },
+    { H: 47000, T: 270.65  },
+    { H: 51000, T: 270.65  },
+    { H: 71000, T: 214.65  },
+    { H: KM_86, T: 186.8673 },
 ] as const;
 
-export function getTemperature(z: number): number {
+const TROPOPAUSE_T = 216.65;   // K (-56.5 °C) — floor of the sea-level-driven layer
+const LAPSE_RATE   = 6.5 / 1000; // K/m
+export const SEA_LEVEL_TEMP_MIN_C = -56.5;
+export const SEA_LEVEL_TEMP_MAX_C = 73.5;
+
+export function getTemperature(z: number, T0_K: number = 288.15): number {
+    if (T0_K < SEA_LEVEL_TEMP_MIN_C + 273.15 || T0_K > SEA_LEVEL_TEMP_MAX_C + 273.15) return NaN;
     if (z > 86000) {
         if (z < 91000)  return 186.8673;
         if (z < 110000) { const b = (z - 91000) / 19942.9; return 263.1905 - 76.3232 * Math.sqrt(1 - b * b); }
@@ -41,14 +50,14 @@ export function getTemperature(z: number): number {
         const b = (EARTH_RADIUS_M + 120000) / (EARTH_RADIUS_M + z);
         return 1000 - 640 * Math.exp(-1.875e-5 * (z - 120000) * b);
     }
-    const L = TEMP_LAYERS;
-    if (z <= L[0].z) {
-        const dTdz = (L[1].T - L[0].T) / (L[1].z - L[0].z);
-        return L[0].T + dTdz * (z - L[0].z);
+    const H = geometricToGeopotential(z);
+    if (H <= 20000) {
+        return Math.max(T0_K - LAPSE_RATE * H, TROPOPAUSE_T);
     }
+    const L = TEMP_LAYERS;
     for (let i = 0; i < L.length - 1; i++) {
-        if (z <= L[i + 1].z) {
-            const t = (z - L[i].z) / (L[i + 1].z - L[i].z);
+        if (H <= L[i + 1].H) {
+            const t = (H - L[i].H) / (L[i + 1].H - L[i].H);
             return L[i].T + t * (L[i + 1].T - L[i].T);
         }
     }
@@ -61,7 +70,7 @@ export function getTemperature(z: number): number {
 // Values are linearly interpolated between table rows.
 
 export const R = 8314.46261815324; // J/(kmol·K) — SI 2019; molar masses are in g/mol = kg/kmol
-const k_B = 1.380649e-23;            // J/K        — SI 2019 exact
+const k_B = 1.380649e-23;          // J/K        — SI 2019 exact
 
 const MF_Z_MIN  = 0; // CSV starts at sea level; negative altitudes clamp to sea-level composition
 const MF_Z_STEP = 1000;
@@ -106,13 +115,13 @@ export function getDensity(P_Pa: number, T_K: number, z: number): number {
 // Unified for all altitudes from −6 km to 1000 km.
 // M(z) is read from the pre-computed table via getMolarMass().
 
-const Z_STEP = 100;   // integration step (m)
+const Z_STEP = 50;   // integration step (m)
 const Z_MIN  = -5000;
 const Z_MAX  = 1000000;
 
 // One RK4 step of the unified hydrostatic equation.
-function _rk4P(z: number, P: number, h: number, dT: number): number {
-    const f = (zi: number) => getMolarMass(zi) * _g(zi) / (R * (getTemperature(zi) + dT));
+function _rk4P(z: number, P: number, h: number, T0_K: number): number {
+    const f = (zi: number) => getMolarMass(zi) * _g(zi) / (R * getTemperature(zi, T0_K));
     const k1 = -P               * f(z);
     const k2 = -(P + 0.5*h*k1) * f(z + 0.5*h);
     const k3 = -(P + 0.5*h*k2) * f(z + 0.5*h);
@@ -121,27 +130,37 @@ function _rk4P(z: number, P: number, h: number, dT: number): number {
 }
 
 // Integrate the hydrostatic equation from z0 to z1 starting at pressure P.
-function _integrateP(z0: number, z1: number, P: number, dT: number): number {
+function _integrateP(z0: number, z1: number, P: number, T0_K: number): number {
     if (z0 === z1) return P;
     const dir   = z1 > z0 ? 1 : -1;
     const dist  = Math.abs(z1 - z0);
     const nFull = Math.floor(dist / Z_STEP);
     let Z = z0;
     for (let i = 0; i < nFull; i++) {
-        P = _rk4P(Z, P, dir * Z_STEP, dT);
+        P = _rk4P(Z, P, dir * Z_STEP, T0_K);
         Z += dir * Z_STEP;
     }
     const rem = z1 - Z;
-    if (Math.abs(rem) > 1e-9) P = _rk4P(Z, P, rem, dT);
+    if (Math.abs(rem) > 1e-9) P = _rk4P(Z, P, rem, T0_K);
     return P;
 }
 
-export function getPressure(z: number, P0: number, T0: number): number {
-    return _integrateP(0, z, P0, T0 - 288.15);
+export function getPressure(z: number, P0: number, T0_K: number): number {
+    return _integrateP(0, z, P0, T0_K);
 }
 
+// Inverts the tiered temperature model: given an air temperature at z, finds
+// the sea-level temperature that produces it. Only solvable at or below 20 km
+// geopotential (T0 has no effect above that), and only for temperatures that
+// are actually reachable (>= 216.65 K, the tropopause floor).
+const EPS = 1e-6; // floating-point slack for boundary comparisons
+
 export function getSeaLevelTemperature(z: number, T_K: number): number {
-    return 288.15 + T_K - getTemperature(z);
+    const H = geometricToGeopotential(z);
+    if (H > 20000 + EPS || T_K < TROPOPAUSE_T - EPS) return NaN;
+    const T0_K = T_K + LAPSE_RATE * H;
+    if (T0_K < SEA_LEVEL_TEMP_MIN_C + 273.15 - EPS || T0_K > SEA_LEVEL_TEMP_MAX_C + 273.15 + EPS) return NaN;
+    return T0_K;
 }
 
 export function getSeaLevelPressure(z: number, P_Pa: number, T0_K: number): number {
@@ -153,7 +172,7 @@ export function getAltimeterSetting(z: number, P_Pa: number): number {
 }
 
 // ── Standard atmosphere lookup table ─────────────────────────────────────────
-// Precomputed pressure and density at every 100 m from −6 km to 1000 km.
+// Precomputed pressure and density at every 50 m from −5 km to 1000 km.
 // Used by getPressureAltitude and getDensityAltitude.
 
 const _STD_N   = ((Z_MAX - Z_MIN) / Z_STEP) + 1; // 10061 entries
@@ -163,10 +182,10 @@ const _stdRho = new Float64Array(_STD_N);
     const i0 = (0 - Z_MIN) / Z_STEP; // index of z = 0
     _stdP[i0] = 101325;
     for (let i = i0; i < _STD_N - 1; i++) {
-        _stdP[i + 1] = _rk4P(Z_MIN + i * Z_STEP, _stdP[i], Z_STEP, 0);
+        _stdP[i + 1] = _rk4P(Z_MIN + i * Z_STEP, _stdP[i], Z_STEP, 288.15);
     }
     for (let i = i0; i > 0; i--) {
-        _stdP[i - 1] = _rk4P(Z_MIN + i * Z_STEP, _stdP[i], -Z_STEP, 0);
+        _stdP[i - 1] = _rk4P(Z_MIN + i * Z_STEP, _stdP[i], -Z_STEP, 288.15);
     }
     for (let i = 0; i < _STD_N; i++) {
         const z = Z_MIN + i * Z_STEP;
@@ -184,35 +203,27 @@ function _bsearchDecreasing(table: Float64Array, value: number): number {
 }
 
 // Pressure altitude: altitude in the standard atmosphere with pressure P_Pa.
-export function getPressureAltitude(P_Pa: number, fast = false): number {
+export function getPressureAltitude(P_Pa: number): number {
     const i    = _bsearchDecreasing(_stdP, P_Pa);
     const z_lo = Z_MIN + i * Z_STEP;
     const P_lo = _stdP[i];
-    if (fast) {
-        const t = Math.log(P_Pa / P_lo) / Math.log(_stdP[i + 1] / P_lo);
-        return Math.max(Z_MIN, Math.min(z_lo + t * Z_STEP, Z_MAX));
-    }
     let lo = 0, hi = Z_STEP;
     while (hi - lo > 1e-6) {
         const mid = (lo + hi) / 2;
-        _rk4P(z_lo, P_lo, mid, 0) > P_Pa ? lo = mid : hi = mid;
+        _rk4P(z_lo, P_lo, mid, 288.15) > P_Pa ? lo = mid : hi = mid;
     }
     return z_lo + lo;
 }
 
 // Density altitude: altitude in the standard atmosphere with density rho.
-export function getDensityAltitude(rho: number, fast = false): number {
+export function getDensityAltitude(rho: number): number {
     const i    = _bsearchDecreasing(_stdRho, rho);
     const z_lo = Z_MIN + i * Z_STEP;
     const P_lo = _stdP[i];
-    if (fast) {
-        const t = Math.log(rho / _stdRho[i]) / Math.log(_stdRho[i + 1] / _stdRho[i]);
-        return Math.max(Z_MIN, Math.min(z_lo + t * Z_STEP, Z_MAX));
-    }
     let lo = 0, hi = Z_STEP;
     while (hi - lo > 1e-6) {
         const mid = (lo + hi) / 2;
-        const rho_mid = _rk4P(z_lo, P_lo, mid, 0) * getMolarMass(z_lo + mid) / (R * getTemperature(z_lo + mid));
+        const rho_mid = _rk4P(z_lo, P_lo, mid, 288.15) * getMolarMass(z_lo + mid) / (R * getTemperature(z_lo + mid));
         rho_mid > rho ? lo = mid : hi = mid;
     }
     return z_lo + lo;
@@ -250,13 +261,12 @@ export function buildAtmosphereProfile(zPoints: number[], P0: number, T0: number
     const M_o = new Float64Array(n);
     if (n === 0) return { P: P_o, T: T_o, M: M_o };
 
-    const dT = T0 - 288.15;
-    P_o[0] = _integrateP(0, zPoints[0], P0, dT);
-    T_o[0] = getTemperature(zPoints[0]) + dT;
+    P_o[0] = _integrateP(0, zPoints[0], P0, T0);
+    T_o[0] = getTemperature(zPoints[0], T0);
     M_o[0] = getMolarMass(zPoints[0]);
     for (let k = 1; k < n; k++) {
-        P_o[k] = _integrateP(zPoints[k - 1], zPoints[k], P_o[k - 1], dT);
-        T_o[k] = getTemperature(zPoints[k]) + dT;
+        P_o[k] = _integrateP(zPoints[k - 1], zPoints[k], P_o[k - 1], T0);
+        T_o[k] = getTemperature(zPoints[k], T0);
         M_o[k] = getMolarMass(zPoints[k]);
     }
     return { P: P_o, T: T_o, M: M_o };

@@ -23,7 +23,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				<h2>Inputs</h2>
 
 				<div class="field">
-					<label for="altitude">Altitude</label>
+					<label for="altitude" id="lbl-altitude" data-tooltip="Height above mean sea level along the local vertical.">Geometric altitude</label>
 					<div class="input-row">
 						<input type="number" id="altitude" value="0" />
 						<select id="altitude-unit">
@@ -37,7 +37,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label for="sea-level-temp" id="lbl-temp-input">Sea-level temperature</label>
+					<label for="sea-level-temp" id="lbl-temp-input" data-tooltip="Air temperature at sea level, used as the baseline for the atmospheric temperature profile.">Sea-level temperature</label>
 					<div class="input-row">
 						<input type="number" id="sea-level-temp" value="15" />
 						<select id="sea-level-temp-unit">
@@ -51,7 +51,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label for="sea-level-pressure" id="lbl-pressure-input">Sea-level pressure</label>
+					<label for="sea-level-pressure" id="lbl-pressure-input" data-tooltip="Atmospheric pressure at sea level, the starting point for the pressure integration.">Sea-level pressure</label>
 					<div class="input-row">
 						<input type="number" id="sea-level-pressure" value="1" />
 						<select id="sea-level-pressure-unit">
@@ -119,7 +119,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				<h2>Outputs</h2>
 
 				<div class="field">
-					<label id="lbl-press-out-1">Air pressure</label>
+					<label id="lbl-press-out-1" data-tooltip="Absolute atmospheric pressure at the given altitude.">Air pressure</label>
 					<div class="output-row">
 						<span id="out-pressure">—</span>
 						<select id="out-pressure-unit">
@@ -135,7 +135,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label id="lbl-press-out-2">Altimeter setting</label>
+					<label id="lbl-press-out-2" data-tooltip="Sea-level pressure derived from station pressure using a standard temperature profile; used to calibrate aircraft altimeters.">Altimeter setting</label>
 					<div class="output-row">
 						<span id="out-press-out-2">—</span>
 						<select id="out-press-out-2-unit">
@@ -151,7 +151,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label id="lbl-temp-output">Air temperature</label>
+					<label id="lbl-temp-output" data-tooltip="Atmospheric temperature at the given altitude.">Air temperature</label>
 					<div class="output-row">
 						<span id="out-temperature">—</span>
 						<select id="out-temperature-unit">
@@ -164,7 +164,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Air density</label>
+					<label data-tooltip="Mass of air per unit volume, computed from pressure, temperature, and molar mass via the ideal gas law.">Air density</label>
 					<div class="output-row">
 						<span id="out-density">—</span>
 						<select id="out-density-unit">
@@ -177,7 +177,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Pressure altitude</label>
+					<label data-tooltip="Altitude in the standard atmosphere where pressure equals the current pressure; used in aviation for flight levels.">Pressure altitude</label>
 					<div class="output-row">
 						<span id="out-pressure-altitude">—</span>
 						<select id="out-pressure-altitude-unit">
@@ -190,7 +190,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Density altitude</label>
+					<label data-tooltip="Altitude in the standard atmosphere where density equals the current density; determines aircraft aerodynamic and engine performance.">Density altitude</label>
 					<div class="output-row">
 						<span id="out-density-altitude">—</span>
 						<select id="out-density-altitude-unit">
@@ -203,7 +203,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Speed of sound</label>
+					<label data-tooltip="Speed of acoustic waves in air, equal to √(γRT/M) with γ = 1.4.">Speed of sound</label>
 					<div class="output-row">
 						<span id="out-speed-of-sound">—</span>
 						<select id="out-speed-of-sound-unit">
@@ -217,21 +217,20 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Dynamic viscosity</label>
+					<label data-tooltip="Resistance of air to shear deformation, computed via Sutherland's viscosity formula.">Dynamic viscosity</label>
 					<div class="output-row">
 						<span id="out-viscosity">—</span>
 						<select id="out-viscosity-unit">
 							<option value="Pa·s" selected>Pa·s</option>
 							<option value="μPa·s">μPa·s</option>
-							<option value="P">poise</option>
-							<option value="cP">centipoise</option>
+							<option value="mPa·s">mPa·s (cP)</option>
 							<option value="lbf·s/ft2">lbf·s/ft²</option>
 						</select>
 					</div>
 				</div>
 
 				<div class="field">
-					<label id="out-geo-alt-label">Geopotential altitude</label>
+					<label id="out-geo-alt-label" data-tooltip="Geopotential altitude corresponding to the input geometric altitude.">Geopotential altitude</label>
 					<div class="output-row">
 						<span id="out-geo-alt">—</span>
 						<select id="out-geo-alt-unit">
@@ -244,7 +243,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Mean free path</label>
+					<label data-tooltip="Average distance a molecule travels between collisions.">Mean free path</label>
 					<div class="output-row">
 						<span id="out-mfp">—</span>
 						<select id="out-mfp-unit">
@@ -261,7 +260,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Partial pressure</label>
+					<label data-tooltip="Mean molecular mass of the air mixture at this altitude; decreases above ~90 km as lighter species dominate.">Molar mass</label>
+					<div class="output-row">
+						<span id="out-molar-mass">—</span>
+						<select disabled><option>g/mol</option></select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label data-tooltip="Pressure contribution of the selected gas species, equal to its mole fraction times total pressure.">Partial pressure</label>
 					<div class="output-row">
 						<span id="out-partial-pressure">—</span>
 						<select id="out-partial-pressure-unit">
@@ -272,7 +279,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="mmHg">mmHg (Torr)</option>
 							<option value="inHg">inHg</option>
 							<option value="psi">psi</option>
-							<option value="fraction">fraction</option>
+							<option value="fraction">mole fraction</option>
 						</select>
 						<select id="out-partial-pressure-species">
 							<option value="N2" selected>N₂</option>
@@ -280,13 +287,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="Ar">Ar</option>
 							<option value="CO2">CO₂</option>
 							<option value="Ne">Ne</option>
+							<option value="He">He</option>
 							<option value="CH4">CH₄</option>
 							<option value="Kr">Kr</option>
 							<option value="H2">H₂</option>
 							<option value="N2O">N₂O</option>
 							<option value="Xe">Xe</option>
 							<option value="O">O</option>
-											<option value="He">He</option>
 							<option value="H">H</option>
 							<option value="N">N</option>
 						</select>
@@ -294,7 +301,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label>Boiling point of water</label>
+					<label data-tooltip="Temperature at which water boils at the current atmospheric pressure; falls below 100°C at altitude.">Boiling point of water</label>
 					<div class="output-row">
 						<span id="out-boiling-point">—</span>
 						<select id="out-boiling-point-unit">
@@ -365,6 +372,36 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			grid-template-columns: 8rem minmax(0, 1fr);
 		}
 	}
+
+	label[data-tooltip] {
+		text-decoration: underline dotted;
+		cursor: help;
+		position: relative;
+	}
+
+	label[data-tooltip]::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		left: 0;
+		top: calc(100% + 4px);
+		width: 16rem;
+		padding: 0.3rem 0.5rem;
+		background: var(--color-output-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		color: var(--color-text);
+		font-size: 0.8125rem;
+		font-weight: normal;
+		white-space: normal;
+		z-index: 100;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+
+	label[data-tooltip]:hover::after {
+		opacity: 1;
+	}
 </style>
 
 <script>
@@ -376,15 +413,37 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		return parseFloat(n.toPrecision(6)).toString();
 	}
 
-	// Boundary between lower and upper atmosphere
-	const UPPER_GEOM  = 86000;                              // m geometric
-	const UPPER_GEOPOT = atm.geometricToGeopotential(UPPER_GEOM); // ≈ 84852 m geopotential
-	const UPPER_GEOPOT_MAX = atm.geometricToGeopotential(1000000); // ≈ 864049 m geopotential
+	const GEOPOT_MIN = atm.geometricToGeopotential(-5000); // ≈ -5004 m geopotential
+	const GEOPOT_MAX = atm.geometricToGeopotential(1000000); // ≈ 864049 m geopotential
+	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
 
 	function resolveAltitude(altVal: number, altUnit: string, useGeopot: boolean) {
 		const input_m = cv.altToM(altVal, altUnit);
 		const h_m = useGeopot ? atm.geopotentialToGeometric(input_m) : input_m;
 		return { h_m };
+	}
+
+	// Above 20 km geopotential, sea-level temp has no effect on air temp at all, so back-solving
+	// sea-level temp from an entered air temp is meaningless there — disable the "Air temperature"
+	// option and fall back to "Sea-level temperature" mode if it was selected.
+	function syncTempModeAvailability() {
+		const tempModeSel = document.getElementById('temp-mode') as HTMLSelectElement;
+		const airOption   = tempModeSel.querySelector('option[value="air"]') as HTMLOptionElement;
+		const altVal      = parseFloat((document.getElementById('altitude') as HTMLInputElement).value);
+		const altUnit     = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
+		const useGeopot   = (document.getElementById('altitude-mode') as HTMLSelectElement).value === 'geopotential';
+
+		if (isNaN(altVal)) {
+			airOption.disabled = false;
+			return;
+		}
+		const { h_m } = resolveAltitude(altVal, altUnit, useGeopot);
+		const aboveLimit = atm.geometricToGeopotential(h_m) > AIR_TEMP_MAX_GEOPOT;
+		airOption.disabled = aboveLimit;
+		if (aboveLimit && tempModeSel.value === 'air') {
+			tempModeSel.value = 'sea-level';
+			updateTempLabels();
+		}
 	}
 
 	function validate(): boolean {
@@ -395,11 +454,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const altUnit   = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
 		const useGeopot = (document.getElementById('altitude-mode') as HTMLSelectElement).value === 'geopotential';
 		const errAlt    = document.getElementById('err-altitude') as HTMLElement;
+		const tempMode  = (document.getElementById('temp-mode') as HTMLSelectElement).value;
 
 		if (!isNaN(altVal)) {
 			const input_m = cv.altToM(altVal, altUnit);
-			const loM = useGeopot ? -5004 : -5000;
-			const hiM = useGeopot ? UPPER_GEOPOT_MAX : 1000000;
+			const loM = useGeopot ? GEOPOT_MIN : -5000;
+			const hiM = useGeopot ? GEOPOT_MAX : 1000000;
 			const label = useGeopot ? 'Geopotential altitude' : 'Geometric altitude';
 			const factor = cv.altFromM(1, altUnit);
 			if (input_m < loM || input_m > hiM) {
@@ -418,16 +478,21 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		// Temperature
 		const tempVal  = parseFloat((document.getElementById('sea-level-temp') as HTMLInputElement).value);
 		const tempUnit = (document.getElementById('sea-level-temp-unit') as HTMLSelectElement).value;
-		const tempMode = (document.getElementById('temp-mode') as HTMLSelectElement).value;
 
 		if (!isNaN(tempVal) && !isNaN(altVal)) {
 			const T_input_K = cv.tempToK(tempVal, tempUnit);
 			const { h_m: z_v } = resolveAltitude(altVal, altUnit, useGeopot);
 			const T0_K_v = tempMode === 'air' ? atm.getSeaLevelTemperature(z_v, T_input_K) : T_input_K;
-			const loK = 173.15, hiK = 373.15;
+			const loK = atm.SEA_LEVEL_TEMP_MIN_C + 273.15, hiK = atm.SEA_LEVEL_TEMP_MAX_C + 273.15;
 			const unitLabel = tempUnit === 'C' ? '°C' : tempUnit === 'F' ? '°F' : tempUnit === 'R' ? '°R' : 'K';
-			if (T0_K_v < loK || T0_K_v > hiK) {
-				errTemp.textContent = `Sea-level temperature must be between ${fmtBound(cv.tempFromK(loK, tempUnit))} and ${fmtBound(cv.tempFromK(hiK, tempUnit))} ${unitLabel}`;
+			if (isNaN(T0_K_v) || T0_K_v < loK || T0_K_v > hiK) {
+				if (tempMode === 'air') {
+					const fmtT = (K: number) => parseFloat(cv.tempFromK(K, tempUnit).toFixed(3)).toString();
+					const xK = atm.getTemperature(z_v, hiK);
+					errTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel}`;
+				} else {
+					errTemp.textContent = `Sea-level temperature must be between ${fmtBound(cv.tempFromK(loK, tempUnit))} and ${fmtBound(cv.tempFromK(hiK, tempUnit))} ${unitLabel}`;
+				}
 				valid = false;
 			} else {
 				errTemp.textContent = '';
@@ -480,10 +545,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	}
 
 	function calculate() {
+		syncTempModeAvailability();
+
 		const outputIds = [
 			'out-pressure', 'out-press-out-2', 'out-temperature', 'out-density',
 			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
-			'out-mfp', 'out-partial-pressure',
+			'out-mfp', 'out-molar-mass', 'out-partial-pressure',
 		];
 		if (!validate()) {
 			for (const id of outputIds) (document.getElementById(id) as HTMLElement).textContent = '—';
@@ -525,7 +592,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			P0_Pa        = atm.getSeaLevelPressure(h_m, P_Pa, T0_K);
 		}
 
-		const T_K = atm.getTemperature(h_m) + (T0_K - 288.15);
+		const T_K = atm.getTemperature(h_m, T0_K);
 		const rho = atm.getDensity(P_Pa, T_K, h_m);
 
 		const out1_Pa = pressMode === 'air' ? P0_Pa : P_Pa;
@@ -570,8 +637,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			? (() => { const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value; return fmtTemp(cv.tempFromK(bp_K, u), u); })()
 			: 'N/A';
 
-		(document.getElementById('out-geo-alt-label') as HTMLElement).textContent =
-			useGeopot ? 'Geometric altitude' : 'Geopotential altitude';
+		const geoAltLbl = document.getElementById('out-geo-alt-label') as HTMLElement;
+		geoAltLbl.textContent = useGeopot ? 'Geometric altitude' : 'Geopotential altitude';
+		geoAltLbl.dataset.tooltip = useGeopot
+			? 'Geometric altitude corresponding to the input geopotential altitude.'
+			: 'Geopotential altitude corresponding to the input geometric altitude.';
 		const altOther_m = useGeopot ? h_m : atm.geometricToGeopotential(h_m);
 		const geoAltUnit = (document.getElementById('out-geo-alt-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-geo-alt') as HTMLElement).textContent = fmt6(cv.altFromM(altOther_m, geoAltUnit));
@@ -587,6 +657,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const mfpUnit = (document.getElementById('out-mfp-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-mfp') as HTMLElement).textContent = fmt6(cv.mfpFromM(atm.getMeanFreePath(P_Pa, T_K), mfpUnit));
+
+		(document.getElementById('out-molar-mass') as HTMLElement).textContent = fmt6(atm.getMolarMass(h_m));
 	}
 
 	const inputIds = [
@@ -606,10 +678,27 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		el.addEventListener('change', calculate);
 	}
 
+	function updateAltitudeLabel() {
+		const geo = (document.getElementById('altitude-mode') as HTMLSelectElement).value === 'geopotential';
+		const lbl = document.getElementById('lbl-altitude') as HTMLElement;
+		lbl.textContent = geo ? 'Geopotential altitude' : 'Geometric altitude';
+		lbl.dataset.tooltip = geo
+			? 'Altitude scaled for the decrease of gravity with height; used in the standard atmosphere equations.'
+			: 'Height above mean sea level along the local vertical.';
+	}
+
 	function updateTempLabels() {
 		const airMode = (document.getElementById('temp-mode') as HTMLSelectElement).value === 'air';
-		(document.getElementById('lbl-temp-input') as HTMLElement).textContent  = airMode ? 'Air temperature' : 'Sea-level temperature';
-		(document.getElementById('lbl-temp-output') as HTMLElement).textContent = airMode ? 'Sea-level temperature' : 'Air temperature';
+		const lblIn  = document.getElementById('lbl-temp-input') as HTMLElement;
+		const lblOut = document.getElementById('lbl-temp-output') as HTMLElement;
+		lblIn.textContent  = airMode ? 'Air temperature' : 'Sea-level temperature';
+		lblOut.textContent = airMode ? 'Sea-level temperature' : 'Air temperature';
+		lblIn.dataset.tooltip  = airMode
+			? 'Temperature at the given altitude; the model back-calculates the sea-level temperature from this.'
+			: 'Air temperature at sea level, used as the baseline for the atmospheric temperature profile.';
+		lblOut.dataset.tooltip = airMode
+			? 'Sea-level temperature back-calculated from the air temperature at altitude.'
+			: 'Atmospheric temperature at the given altitude.';
 	}
 
 	function updateStdNote() {
@@ -629,17 +718,29 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			`Standard sea-level conditions are ${stdT} ${tLabel} and ${stdP} ${pressUnit}.`;
 	}
 
+	const PRESSURE_TOOLTIPS: Record<string, string> = {
+		'air_pressure_in':   'Pressure at the given altitude; the model back-calculates the sea-level pressure from this.',
+		'altimeter_in':      'Sea-level pressure implied by the station pressure using a standard temperature profile, as set on an aircraft altimeter.',
+		'sl_pressure_in':    'Atmospheric pressure at sea level, the starting point for the pressure integration.',
+		'air_pressure_out':  'Absolute atmospheric pressure at the given altitude.',
+		'sl_pressure_out':   'Station pressure corrected to sea level using the temperature profile; what weather stations report.',
+		'altimeter_out':     'Sea-level pressure derived from station pressure using a standard temperature profile; used to calibrate aircraft altimeters.',
+	};
+
 	function updatePressureLabels() {
 		const mode = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
-		const inputLabel = mode === 'air' ? 'Air pressure' : mode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
-		(document.getElementById('lbl-pressure-input') as HTMLElement).textContent = inputLabel;
-		const [out1, out2] = mode === 'air'
-			? ['Sea-level pressure', 'Altimeter setting']
+		const lblIn   = document.getElementById('lbl-pressure-input') as HTMLElement;
+		const lblOut1 = document.getElementById('lbl-press-out-1') as HTMLElement;
+		const lblOut2 = document.getElementById('lbl-press-out-2') as HTMLElement;
+		lblIn.textContent = mode === 'air' ? 'Air pressure' : mode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+		lblIn.dataset.tooltip = PRESSURE_TOOLTIPS[mode === 'air' ? 'air_pressure_in' : mode === 'altimeter' ? 'altimeter_in' : 'sl_pressure_in'];
+		const [out1, out2, tip1, tip2] = mode === 'air'
+			? ['Sea-level pressure', 'Altimeter setting', PRESSURE_TOOLTIPS['sl_pressure_out'], PRESSURE_TOOLTIPS['altimeter_out']]
 			: mode === 'altimeter'
-			? ['Air pressure', 'Sea-level pressure']
-			: ['Air pressure', 'Altimeter setting'];
-		(document.getElementById('lbl-press-out-1') as HTMLElement).textContent = out1;
-		(document.getElementById('lbl-press-out-2') as HTMLElement).textContent = out2;
+			? ['Air pressure', 'Sea-level pressure', PRESSURE_TOOLTIPS['air_pressure_out'], PRESSURE_TOOLTIPS['sl_pressure_out']]
+			: ['Air pressure', 'Altimeter setting', PRESSURE_TOOLTIPS['air_pressure_out'], PRESSURE_TOOLTIPS['altimeter_out']];
+		lblOut1.textContent = out1; lblOut1.dataset.tooltip = tip1;
+		lblOut2.textContent = out2; lblOut2.dataset.tooltip = tip2;
 	}
 
 	type UnitPreset = { alt: string; temp: string; press: string; dens: string; speed: string; visc: string; mfp: string; };
@@ -724,10 +825,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if (val !== 'custom') applyPreset(val);
 	});
 
+	document.getElementById('altitude-mode')!.addEventListener('change', updateAltitudeLabel);
 	document.getElementById('temp-mode')!.addEventListener('change', () => { updateTempLabels(); calculate(); });
 	document.getElementById('pressure-mode')!.addEventListener('change', () => { updatePressureLabels(); calculate(); });
 	document.getElementById('sea-level-temp-unit')!.addEventListener('change', updateStdNote);
 	document.getElementById('sea-level-pressure-unit')!.addEventListener('change', updateStdNote);
+	updateAltitudeLabel();
 	updateTempLabels();
 	updatePressureLabels();
 	updateStdNote();

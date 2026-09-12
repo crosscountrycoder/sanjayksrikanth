@@ -5,8 +5,8 @@
 export function waterVaporPressure(T: number): number {
     if (T > 647.096) return NaN; // no vapor pressure above critical temperature
     if (T >= 273.1600117513473) {
-        /* Note: 273.1600117513473 is used rather than 273.16 due to rounding, which causes a very small discontinuity
-        at the triple point. The IAPWS-95 ice and water formulas intersect at 273.1600117513473 K. */
+        /* The IAPWS-95 ice and water formulas intersect at precisely 273.1600117513473 K due to rounding. 
+        The actual triple point is still 273.16 K.*/
         const Tc = 647.096, Pc = 22064000, tau = 1 - T / Tc;
         return Pc * Math.exp((Tc / T) * (
             -7.85951783*tau + 1.84408259*tau**1.5 - 11.7866497*tau**3 +

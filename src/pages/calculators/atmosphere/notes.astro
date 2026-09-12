@@ -14,47 +14,33 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<AtmosphereNav active="notes" />
 	<h2>About the U.S. Standard Atmosphere</h2>
 	<p>
-	The <a href="https://www.pdas.com/atmosdownload.html" target="_blank">U.S. Standard Atmosphere</a> (USSA) models atmospheric properties by 
-	altitude from -5 to 1000 km (-16404 to 3280840 ft, -3.11 to 621.37 mi), representing typical mid-latitude conditions. Formulas are from the 
-	file ussa1976.dpr in <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a>. This calculator uses updated gas concentrations
-	from NOAA GML, NRLMSIS 2.1, WACCM, and diffusion models to better represent current atmospheric chemistry, particularly the increase 
-	in CO<sub>2</sub>. Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure.
-	</p>
-	<p>
-	The boiling point of water is calculated 
-	using <a href="https://www.iapws.org/relguide/IF97-Rev.html" target="_blank">IAPWS-95</a> and is accurate to 0.01°C (0.02°F). At pressures below 
-	water's triple point of 611.657 Pa, the boiling point is undefined because liquid water cannot exist.
-	</p>
-	<p>
-	The U.S. Standard Atmosphere models a typical mid-latitude profile. At a given altitude, it generally underestimates pressure in the tropics and 
-	in summer, and overestimates it in polar regions and in winter. It is not a weather model, and it does not account for local variations in 
-	pressure, temperature, or humidity. Water vapor and ozone are not included because their concentrations vary drastically based on weather, 
-	latitude, and season. Above the stratopause (50 km), predicted conditions at a given sea-level temperature and pressure may vary widely from 
-	actual conditions.
+	The <a href="https://www.pdas.com/atmosdownload.html" target="_blank">U.S. Standard Atmosphere</a> (USSA) is a model of Earth's atmospheric
+	temperature, pressure and other properties from -5 to 1000 km (-16,404 to 3,280,840 ft). Properties are calculated for dry air; humid air can be 
+	up to 2% less dense than dry air at the same temperature and pressure. The USSA is most representative of mid-latitude conditions.
 	</p>
 	<h2>Standard sea-level conditions</h2>
 	<ul>
-		<li>Pressure: 1 atm (101325 Pa, 1013.25 hPa, 760 mmHg, 14.6959 psi, 29.9213 inHg)</li>
-		<li>Temperature: 15°C (59°F, 288.15 K, 518.67°R)</li>
-		<li>Lapse rate: -6.5°C/km (0.00357°F/ft) under 11 km, varies above 11 km</li>
+		<li>Pressure: 1 atm (1,013.25 hPa / 760 mmHg / 14.6959 psi / 29.9213 inHg)</li>
+		<li>Temperature: 15°C (59°F / 288.15 K / 518.67°R)</li>
+		<li>Lapse rate: -6.5°C/km (0.00357°F/ft) under 11 km geopotential, varies above 11 km</li>
 	</ul>
 	<h2>Changes with altitude</h2>
 	<p>
-	In the troposphere (below 11 km), temperature decreases with altitude at the lapse rate. Above that, the stratosphere warms with altitude due to the
-	presence of UV-absorbing ozone; the mesosphere (50-86 km) cools again; and the thermosphere (86-1000 km) warms again. Pressure decreases roughly
-	exponentially throughout the atmosphere.
+	In the troposphere (below 11 km), temperature decreases with altitude at the standard lapse rate. In the stratosphere (11-50 km), temperature is 
+	initially constant before increasing with altitude due to UV absorption by ozone. Temperature decreases again in the mesosphere (50-86 km) and 
+	rises in the thermosphere (above 86 km). Pressure decreases roughly exponentially throughout the atmosphere.
 	</p>
 	<p>
-	Pressure is adjusted to sea-level two ways: <b>sea-level pressure</b> and <b>altimeter setting</b>. Sea-level pressure computes the air pressure
-	at sea-level given the measured pressure and temperature, standard lapse rate, the altitude of the measurement, and the ideal gas law. Altimeter
-	setting does the same, but assumes a constant sea-level temperature of 15°C (59°F) with the same lapse rate.
+	Pressure can be adjusted to sea level in two ways: <b>sea-level pressure</b> and <b>altimeter setting</b>. Sea-level pressure extrapolates the
+	measured pressure to sea level using the measured temperature, altitude, an assumed lapse rate, and the ideal gas law. Altimeter setting instead
+	uses the standard atmosphere: it finds the standard pressure ratio between the given altitude and sea level, then applies that ratio to the
+	measured pressure.
 	</p>
 	<p>
-	Example: at Mount Everest (8849 m, 29032 ft), typical summer conditions 
-	are <a href="https://rmets.onlinelibrary.wiley.com/doi/10.1002/wea.3931" target="_blank">-19°C (-2°F)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/10066724/" target="_blank">336 hPa (0.332 atm)</a>. 
-	Extrapolating -19°C to sea level with the standard lapse rate gives 38.5°C (101.3°F) - far above the standard 15°C - and a sea-level pressure of 980 
-	hPa. Altimeter setting instead asks what sea-level pressure would produce the same pressure ratio (ratio of ambient to sea-level pressure) as would
-	be expected at 8849 m under standard temperatures and lapse rates - 1081 hPa.
+	Example: In Denver (elevation 1,656 m / 5,433 ft), a summer day might be 30°C (86°F) with a pressure of 833 hPa. Extrapolating these conditions
+	down to sea level using the standard lapse rate gives 40.761°C (105.370°F) and <b>1,000.62 hPa</b>. The USSA pressure ratio at 1,656 m is 0.818689, 
+	so the altimeter setting is 833 / 0.818689 = <b>1,017.48 hPa</b>. At these conditions, the pressure altitude is 1,622 m, slightly below the actual 
+	elevation because the pressure is slightly above standard. Due to the high temperature, however, the density altitude is much higher at 2,497 m.
 	</p>
 	<h2>Geometric versus geopotential altitude</h2>
 	<p>
@@ -63,4 +49,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	Gravity weakens slightly at higher altitudes, due to the greater distance from earth's center, so at very high altitudes geopotential altitude is 
 	significantly less than geometric altitude.
 	</p>
+	<h2>Sources</h2>
+	<ul>
+		<li>U.S. Standard Atmosphere (USSA) formulas from <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a></li>
+		<li><a href="https://gml.noaa.gov/ccgg/trends/">NOAA GML</a>, <a href="https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.1/">NRLMSIS 2.1</a>, <a href="https://ncar.ucar.edu/what-we-offer/models/whole-atmosphere-community-climate-model-waccm">WACCM</a>, 
+			and diffusion models for atmospheric composition</li>
+		<li><a href="https://ciaaw.org/" target="_blank">IUPAC Commission on Isotopic Abundances and Atomic Weights</a> for molar masses</li>
+		<li><a href="https://www.iapws.org/relguide/IF97-Rev.html" target="_blank">IAPWS-95</a> for water vapor pressure and boiling point</li>
+	</ul>
 </Layout>

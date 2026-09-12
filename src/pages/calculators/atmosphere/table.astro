@@ -209,8 +209,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<select id="unit-viscosity">
 						<option value="Pa·s" selected>Pa·s</option>
 						<option value="μPa·s">μPa·s</option>
-						<option value="P">poise</option>
-						<option value="cP">centipoise</option>
+						<option value="mPa·s">mPa·s (centipoise)</option>
 						<option value="lbf·s/ft2">lbf·s/ft²</option>
 					</select>
 				</div>
@@ -235,37 +234,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					</select>
 				</div>
 				<div class="var-row">
-					<input type="checkbox" id="chk-partial_pressure" data-var="partial_pressure" />
-					<label for="chk-partial_pressure">Partial pressure</label>
-					<select id="unit-partial_pressure">
-						<option value="atm" selected>atm</option>
-						<option value="Pa">Pa</option>
-						<option value="hPa">hPa (mbar)</option>
-						<option value="kPa">kPa</option>
-						<option value="mmHg">mmHg (Torr)</option>
-						<option value="inHg">inHg</option>
-						<option value="psi">psi</option>
-						<option value="fraction">fraction</option>
-					</select>
-					<select id="species-partial_pressure">
-						<option value="N2" selected>N₂</option>
-						<option value="O2">O₂</option>
-						<option value="Ar">Ar</option>
-						<option value="CO2">CO₂</option>
-						<option value="Ne">Ne</option>
-						<option value="CH4">CH₄</option>
-						<option value="Kr">Kr</option>
-						<option value="H2">H₂</option>
-						<option value="N2O">N₂O</option>
-						<option value="Xe">Xe</option>
-						<option value="O">O</option>
-						<option value="O3">O₃</option>
-						<option value="He">He</option>
-						<option value="H">H</option>
-						<option value="N">N</option>
-					</select>
-				</div>
-				<div class="var-row">
 					<input type="checkbox" id="chk-mean_free_path" data-var="mean_free_path" />
 					<label for="chk-mean_free_path">Mean free path</label>
 					<select id="unit-mean_free_path">
@@ -278,6 +246,42 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<option value="ft">ft</option>
 						<option value="mi">mi</option>
 					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-molar_mass" data-var="molar_mass" />
+					<label for="chk-molar_mass">Molar mass</label>
+					<select id="unit-molar_mass">
+						<option value="g/mol" selected>g/mol</option>
+					</select>
+				</div>
+				<div class="var-row pp-header">
+					<span class="pp-label">Partial pressure</span>
+					<select id="unit-partial_pressure">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+						<option value="fraction">mole fraction</option>
+					</select>
+				</div>
+				<div class="pp-species">
+					<label><input type="checkbox" data-var="partial_pressure" data-species="N2"> N₂</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="O2"> O₂</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="Ar"> Ar</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="CO2"> CO₂</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="Ne"> Ne</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="He"> He</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="CH4"> CH₄</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="Kr"> Kr</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="H2"> H₂</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="N2O"> N₂O</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="Xe"> Xe</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="O"> O</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="H"> H</label>
+					<label><input type="checkbox" data-var="partial_pressure" data-species="N"> N</label>
 				</div>
 				<div class="var-row">
 					<input type="checkbox" id="chk-boiling_point" data-var="boiling_point" />
@@ -390,6 +394,27 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		padding: 0.15rem 0.25rem;
 	}
 
+	.pp-header .pp-label {
+		flex: 1;
+		font-size: 0.9375rem;
+	}
+
+	.pp-species {
+		display: grid;
+		grid-template-columns: repeat(4, auto);
+		justify-content: start;
+		gap: 0.1rem 0.6rem;
+		padding: 0.1rem 0 0.2rem 1.25rem;
+		font-size: 0.9375rem;
+	}
+
+	.pp-species label {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+		cursor: pointer;
+	}
+
 	.table-area {
 		display: flex;
 		flex-direction: column;
@@ -449,10 +474,36 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import * as cv  from '../../../lib/convert.ts';
 
+	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
+
+	// Above 20 km geopotential, sea-level temp has no effect on air temp at all, so back-solving
+	// sea-level temp from an entered air temp is meaningless there — disable the "Air temperature"
+	// option and fall back to "Sea-level temperature" mode if it was selected.
+	function syncTempModeAvailability() {
+		const tempModeSel = document.getElementById('temp-mode') as HTMLSelectElement;
+		const airOption   = tempModeSel.querySelector('option[value="air"]') as HTMLOptionElement;
+		const condAltVal  = parseFloat((document.getElementById('cond-alt') as HTMLInputElement).value);
+		const condAltUnit = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
+		const xVar        = (document.getElementById('x-var') as HTMLSelectElement).value;
+
+		if (isNaN(condAltVal)) {
+			airOption.disabled = false;
+			return;
+		}
+		const condAlt_m = cv.altToM(condAltVal, condAltUnit);
+		const H_cond = xVar === 'geopotential' ? condAlt_m : atm.geometricToGeopotential(condAlt_m);
+		const aboveLimit = H_cond > AIR_TEMP_MAX_GEOPOT;
+		airOption.disabled = aboveLimit;
+		if (aboveLimit && tempModeSel.value === 'air') {
+			tempModeSel.value = 'sea-level';
+			updateConditionLabels();
+		}
+	}
+
 	const SPECIES_DISPLAY: Record<string, string> = {
 		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂',
-		Ne: 'Ne', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
-		O: 'O', He: 'He', H: 'H',
+		Ne: 'Ne', He: 'He', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
+		O: 'O', H: 'H', N: 'N',
 	};
 
 	const Y_LABELS: Record<string, string> = {
@@ -468,6 +519,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		geopotential_alt:  'Geopotential altitude',
 		geometric_alt:     'Geometric altitude',
 		partial_pressure:  'Partial pressure',
+		molar_mass:        'Molar mass',
 		mean_free_path:    'Mean free path',
 		boiling_point:     'Boiling point of water',
 	};
@@ -487,8 +539,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const unitSel = document.getElementById(`unit-${key}`) as HTMLSelectElement;
 			const unit = unitSel.value;
 			const unitLabel = unitSel.options[unitSel.selectedIndex].text;
-			const speciesSel = document.getElementById(`species-${key}`) as HTMLSelectElement | null;
-			const species = speciesSel?.value ?? '';
+			const species = chk.dataset.species ?? '';
 			const label = key === 'partial_pressure'
 				? unit === 'fraction'
 					? `Mole fraction ${SPECIES_DISPLAY[species]}`
@@ -526,6 +577,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	let tableYConfigs: VarConfig[] = [];
 
 	function generateTable() {
+		syncTempModeAvailability();
+
 		const condAltVal  = parseFloat((document.getElementById('cond-alt') as HTMLInputElement).value);
 		const condAltUnit = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
 		const slTempVal   = parseFloat((document.getElementById('sl-temp') as HTMLInputElement).value);
@@ -584,11 +637,18 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		// Derive T0_K
 		const T_input_K = cv.tempToK(slTempVal, slTempUnit);
 		const z_cond = xVar === 'geopotential' ? atm.geopotentialToGeometric(condAlt_m) : condAlt_m;
-		const T0_K = tempMode === 'air' ? atm.getSeaLevelTemperature(Math.min(z_cond, 86000), T_input_K) : T_input_K;
-		if (T0_K < 173.15 || T0_K > 373.15) {
-			const fmt = (K: number) => fmt6(cv.tempFromK(K, slTempUnit));
+		const T0_K = tempMode === 'air' ? atm.getSeaLevelTemperature(z_cond, T_input_K) : T_input_K;
+		const loK = atm.SEA_LEVEL_TEMP_MIN_C + 273.15, hiK = atm.SEA_LEVEL_TEMP_MAX_C + 273.15;
+		if (isNaN(T0_K) || T0_K < loK || T0_K > hiK) {
 			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
-			errSlTemp.textContent = `Sea-level temperature must be between ${fmt(173.15)} and ${fmt(373.15)} ${unitLabel[slTempUnit]}.`;
+			if (tempMode === 'air') {
+				const fmtT = (K: number) => parseFloat(cv.tempFromK(K, slTempUnit).toFixed(3)).toString();
+				const xK = atm.getTemperature(z_cond, hiK);
+				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}.`;
+			} else {
+				const fmt = (K: number) => fmt6(cv.tempFromK(K, slTempUnit));
+				errSlTemp.textContent = `Sea-level temperature must be between ${fmt(loK)} and ${fmt(hiK)} ${unitLabel[slTempUnit]}.`;
+			}
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
 		}
@@ -648,14 +708,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			if (h_m < -5000) { tableData.push({ x: xVal, ys: vars.map(() => null) }); continue; }
 
 			const P_Pa = atm.getPressure(h_m, P0_Pa, T0_K);
-			const T_K  = atm.getTemperature(h_m) + (T0_K - 288.15);
+			const T_K  = atm.getTemperature(h_m, T0_K);
 			const rho  = atm.getDensity(P_Pa, T_K, h_m);
 
 			const ys = vars.map(v => {
 				switch (v.key) {
 					case 'pressure':           return cv.pressureFromPa(P_Pa, v.unit);
 					case 'altimeter_setting':  return cv.pressureFromPa(atm.getAltimeterSetting(h_m, P_Pa), v.unit);
-					case 'sea_level_pressure': return h_m <= 86000 ? cv.pressureFromPa(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), v.unit) : null;
+					case 'sea_level_pressure': return cv.pressureFromPa(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), v.unit);
 					case 'temperature':        return cv.tempFromK(T_K, v.unit);
 					case 'density':            return cv.densityFromKgM3(rho, v.unit);
 					case 'pressure_altitude':  return cv.altFromM(atm.getPressureAltitude(P_Pa), v.unit);
@@ -670,6 +730,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						if (v.unit === 'fraction') return mf;
 						return cv.pressureFromPa(pp_Pa, v.unit);
 					}
+					case 'molar_mass':         return atm.getMolarMass(h_m);
 					case 'mean_free_path':     return cv.mfpFromM(atm.getMeanFreePath(P_Pa, T_K), v.unit);
 					case 'boiling_point': {
 						const bp = getBoilingPoint(P_Pa);

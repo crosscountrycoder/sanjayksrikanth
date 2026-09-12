@@ -78,8 +78,7 @@ export function mfpFromM(m: number, unit: string): number {
 // Dynamic viscosity (from Pa·s)
 export function viscosityFromPaS(mu: number, unit: string): number {
 	return unit === 'μPa·s'    ? mu * 1e6
-	     : unit === 'P'         ? mu * 10
-	     : unit === 'cP'        ? mu * 1000
+	     : unit === 'mPa·s'    ? mu * 1000
 	     : unit === 'lbf·s/ft2' ? mu * 0.0208854342331501
 	     : mu;
 }

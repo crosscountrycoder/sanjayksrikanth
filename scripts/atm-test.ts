@@ -37,7 +37,8 @@ const T    = atm.getTemperature(z) + dT;
 const rho  = atm.getDensity(P, T, z);
 const H    = atm.geometricToGeopotential(z);
 const mu   = atm.getViscosity(T);
-const sos  = atm.getSpeedOfSound(T, atm.getMolarMass(z));
+const M    = atm.getMolarMass(z);
+const sos  = atm.getSpeedOfSound(T, M);
 const bp   = getBoilingPoint(P);
 const mfp  = atm.getMeanFreePath(P, T);
 const pa   = atm.getPressureAltitude(P);
@@ -58,7 +59,7 @@ function tempLine(label: string, K: number): void {
     console.log(`${label}: ${parseFloat(K.toPrecision(6))} K  (${fmtC(K)} °C)`);
 }
 
-console.log(`\nInputs`);
+console.log(`Inputs`);
 console.log(`  Geometric altitude : ${sf6(z)} m`);
 console.log(`  Sea-level temp     : ${parseFloat(T0.toPrecision(6))} K  (${fmtC(T0)} °C)`);
 console.log(`  Sea-level pressure : ${sf6(P0)} Pa`);
@@ -74,11 +75,13 @@ console.log(`  Geopotential alt   : ${sf6(H)} m`);
 console.log(`  Speed of sound     : ${sos !== null ? sf6(sos) + ' m/s' : 'N/A'}`);
 console.log(`  Dynamic viscosity  : ${sf6(mu)} Pa·s`);
 console.log(`  Mean free path     : ${sf6(mfp)} m`);
+console.log(`  Molar mass         : ${sf6(M)} kg/kmol`);
 if (bp !== null) tempLine(`  Boiling point      `, bp);
 else console.log(`  Boiling point      : N/A (below triple point)`);
-
+/*
 console.log(`\nMole fractions`);
 for (const species of MF_SPECIES) {
     const frac = atm.getMoleFraction(species, z);
     if (frac > 0) console.log(`  ${species.padEnd(4)}: ${sf6(frac)}`);
 }
+*/

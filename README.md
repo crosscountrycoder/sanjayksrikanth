@@ -11,7 +11,7 @@ A USSA 1976 atmosphere calculator covering −6 km to 1000 km geometric altitude
 pressure, temperature, density, altimeter setting, pressure altitude, density altitude, geopotential altitude, speed of sound, dynamic viscosity, 
 mean free path, boiling point, and species mole fractions.
 
-The model integrates the hydrostatic equation using RK4 at 100 m steps with variable molar mass and gravity from a pre-computed composition table 
+The model integrates the hydrostatic equation using RK4 at 50 m steps with variable molar mass and gravity from a pre-computed composition table 
 (`src/lib/mole-fractions.ts`), covering all altitudes in a single unified formulation. Four views are available: point calculator, table, graph, and 
 technical notes.
 
