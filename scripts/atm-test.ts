@@ -1,6 +1,7 @@
 ﻿import { MF_DATA, MF_SPECIES } from '../src/lib/mole-fractions.ts';
 import * as atm from '../src/lib/atmosphere.ts';
 import { getBoilingPoint } from '../src/lib/water-properties.ts';
+import { convert } from '../src/lib/convert.ts';
 
 const args = process.argv.slice(2);
 
@@ -52,6 +53,8 @@ const bp   = getBoilingPoint(P);
 const mfp  = atm.getMeanFreePath(P, T);
 const pa   = atm.getPressureAltitude(P);
 const da   = atm.getDensityAltitude(rho);
+const H_sc = atm.getScaleHeight(T, M, z);
+const n    = atm.getNumberDensity(P, T);
 
 function sf6(v: number): string {
     return parseFloat(v.toPrecision(6)).toString();
@@ -84,13 +87,14 @@ console.log(`  Geopotential alt   : ${sf6(H)} m`);
 console.log(`  Speed of sound     : ${sos !== null ? sf6(sos) + ' m/s' : 'N/A'}`);
 console.log(`  Dynamic viscosity  : ${sf6(mu)} Pa·s`);
 console.log(`  Mean free path     : ${sf6(mfp)} m`);
+console.log(`  Scale height       : ${sf6(H_sc)} m`);
+console.log(`  Number density     : ${sf6(n)} /m³  (${sf6(convert(n, 'per_m3', 'kmol_m3'))} kmol/m³)`);
 console.log(`  Molar mass         : ${sf6(M)} kg/kmol`);
 if (bp !== null) tempLine(`  Boiling point      `, bp);
 else console.log(`  Boiling point      : N/A (below triple point)`);
-/*
+
 console.log(`\nMole fractions`);
 for (const species of MF_SPECIES) {
     const frac = atm.getMoleFraction(species, z);
-    if (frac > 0) console.log(`  ${species.padEnd(4)}: ${sf6(frac)}`);
+    if (frac > 1e-20) console.log(`  ${species.padEnd(4)}: ${sf6(frac)}`);
 }
-*/

@@ -8,8 +8,9 @@
 // a value in [-56.5, 73.5] is read as °C (the two valid ranges never overlap numerically).
 // Usage: node scripts/atm-test-simple.ts [z_m] [T0_K_or_C] [P0_Pa]
 
-import {getSpeedOfSound, getMeanFreePath, geometricToGeopotential, getViscosity, SEA_LEVEL_TEMP_MIN_K, SEA_LEVEL_TEMP_MAX_K,} from '../src/lib/atmosphere.ts';
+import {getSpeedOfSound, getMeanFreePath, geometricToGeopotential, getViscosity, getScaleHeight, getNumberDensity, SEA_LEVEL_TEMP_MIN_K, SEA_LEVEL_TEMP_MAX_K,} from '../src/lib/atmosphere.ts';
 import {getBoilingPoint} from '../src/lib/water-properties.ts';
+import {convert} from '../src/lib/convert.ts';
 
 const G0 = 9.80665;               // standard gravity (m/s²)
 const R  = 8314.46261815324;      // gas constant J/(kmol·K)
@@ -139,6 +140,8 @@ const sos = getSpeedOfSound(T, M);
 const bp  = getBoilingPoint(P);
 const mfp = getMeanFreePath(P, T);
 const Geo = geometricToGeopotential(z);
+const H_sc = getScaleHeight(T, M, z);
+const n    = getNumberDensity(P, T);
 
 function sf6(v: number): string {
     return parseFloat(v.toPrecision(6)).toString();
@@ -171,5 +174,8 @@ console.log(`  Geopotential alt   : ${sf6(Geo)} m`);
 console.log(`  Speed of sound     : ${sos !== null ? sf6(sos) + ' m/s' : 'N/A'}`);
 console.log(`  Dynamic viscosity  : ${sf6(mu)} Pa·s`);
 console.log(`  Mean free path     : ${sf6(mfp)} m`);
+console.log(`  Scale height       : ${sf6(H_sc)} m`);
+console.log(`  Number density     : ${sf6(n)} /m³  (${sf6(convert(n, 'per_m3', 'kmol_m3'))} kmol/m³)`);
+console.log(`  Molar mass         : ${sf6(M)} kg/kmol`);
 if (bp !== null) tempLine(`  Boiling point      `, bp);
 else console.log(`  Boiling point      : N/A (below triple point)`);

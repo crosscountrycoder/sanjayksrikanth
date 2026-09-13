@@ -262,7 +262,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import * as atm  from '../../../lib/atmosphere.ts';
 	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import * as atmg from '../../../lib/atmosphere-graph.ts';
-	import * as cv   from '../../../lib/convert.ts';
+	import { convert } from '../../../lib/convert.ts';
 
 	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
 
@@ -280,7 +280,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			airOption.disabled = false;
 			return;
 		}
-		const condAlt_m = cv.altToM(condAltVal, condAltUnit);
+		const condAlt_m = convert(condAltVal, condAltUnit, 'm');
 		const H_cond = xVar === 'geopotential' ? condAlt_m : atm.geometricToGeopotential(condAlt_m);
 		const aboveLimit = H_cond > AIR_TEMP_MAX_GEOPOT;
 		airOption.disabled = aboveLimit;
@@ -490,28 +490,28 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if ([condAltVal, slTempVal, slPressVal, xMin, xMax].some(isNaN) || xMin >= xMax) return;
 
 		// Conditions altitude → geopotential
-		const condAlt_m = cv.altToM(condAltVal, condAltUnit);
+		const condAlt_m = convert(condAltVal, condAltUnit, 'm');
 		const H_cond = xVar === 'geopotential' ? condAlt_m : atm.geometricToGeopotential(condAlt_m);
 		const loH = xVar === 'geopotential' ? -5004 : -5000;
 		if (condAlt_m < loH) {
-			const factor = cv.altFromM(1, condAltUnit);
+			const factor = convert(1, 'm', condAltUnit);
 			errCondAlt.textContent = `Altitude must be at least ${parseFloat((loH * factor).toPrecision(6))} ${condAltUnit}.`;
 			return;
 		}
 
 		// Derive T0_K from temp mode
-		const T_input_K = cv.tempToK(slTempVal, slTempUnit);
+		const T_input_K = convert(slTempVal, slTempUnit, 'K');
 		const z_cond = xVar === 'geopotential' ? atm.geopotentialToGeometric(condAlt_m) : condAlt_m;
 		const T0_K = tempMode === 'air' ? atm.getSeaLevelTemperature(z_cond, T_input_K) : T_input_K;
 		const loK = atm.SEA_LEVEL_TEMP_MIN_K, hiK = atm.SEA_LEVEL_TEMP_MAX_K;
 		if (isNaN(T0_K) || T0_K < loK || T0_K > hiK) {
 			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
 			if (tempMode === 'air') {
-				const fmtT = (K: number) => parseFloat(cv.tempFromK(K, slTempUnit).toFixed(3)).toString();
+				const fmtT = (K: number) => parseFloat(convert(K, 'K', slTempUnit).toFixed(3)).toString();
 				const xK = atm.getTemperature(z_cond, hiK);
 				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}.`;
 			} else {
-				const fmt = (K: number) => parseFloat(cv.tempFromK(K, slTempUnit).toPrecision(6)).toString();
+				const fmt = (K: number) => parseFloat(convert(K, 'K', slTempUnit).toPrecision(6)).toString();
 				const lo = fmt(loK), hi = fmt(hiK);
 				errSlTemp.textContent = `Sea-level temperature must be between ${lo} and ${hi} ${unitLabel[slTempUnit]}.`;
 			}
@@ -519,7 +519,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		}
 
 		// Derive P0_Pa from pressure mode
-		const P_input_Pa = cv.pressureToPa(slPressVal, slPressUnit);
+		const P_input_Pa = convert(slPressVal, slPressUnit, 'Pa');
 		let P0_Pa: number;
 		if (pressMode === 'sea-level') {
 			P0_Pa = P_input_Pa;
@@ -535,12 +535,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			return;
 		}
 
-		const xMin_m = cv.altToM(xMin, xUnit);
-		const xMax_m = cv.altToM(xMax, xUnit);
+		const xMin_m = convert(xMin, xUnit, 'm');
+		const xMax_m = convert(xMax, xUnit, 'm');
 		const loX = xVar === 'geopotential' ? -5004 : -5000;
 		const hiX = xVar === 'geopotential' ? 864071 : 1000000;
 		if (xMin_m < loX || xMax_m > hiX) {
-			const factor = cv.altFromM(1, xUnit);
+			const factor = convert(1, 'm', xUnit);
 			const lo = parseFloat((loX * factor).toPrecision(6));
 			const hi = parseFloat((hiX * factor).toPrecision(6));
 			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
@@ -565,7 +565,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const H    = atm.geometricToGeopotential(h_m);
 			const xVal = i === 0 ? xMin
 				: i === geoZ.length - 1 ? xMax
-				: xVar === 'geometric' ? cv.altFromM(h_m, xUnit) : cv.altFromM(H, xUnit);
+				: xVar === 'geometric' ? convert(h_m, 'm', xUnit) : convert(H, 'm', xUnit);
 
 			if (h_m < -5000) { pts.push({ x: xVal, y: null }); continue; }
 
@@ -577,59 +577,59 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			let y: number | null = null;
 			switch (yVar) {
 				case 'pressure':
-					y = cv.pressureFromPa(P_Pa, yUnit); break;
+					y = convert(P_Pa, 'Pa', yUnit); break;
 				case 'altimeter_setting':
-					y = cv.pressureFromPa(atm.getAltimeterSetting(h_m, P_Pa), yUnit);
+					y = convert(atm.getAltimeterSetting(h_m, P_Pa), 'Pa', yUnit);
 					break;
 				case 'sea_level_pressure':
-					y = cv.pressureFromPa(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), yUnit);
+					y = convert(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), 'Pa', yUnit);
 					break;
 				case 'temperature':
-					y = cv.tempFromK(T_K, yUnit); break;
+					y = convert(T_K, 'K', yUnit); break;
 				case 'density':
-					y = cv.densityFromKgM3(rho, yUnit); break;
+					y = convert(rho, 'kg/m3', yUnit); break;
 				case 'pressure_altitude': {
 					const pa = atm.getPressureAltitude(P_Pa);
-					if (!isNaN(pa)) y = cv.altFromM(pa, yUnit);
+					if (!isNaN(pa)) y = convert(pa, 'm', yUnit);
 					break;
 				}
 				case 'density_altitude': {
 					const da = atm.getDensityAltitude(rho);
-					if (!isNaN(da)) y = cv.altFromM(da, yUnit);
+					if (!isNaN(da)) y = convert(da, 'm', yUnit);
 					break;
 				}
 				case 'speed_of_sound': {
 					const sos = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
-					y = cv.speedFromMS(sos, yUnit); break;
+					y = convert(sos, 'm/s', yUnit); break;
 				}
 				case 'scale_height':
-					y = cv.altFromM(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), yUnit); break;
+					y = convert(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), 'm', yUnit); break;
 				case 'viscosity':
-					y = cv.viscosityFromPaS(atm.getViscosity(T_K), yUnit); break;
+					y = convert(atm.getViscosity(T_K), 'Pa·s', yUnit); break;
 				case 'boiling_point': {
-					if (P_Pa >= 611.657) y = cv.tempFromK(getBoilingPoint(P_Pa), yUnit);
+					if (P_Pa >= 611.657) y = convert(getBoilingPoint(P_Pa), 'K', yUnit);
 					break;
 				}
 				case 'geopotential_alt':
-					y = cv.altFromM(H, yUnit); break;
+					y = convert(H, 'm', yUnit); break;
 				case 'geometric_alt':
-					y = cv.altFromM(h_m, yUnit); break;
+					y = convert(h_m, 'm', yUnit); break;
 				case 'partial_pressure': {
 					const mf = ySpecies === 'total' ? 1 : (atm.getMoleFraction(ySpecies, h_m) ?? 0);
 					const pp_Pa = mf * P_Pa;
 					y = yUnit === 'fraction'
 						? mf
-						: cv.pressureFromPa(pp_Pa, yUnit);
+						: convert(pp_Pa, 'Pa', yUnit);
 					break;
 				}
 				case 'molecular_density': {
 					const n_total = atm.getNumberDensity(P_Pa, T_K);
 					const n = ySpecies === 'total' ? n_total : (atm.getMoleFraction(ySpecies, h_m) ?? 0) * n_total;
-					y = cv.numberDensityFromM3(n, yUnit);
+					y = convert(n, 'per_m3', yUnit);
 					break;
 				}
 				case 'mean_free_path':
-					y = cv.mfpFromM(atm.getMeanFreePath(P_Pa, T_K), yUnit); break;
+					y = convert(atm.getMeanFreePath(P_Pa, T_K), 'm', yUnit); break;
 				case 'molar_mass':
 					y = atm.getMolarMass(h_m); break;
 			}
@@ -877,11 +877,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const tempUnit = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
 		const pressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
 		(document.getElementById('cond-alt') as HTMLInputElement).value =
-			parseFloat(cv.altFromM(0, altUnit).toPrecision(6)).toString();
+			parseFloat(convert(0, 'm', altUnit).toPrecision(6)).toString();
 		(document.getElementById('sl-temp') as HTMLInputElement).value =
-			parseFloat(cv.tempFromK(288.15, tempUnit).toPrecision(6)).toString();
+			parseFloat(convert(288.15, 'K', tempUnit).toPrecision(6)).toString();
 		(document.getElementById('sl-pressure') as HTMLInputElement).value =
-			parseFloat(cv.pressureFromPa(101325, pressUnit).toPrecision(6)).toString();
+			parseFloat(convert(101325, 'Pa', pressUnit).toPrecision(6)).toString();
 		generateGraph();
 	});
 

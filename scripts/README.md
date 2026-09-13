@@ -42,6 +42,9 @@ npx tsx scripts/atm-test.ts [z_m] [T0_K] [P0_Pa]
 - Speed of sound (m/s)
 - Dynamic viscosity (Pa·s)
 - Mean free path (m)
+- Scale height (m)
+- Number density (/m³, kmol/m³)
+- Molar mass (kg/kmol)
 - Boiling point (K / °C) — `N/A` below the triple point (611.657 Pa)
 - Mole fractions of all species present above 10<sup>-20</sup>
 
@@ -83,6 +86,9 @@ npx tsx scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
 - Speed of sound (m/s)
 - Dynamic viscosity (Pa·s)
 - Mean free path (m)
+- Scale height (m)
+- Number density (/m³, kmol/m³)
+- Molar mass (kg/kmol)
 - Boiling point (K / °C)
 
 **Model notes:** Geometric altitude is converted to geopotential altitude (H = R_E · z / (R_E + z); R_E = 6,356,766 m) before applying the USSA 1976 

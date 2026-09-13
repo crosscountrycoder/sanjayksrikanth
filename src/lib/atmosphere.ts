@@ -1,5 +1,5 @@
 import { MF_DATA, MF_SPECIES } from './mole-fractions.ts';
-import { tempFromK, pressureFromPa } from './convert.ts';
+import { convert } from './convert.ts';
 
 // ── Section 1: Geodesy ────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ export function getTemperature(z: number, T0_K: number = 288.15): number {
 
 // ── Section 3: Composition and molar mass ────────────────────────────────────
 // Molar mass and mole fractions are read from the pre-computed table in
-// mole-fractions.ts, which covers −6000 m to 1 000 000 m in 1 km steps.
+// mole-fractions.ts, which covers −5000 m to 1000000 m in 1 km steps.
 // Values are linearly interpolated between table rows.
 
 export const R = 8314.46261815324; // J/(kmol·K) — SI 2019; molar masses are in g/mol = kg/kmol
@@ -114,7 +114,7 @@ export function getDensity(P_Pa: number, T_K: number, z: number): number {
 
 // ── Section 4: Pressure integration ──────────────────────────────────────────
 // Hydrostatic equation: dP/dz = −P · M(z) · g(z) / (R · T(z))
-// Unified for all altitudes from −6 km to 1000 km.
+// Unified for all altitudes from −5 km to 1000 km.
 // M(z) is read from the pre-computed table via getMolarMass().
 
 const Z_STEP = 50;   // integration step (m)
@@ -283,8 +283,8 @@ export function getStandardConditionsNote(
     if (isNaN(stdT_K) || isNaN(stdP_Pa)) return null;
 
     const tempUnitLabel = tempUnit === 'C' ? '°C' : tempUnit === 'F' ? '°F' : tempUnit === 'R' ? '°R' : 'K';
-    const T = fmtTemp(tempFromK(stdT_K, tempUnit), tempUnit, 6, false);
-    const P = parseFloat(pressureFromPa(stdP_Pa, pressUnit).toPrecision(6)).toString();
+    const T = fmtTemp(convert(stdT_K, 'K', tempUnit), tempUnit, 6, false);
+    const P = parseFloat(convert(stdP_Pa, 'Pa', pressUnit).toPrecision(6)).toString();
 
     if (!tempNeedsAlt && !pressNeedsAlt) {
         return `Standard sea-level conditions are ${T} ${tempUnitLabel} and ${P} ${pressUnit}.`;

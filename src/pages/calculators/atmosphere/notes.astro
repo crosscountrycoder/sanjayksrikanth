@@ -33,14 +33,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<p>
 	Pressure can be adjusted to sea level in two ways: <b>sea-level pressure</b> and <b>altimeter setting</b>. Sea-level pressure extrapolates the
 	measured pressure to sea level using the measured temperature, altitude, an assumed lapse rate, and the ideal gas law. Altimeter setting instead
-	uses the standard atmosphere: it finds the standard pressure ratio between the given altitude and sea level, then applies that ratio to the
-	measured pressure.
+	finds the standard pressure ratio between the given altitude and sea level, then applies that ratio to the measured pressure.
 	</p>
 	<p>
 	Example: In Denver (elevation 1,656 m / 5,433 ft), a summer day might be 30°C (86°F) with a pressure of 833 hPa. Extrapolating these conditions
 	down to sea level using the standard lapse rate gives 40.761°C (105.370°F) and <b>1,000.62 hPa</b>. The USSA pressure ratio at 1,656 m is 0.818689, 
-	so the altimeter setting is 833 / 0.818689 = <b>1,017.48 hPa</b>. At these conditions, the pressure altitude is 1,622 m, slightly below the actual 
-	elevation because the pressure is slightly above standard. Due to the high temperature, however, the density altitude is much higher at 2,497 m.
+	so the altimeter setting is 833 / 0.818689 = <b>1,017.48 hPa</b> (30.0462 inHg). At these conditions, the pressure altitude is 1,622 m, slightly 
+	below the actual elevation because the pressure is slightly above standard. Due to the high temperature, however, the density altitude is much higher 
+	at 2,497 m.
 	</p>
 	<h2>Geometric versus geopotential altitude</h2>
 	<p>
@@ -51,6 +51,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	</p>
 	<h2>Sources</h2>
 	<ul>
+		<li>Source code for this calculator: <a href="https://github.com/crosscountrycoder/sanjayksrikanth" target="_blank">GitHub</a> (<a href="https://github.com/crosscountrycoder/atmos-model" target="_blank">Python version</a>)</li>
 		<li>U.S. Standard Atmosphere (USSA) formulas from <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a></li>
 		<li><a href="https://gml.noaa.gov/ccgg/trends/">NOAA GML</a>, <a href="https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.1/">NRLMSIS 2.1</a>, <a href="https://ncar.ucar.edu/what-we-offer/models/whole-atmosphere-community-climate-model-waccm">WACCM</a>, 
 			and diffusion models for atmospheric composition</li>
