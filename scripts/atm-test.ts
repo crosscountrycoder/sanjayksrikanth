@@ -28,12 +28,21 @@ if (args[0] === 'verify-mole-fractions') {
 // ── single-point calculator ───────────────────────────────────────────────────
 
 const z    = args[0] !== undefined ? parseFloat(args[0]) : 0;
-const T0   = args[1] !== undefined ? parseFloat(args[1]) : 288.15;
+let   T0   = args[1] !== undefined ? parseFloat(args[1]) : 288.15;
 const P0   = args[2] !== undefined ? parseFloat(args[2]) : 101325;
 
-const dT   = T0 - 288.15;
+// T0 is unambiguous: the valid Celsius range (-56.5 to 73.5) and valid Kelvin range
+// (216.65 to 346.65) never overlap, so a value in the Celsius range must be Celsius.
+if (T0 >= -56.5 && T0 <= 73.5) T0 += 273.15;
+
+if (T0 < atm.SEA_LEVEL_TEMP_MIN_K || T0 > atm.SEA_LEVEL_TEMP_MAX_K) {
+    console.error(`Error: sea-level temperature ${T0} K is outside the valid range ` +
+        `[216.65, 346.65] K (-56.5 to 73.5 °C).`);
+    process.exit(1);
+}
+
 const P    = atm.getPressure(z, P0, T0);
-const T    = atm.getTemperature(z) + dT;
+const T    = atm.getTemperature(z, T0);
 const rho  = atm.getDensity(P, T, z);
 const H    = atm.geometricToGeopotential(z);
 const mu   = atm.getViscosity(T);

@@ -293,6 +293,34 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<label><input type="checkbox" data-var="partial_pressure" data-species="H"> H</label>
 					<label><input type="checkbox" data-var="partial_pressure" data-species="N"> N</label>
 				</div>
+				<div class="var-row pp-header">
+					<span class="pp-label">Number density</span>
+					<select id="unit-molecular_density">
+						<option value="per_m3" selected>/m³</option>
+						<option value="per_L">/L</option>
+						<option value="per_ft3">/ft³</option>
+						<option value="mol_m3">mol/m³</option>
+						<option value="kmol_m3">kmol/m³ (mol/L)</option>
+						<option value="lbmol_ft3">lbmol/ft³</option>
+					</select>
+				</div>
+				<div class="pp-species">
+					<label><input type="checkbox" data-var="molecular_density" data-species="total"> Total</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="N2"> N₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="O2"> O₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Ar"> Ar</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="CO2"> CO₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Ne"> Ne</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="He"> He</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="CH4"> CH₄</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Kr"> Kr</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="H2"> H₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="N2O"> N₂O</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Xe"> Xe</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="O"> O</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="H"> H</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="N"> N</label>
+				</div>
 				<div class="var-row">
 					<input type="checkbox" id="chk-boiling_point" data-var="boiling_point" />
 					<label for="chk-boiling_point">Boiling point of water</label>
@@ -511,6 +539,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	}
 
 	const SPECIES_DISPLAY: Record<string, string> = {
+		total: 'Total',
 		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂',
 		Ne: 'Ne', He: 'He', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
 		O: 'O', H: 'H', N: 'N',
@@ -530,6 +559,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		geopotential_alt:  'Geopotential altitude',
 		geometric_alt:     'Geometric altitude',
 		partial_pressure:  'Partial pressure',
+		molecular_density: 'Number density',
 		molar_mass:        'Molar mass',
 		mean_free_path:    'Mean free path',
 		boiling_point:     'Boiling point of water',
@@ -555,6 +585,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				? unit === 'fraction'
 					? `Mole fraction ${SPECIES_DISPLAY[species]}`
 					: `Partial pressure (${unitLabel}) ${SPECIES_DISPLAY[species]}`
+				: key === 'molecular_density'
+				? `Number density (${unitLabel}) ${SPECIES_DISPLAY[species]}`
 				: `${Y_LABELS[key]} (${unitLabel})`;
 			return { key, unit, species, label };
 		});
@@ -732,6 +764,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						const pp_Pa = mf * P_Pa;
 						if (v.unit === 'fraction') return mf;
 						return cv.pressureFromPa(pp_Pa, v.unit);
+					}
+					case 'molecular_density': {
+						const n_total = atm.getNumberDensity(P_Pa, T_K);
+						const n = v.species === 'total' ? n_total : (atm.getMoleFraction(v.species, h_m) ?? 0) * n_total;
+						return cv.numberDensityFromM3(n, v.unit);
 					}
 					case 'molar_mass':         return atm.getMolarMass(h_m);
 					case 'mean_free_path':     return cv.mfpFromM(atm.getMeanFreePath(P_Pa, T_K), v.unit);

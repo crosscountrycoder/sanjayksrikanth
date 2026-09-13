@@ -7,7 +7,7 @@ scientific calculators.
 
 ### Atmosphere (`/calculators/atmosphere/`)
 
-A USSA 1976 atmosphere calculator covering −6 km to 1000 km geometric altitude with non-standard temperature and pressure support. Outputs air 
+A USSA 1976 atmosphere calculator covering −5 km to 1000 km geometric altitude with non-standard temperature and pressure support. Outputs air 
 pressure, temperature, density, altimeter setting, pressure altitude, density altitude, geopotential altitude, speed of sound, dynamic viscosity, 
 mean free path, boiling point, and species mole fractions.
 

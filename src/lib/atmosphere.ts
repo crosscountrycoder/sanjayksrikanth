@@ -315,9 +315,14 @@ export function getViscosity(T_K: number): number {
     return 1.458e-6 * T_K ** 1.5 / (T_K + 110.4);
 }
 
+// Number density (particles/m³) via the ideal gas law: n = P/(k_B·T).
+export function getNumberDensity(P_Pa: number, T_K: number): number {
+    return P_Pa / (k_B * T_K);
+}
+
 const SIGMA_MFP = 3.65e-10;
 export function getMeanFreePath(P_Pa: number, T_K: number): number {
-    const n = P_Pa / (k_B * T_K);
+    const n = getNumberDensity(P_Pa, T_K);
     return 1 / (Math.SQRT2 * Math.PI * SIGMA_MFP * SIGMA_MFP * n);
 }
 

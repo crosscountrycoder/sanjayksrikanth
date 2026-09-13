@@ -235,6 +235,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="kn">knots</option>
 						</select>
 					</div>
+					<p class="error" id="err-speed-of-sound"></p>
 				</div>
 
 				<div class="field">
@@ -314,6 +315,38 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
+					<label data-tooltip="Number (or moles) of particles of the selected gas species per unit volume; select Total for all species combined.">Number density</label>
+					<div class="output-row">
+						<span id="out-molecular-density">—</span>
+						<select id="out-molecular-density-unit">
+							<option value="per_m3" selected>/m³</option>
+							<option value="per_L">/L</option>
+							<option value="per_ft3">/ft³</option>
+							<option value="mol_m3">mol/m³</option>
+							<option value="kmol_m3">kmol/m³ (mol/L)</option>
+							<option value="lbmol_ft3">lbmol/ft³</option>
+						</select>
+						<select id="out-molecular-density-species">
+							<option value="total" selected>Total</option>
+							<option value="N2">N₂</option>
+							<option value="O2">O₂</option>
+							<option value="Ar">Ar</option>
+							<option value="CO2">CO₂</option>
+							<option value="Ne">Ne</option>
+							<option value="He">He</option>
+							<option value="CH4">CH₄</option>
+							<option value="Kr">Kr</option>
+							<option value="H2">H₂</option>
+							<option value="N2O">N₂O</option>
+							<option value="Xe">Xe</option>
+							<option value="O">O</option>
+							<option value="H">H</option>
+							<option value="N">N</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
 					<label data-tooltip="Temperature at which water boils at the current atmospheric pressure; falls below 100°C at altitude.">Boiling point of water</label>
 					<div class="output-row">
 						<span id="out-boiling-point">—</span>
@@ -324,6 +357,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="R">°R</option>
 						</select>
 					</div>
+					<p class="error" id="err-boiling-point"></p>
 				</div>
 			</div>
 		</section>
@@ -546,10 +580,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const outputIds = [
 			'out-pressure', 'out-press-out-2', 'out-temperature', 'out-density',
 			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-scale-height', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
-			'out-mfp', 'out-molar-mass', 'out-partial-pressure',
+			'out-mfp', 'out-molar-mass', 'out-partial-pressure', 'out-molecular-density',
 		];
 		if (!validate()) {
 			for (const id of outputIds) (document.getElementById(id) as HTMLElement).textContent = '—';
+			(document.getElementById('err-boiling-point') as HTMLElement).textContent = '';
+			(document.getElementById('err-speed-of-sound') as HTMLElement).textContent = '';
 			return;
 		}
 
@@ -622,6 +658,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const sos_ms  = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
 		const sosUnit = (document.getElementById('out-speed-of-sound-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-speed-of-sound') as HTMLElement).textContent = fmt6(cv.speedFromMS(sos_ms, sosUnit));
+		(document.getElementById('err-speed-of-sound') as HTMLElement).textContent = P_Pa < 0.01
+			? 'At this pressure, air is too thin for normal sound propagation. The displayed sound speed is theoretical.'
+			: '';
 
 		const H_scale  = atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m);
 		const shUnit   = (document.getElementById('out-scale-height-unit') as HTMLSelectElement).value;
@@ -633,9 +672,21 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const bp_K = getBoilingPoint(P_Pa);
 		const bpEl = document.getElementById('out-boiling-point') as HTMLElement;
-		bpEl.textContent = bp_K >= 273.16
-			? (() => { const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value; return atm.fmtTemp(cv.tempFromK(bp_K, u), u); })()
-			: 'N/A';
+		const errBoilingPoint = document.getElementById('err-boiling-point') as HTMLElement;
+		if (bp_K >= 273.16) {
+			const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value;
+			bpEl.textContent = atm.fmtTemp(cv.tempFromK(bp_K, u), u);
+			errBoilingPoint.textContent = '';
+		} else {
+			bpEl.textContent = 'N/A';
+			// "Air pressure" is the raw input field when pressMode === 'air'; otherwise it's
+			// output-1, which uses out-pressure-unit (see updatePressureLabels()).
+			const airPressureUnit = pressMode === 'air'
+				? (document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value
+				: (document.getElementById('out-pressure-unit') as HTMLSelectElement).value;
+			const triplePoint = fmtBound(cv.pressureFromPa(611.657, airPressureUnit));
+			errBoilingPoint.textContent = `Air pressure is below water's triple point (${triplePoint} ${airPressureUnit})`;
+		}
 
 		const geoAltLbl = document.getElementById('out-geo-alt-label') as HTMLElement;
 		geoAltLbl.textContent = useGeopot ? 'Geometric altitude' : 'Geopotential altitude';
@@ -655,6 +706,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			: fmt6(cv.pressureFromPa(pp_Pa, ppUnit));
 		(document.getElementById('out-partial-pressure') as HTMLElement).textContent = ppVal;
 
+		const mdSpecies = (document.getElementById('out-molecular-density-species') as HTMLSelectElement).value;
+		const mdUnit    = (document.getElementById('out-molecular-density-unit') as HTMLSelectElement).value;
+		const n_total   = atm.getNumberDensity(P_Pa, T_K);
+		const n         = mdSpecies === 'total' ? n_total : (atm.getMoleFraction(mdSpecies, h_m) ?? 0) * n_total;
+		(document.getElementById('out-molecular-density') as HTMLElement).textContent = fmt6(cv.numberDensityFromM3(n, mdUnit));
+
 		const mfpUnit = (document.getElementById('out-mfp-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-mfp') as HTMLElement).textContent = fmt6(cv.mfpFromM(atm.getMeanFreePath(P_Pa, T_K), mfpUnit));
 
@@ -670,6 +727,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'out-pressure-altitude-unit', 'out-density-altitude-unit', 'out-speed-of-sound-unit', 'out-scale-height-unit',
 		'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
 		'out-mfp-unit', 'out-partial-pressure-species', 'out-partial-pressure-unit',
+		'out-molecular-density-species', 'out-molecular-density-unit',
 	];
 
 	for (const id of inputIds) {
@@ -811,7 +869,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit',
 		'out-density-unit', 'out-pressure-altitude-unit', 'out-density-altitude-unit',
 		'out-speed-of-sound-unit', 'out-scale-height-unit', 'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
-		'out-mfp-unit', 'out-partial-pressure-unit',
+		'out-mfp-unit', 'out-partial-pressure-unit', 'out-molecular-density-unit',
 	];
 	for (const id of unitDropdownIds) {
 		document.getElementById(id)!.addEventListener('change', () => {

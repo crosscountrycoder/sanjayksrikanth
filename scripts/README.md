@@ -14,7 +14,7 @@ Full atmosphere model test using `src/lib/atmosphere.ts`. Supports a special sub
 npx tsx scripts/atm-test.ts verify-mole-fractions
 ```
 
-Checks that every row in `src/lib/mole-fractions.ts` has species mole fractions summing to 1 within 1 × 10<sup>-13</sup>. Exits 0 on success, 1 if any row fails.
+Checks that every row in `src/lib/mole-fractions.ts` has species mole fractions summing to 1 within 1 × 10<sup>-9</sup>. Exits 0 on success, 1 if any row fails.
 
 ### Point calculator
 
@@ -25,8 +25,10 @@ npx tsx scripts/atm-test.ts [z_m] [T0_K] [P0_Pa]
 | Argument | Description | Default |
 | :------- | :---------- | :------ |
 | `z_m`    | Geometric altitude (m)    | `0` |
-| `T0_K`   | Sea-level temperature (K) | `288.15` |
+| `T0_K`   | Sea-level temperature (K or °C)* | `288.15` |
 | `P0_Pa`  | Sea-level pressure (Pa)   | `101325` |
+
+\* If the input temperature is between `-56.5` and `73.5`, it will be interpreted as being in degrees Celsius.
 
 **Outputs** (6 significant figures, temperatures also in °C):
 
@@ -40,12 +42,12 @@ npx tsx scripts/atm-test.ts [z_m] [T0_K] [P0_Pa]
 - Speed of sound (m/s)
 - Dynamic viscosity (Pa·s)
 - Mean free path (m)
-- Boiling point (K / °C) — `N/A` below the triple point (611.657 Pa)
+- Boiling point (K / °C) - `N/A` below the triple point (611.657 Pa)
 - Mole fractions of all species present above 10<sup>-20</sup>
 
 **Model notes:** Pressure is integrated via RK4 at 50 m steps using variable molar mass and gravity. Molar mass and species fractions are read from 
-a 1 km-step pre-computed table and linearly interpolated. Valid range: −6 km to 1000 km geometric. Non-standard T0 shifts all temperatures by dT = T0 
-− 288.15 K.
+a 1 km-step pre-computed table and linearly interpolated. Valid range: −6 km to 1000 km geometric. Non-standard T0 shifts all temperatures by dT = 
+T0 - 288.15 K.
 
 ---
 
@@ -55,7 +57,7 @@ Independent USSA 1976 reference implementation using the standard analytical for
 piecewise-linear temperature layers in geopotential altitude, with no numerical integration. Intended for cross-checking `atm-test.ts` results 
 against the USSA 1976 standard.
 
-**Valid range: −5 km to 86 km geometric altitude.**
+**Valid range: -5 km to 86 km geometric altitude.**
 
 ```sh
 npx tsx scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
@@ -64,8 +66,10 @@ npx tsx scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
 | Argument | Description | Default |
 | :------- | :---------- | :------ |
 | `z_m`    | Geometric altitude (m) | `0` |
-| `T0_K`   | Sea-level temperature (K) | `288.15` |
+| `T0_K`   | Sea-level temperature (K or °C)* | `288.15` |
 | `P0_Pa`  | Sea-level pressure (Pa) | `101325` |
+
+\* If the input temperature is between `-56.5` and `73.5`, it will be interpreted as being in degrees Celsius.
 
 **Outputs** (6 significant figures, temperatures also in °C):
 
@@ -81,9 +85,9 @@ npx tsx scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
 - Mean free path (m)
 - Boiling point (K / °C)
 
-**Model notes:** Geometric altitude is converted to geopotential altitude (H = R_E · z / (R_E + z), R_E = 6 356 766 m) before applying the USSA 1976 
+**Model notes:** Geometric altitude is converted to geopotential altitude (H = R_E · z / (R_E + z); R_E = 6,356,766 m) before applying the USSA 1976 
 geopotential layer formulas. Pressure and density altitude are found by binary search back in geometric altitude. Non-standard T0 shifts tropospheric
-temperatures by dT = T0 − 288.15 K up to the altitude where T = 216.65 K (-56.5°C), where temperature stops decreasing.
+temperatures by dT = T0 - 288.15 K up to the altitude where T = 216.65 K (-56.5°C), where temperature stops decreasing.
 
 ### USSA 1976 temperature layers (geopotential altitude)
 
@@ -102,6 +106,6 @@ temperatures by dT = T0 − 288.15 K up to the altitude where T = 216.65 K (-56.
 Pressure formulas per layer (T_b includes the dT offset):
 
 - **Gradient layer** (L ≠ 0): P = P_b · (T_b / (T_b + L · ΔH))^(M · g<sub>0</sub> / (R · L))
-- **Isothermal layer** (L = 0): P = P_b · exp(−M · g<sub>0</sub> · ΔH / (R · T_b))
+- **Isothermal layer** (L = 0): P = P_b · exp(-M · g<sub>0</sub> · ΔH / (R · T_b))
 
-where ΔH = H − H_base, g<sub>0</sub> = 9.80665 m/s<sup>2</sup>, M = 28.9659 kg/kmol, R = 8314.46261815324 J/(kmol·K).
+where ΔH = H - H_base, g<sub>0</sub> = 9.80665 m/s<sup>2</sup>, M = 28.9659 kg/kmol, R = 8314.46261815324 J/(kmol·K).

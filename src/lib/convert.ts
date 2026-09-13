@@ -75,6 +75,18 @@ export function mfpFromM(m: number, unit: string): number {
 	     : m;
 }
 
+// Number/molecular density (from particles/m³)
+const AVOGADRO     = 6.02214076e23; // 1/mol — SI 2019 exact
+const LBMOL_TO_MOL = 453.59237;     // mol per lbmol
+export function numberDensityFromM3(n: number, unit: string): number {
+	return unit === 'per_L'     ? n * 1e-3
+	     : unit === 'per_ft3'   ? n * 0.028316846592
+	     : unit === 'mol_m3'    ? n / AVOGADRO
+	     : unit === 'kmol_m3'   ? n / AVOGADRO / 1000
+	     : unit === 'lbmol_ft3' ? n / AVOGADRO * 0.028316846592 / LBMOL_TO_MOL
+	     : n;
+}
+
 // Dynamic viscosity (from Pa·s)
 export function viscosityFromPaS(mu: number, unit: string): number {
 	return unit === 'μPa·s'    ? mu * 1e6

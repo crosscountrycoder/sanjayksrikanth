@@ -133,6 +133,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<option value="mean_free_path">Mean free path</option>
 					<option value="scale_height">Scale height</option>
 					<option value="partial_pressure">Partial pressure</option>
+					<option value="molecular_density">Number density</option>
 					<option value="boiling_point">Boiling point of water</option>
 				</select>
 			</div>
@@ -153,6 +154,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<option value="O">O</option>
 					<option value="H">H</option>
 					<option value="N">N</option>
+					<option value="total">Total</option>
 				</select>
 			</div>
 			<div class="field">
@@ -369,12 +371,20 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		partial_pressure: [...PRESSURE_UNITS, { value: 'fraction', label: 'mole fraction' }],
 		mean_free_path:   MFP_UNITS,
 		molar_mass:       [{ value: 'g/mol', label: 'g/mol' }],
+		molecular_density: [
+			{ value: 'per_m3',     label: '/m³' },
+			{ value: 'per_L',      label: '/L' },
+			{ value: 'per_ft3',    label: '/ft³' },
+			{ value: 'mol_m3',     label: 'mol/m³' },
+			{ value: 'kmol_m3',    label: 'kmol/m³ (mol/L)' },
+			{ value: 'lbmol_ft3',  label: 'lbmol/ft³' },
+		],
 	};
 
 	const SPECIES_DISPLAY: Record<string, string> = {
 		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂',
 		Ne: 'Ne', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
-		O: 'O', He: 'He', H: 'H',
+		O: 'O', He: 'He', H: 'H', N: 'N', total: 'Total',
 	};
 
 	const Y_LABELS: Record<string, string> = {
@@ -394,6 +404,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		partial_pressure:  'Partial pressure',
 		mean_free_path:    'Mean free path',
 		molar_mass:        'Molar mass',
+		molecular_density: 'Number density',
 	};
 
 	function isLogDisabled(): boolean {
@@ -421,8 +432,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			sel.appendChild(o);
 		}
 		if (Y_UNITS[yVar].some(o => o.value === prev)) sel.value = prev;
-		(document.getElementById('y-species-field') as HTMLElement).style.display =
-			yVar === 'partial_pressure' ? '' : 'none';
+		const speciesRelevant = yVar === 'partial_pressure' || yVar === 'molecular_density';
+		(document.getElementById('y-species-field') as HTMLElement).style.display = speciesRelevant ? '' : 'none';
+		if (yVar === 'molecular_density') (document.getElementById('y-species') as HTMLSelectElement).value = 'total';
 		updateLogCheckbox();
 	}
 
@@ -603,11 +615,17 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				case 'geometric_alt':
 					y = cv.altFromM(h_m, yUnit); break;
 				case 'partial_pressure': {
-					const mf = atm.getMoleFraction(ySpecies, h_m) ?? 0;
+					const mf = ySpecies === 'total' ? 1 : (atm.getMoleFraction(ySpecies, h_m) ?? 0);
 					const pp_Pa = mf * P_Pa;
 					y = yUnit === 'fraction'
 						? mf
 						: cv.pressureFromPa(pp_Pa, yUnit);
+					break;
+				}
+				case 'molecular_density': {
+					const n_total = atm.getNumberDensity(P_Pa, T_K);
+					const n = ySpecies === 'total' ? n_total : (atm.getMoleFraction(ySpecies, h_m) ?? 0) * n_total;
+					y = cv.numberDensityFromM3(n, yUnit);
 					break;
 				}
 				case 'mean_free_path':
@@ -671,6 +689,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				? yUnit === 'fraction'
 					? `Mole fraction ${SPECIES_DISPLAY[ySpecies]}`
 					: `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
+				: yVar === 'molecular_density'
+				? `Number density (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
 				: `${Y_LABELS[yVar]} (${yUnitLabel})`;
 			const xLabel = altOnY ? varLabel : altLabel;
 			const yLabel = altOnY ? altLabel : varLabel;
@@ -752,6 +772,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const altLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
 		const varLabel = yVar === 'partial_pressure'
 			? `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
+			: yVar === 'molecular_density'
+			? `Number density (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
 			: `${Y_LABELS[yVar]} (${yUnitLabel})`;
 		const xLabel = altOnY ? varLabel : altLabel;
 		const yLabel = altOnY ? altLabel : varLabel;
