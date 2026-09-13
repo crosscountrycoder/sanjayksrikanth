@@ -22,7 +22,9 @@ src/
   lib/
     atmosphere.ts          — core atmosphere model (pressure, temperature, composition, derived quantities)
     atmosphere-graph.ts    — profile builder optimized for graph rendering
-    mole-fractions.ts      — pre-computed composition table (−6 km to 1000 km, 1 km steps)
+    convert.ts             — unit conversion helpers
+    water-properties.ts    — boiling point, vapor pressure, humidity/dew point
+    mole-fractions.ts      — pre-computed composition table (−5 km to 1000 km, 1 km steps)
   pages/
     index.astro            — home page / biography
     calculators/
