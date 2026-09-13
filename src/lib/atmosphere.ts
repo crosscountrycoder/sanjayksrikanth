@@ -1,4 +1,5 @@
 import { MF_DATA, MF_SPECIES } from './mole-fractions.ts';
+import { tempFromK, pressureFromPa } from './convert.ts';
 
 // ── Section 1: Geodesy ────────────────────────────────────────────────────────
 
@@ -38,11 +39,12 @@ const TEMP_LAYERS = [
 
 const TROPOPAUSE_T = 216.65;   // K (-56.5 °C) — floor of the sea-level-driven layer
 const LAPSE_RATE   = 6.5 / 1000; // K/m
-export const SEA_LEVEL_TEMP_MIN_C = -56.5;
-export const SEA_LEVEL_TEMP_MAX_C = 73.5;
+const EPS = 1e-9; // floating-point slack for boundary comparisons
+export const SEA_LEVEL_TEMP_MIN_K = 216.65 - EPS; // -56.5 °C
+export const SEA_LEVEL_TEMP_MAX_K = 346.65 + EPS; // 73.5 °C
 
 export function getTemperature(z: number, T0_K: number = 288.15): number {
-    if (T0_K < SEA_LEVEL_TEMP_MIN_C + 273.15 || T0_K > SEA_LEVEL_TEMP_MAX_C + 273.15) return NaN;
+    if (T0_K < SEA_LEVEL_TEMP_MIN_K || T0_K > SEA_LEVEL_TEMP_MAX_K) return NaN;
     if (z > 86000) {
         if (z < 91000)  return 186.8673;
         if (z < 110000) { const b = (z - 91000) / 19942.9; return 263.1905 - 76.3232 * Math.sqrt(1 - b * b); }
@@ -153,13 +155,12 @@ export function getPressure(z: number, P0: number, T0_K: number): number {
 // the sea-level temperature that produces it. Only solvable at or below 20 km
 // geopotential (T0 has no effect above that), and only for temperatures that
 // are actually reachable (>= 216.65 K, the tropopause floor).
-const EPS = 1e-6; // floating-point slack for boundary comparisons
 
 export function getSeaLevelTemperature(z: number, T_K: number): number {
     const H = geometricToGeopotential(z);
-    if (H > 20000 + EPS || T_K < TROPOPAUSE_T - EPS) return NaN;
+    if (H > 20000 || T_K < SEA_LEVEL_TEMP_MIN_K) return NaN;
     const T0_K = T_K + LAPSE_RATE * H;
-    if (T0_K < SEA_LEVEL_TEMP_MIN_C + 273.15 - EPS || T0_K > SEA_LEVEL_TEMP_MAX_C + 273.15 + EPS) return NaN;
+    if (T0_K < SEA_LEVEL_TEMP_MIN_K || T0_K > SEA_LEVEL_TEMP_MAX_K) return NaN;
     return T0_K;
 }
 
@@ -203,7 +204,9 @@ function _bsearchDecreasing(table: Float64Array, value: number): number {
 }
 
 // Pressure altitude: altitude in the standard atmosphere with pressure P_Pa.
+// Returns NaN if that altitude would fall outside -5 km to 1000 km.
 export function getPressureAltitude(P_Pa: number): number {
+    if (P_Pa > _stdP[0] || P_Pa < _stdP[_STD_N - 1]) return NaN;
     const i    = _bsearchDecreasing(_stdP, P_Pa);
     const z_lo = Z_MIN + i * Z_STEP;
     const P_lo = _stdP[i];
@@ -216,7 +219,9 @@ export function getPressureAltitude(P_Pa: number): number {
 }
 
 // Density altitude: altitude in the standard atmosphere with density rho.
+// Returns NaN if that altitude would fall outside -5 km to 1000 km.
 export function getDensityAltitude(rho: number): number {
+    if (rho > _stdRho[0] || rho < _stdRho[_STD_N - 1]) return NaN;
     const i    = _bsearchDecreasing(_stdRho, rho);
     const z_lo = Z_MIN + i * Z_STEP;
     const P_lo = _stdP[i];
@@ -229,8 +234,80 @@ export function getDensityAltitude(rho: number): number {
     return z_lo + lo;
 }
 
+// Standard-atmosphere pressure (Pa) at geometric altitude z, read directly from the
+// precomputed table (O(1) interpolation, unlike getPressure which re-integrates from
+// scratch). Returns NaN outside -5 km to 1000 km.
+export function getStandardPressure(z: number): number {
+    if (z < Z_MIN || z > Z_MAX) return NaN;
+    const idx_f = (z - Z_MIN) / Z_STEP;
+    const idx   = Math.min(Math.floor(idx_f), _STD_N - 2);
+    const frac  = idx_f - idx;
+    return _stdP[idx] + frac * (_stdP[idx + 1] - _stdP[idx]);
+}
+
+// Formats a temperature value for display: 6 significant figures counted against the
+// *absolute* temperature (Kelvin for °C/K, Rankine for °F/°R), not against the display
+// value directly — this is why an ordinary temperature like 15 °C or -17.4745 °C renders
+// with 3 decimal places rather than 6 significant digits of its own magnitude. Shared by
+// all three atmosphere calculator pages (calculator, table, graph) to avoid duplicating it.
+// trailingZeros (default true) controls whether e.g. 15 renders as "15.000" or "15".
+export function fmtTemp(v: number, unit: string, sigFigs = 6, trailingZeros = true): string {
+    if (unit === 'K' || unit === 'R') {
+        const s = v.toPrecision(sigFigs);
+        return trailingZeros ? s : parseFloat(s).toString();
+    }
+    const T_abs = v + (unit === 'C' ? 273.15 : 459.67);
+    const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
+    const s = v.toFixed(digits);
+    return trailingZeros ? s : parseFloat(s).toString();
+}
+
+// Builds the "Standard conditions" hint shown near the sea-level temperature/pressure
+// inputs. When a field is in "Air temperature"/"Air pressure" mode, its standard-atmosphere
+// reference value depends on altitude rather than always being 15 °C / 1 atm, so the note
+// is phrased accordingly. Returns null if an altitude-dependent value is needed but z is
+// invalid or outside the model's range.
+export function getStandardConditionsNote(
+    z: number,
+    tempMode: 'sea-level' | 'air',
+    pressMode: 'sea-level' | 'air' | 'altimeter',
+    tempUnit: string,
+    pressUnit: string,
+): string | null {
+    const tempNeedsAlt  = tempMode === 'air';
+    const pressNeedsAlt = pressMode === 'air';
+    if ((tempNeedsAlt || pressNeedsAlt) && isNaN(z)) return null;
+
+    const stdT_K  = tempNeedsAlt  ? getTemperature(z) : 288.15;
+    const stdP_Pa = pressNeedsAlt ? getStandardPressure(z) : 101325;
+    if (isNaN(stdT_K) || isNaN(stdP_Pa)) return null;
+
+    const tempUnitLabel = tempUnit === 'C' ? '°C' : tempUnit === 'F' ? '°F' : tempUnit === 'R' ? '°R' : 'K';
+    const T = fmtTemp(tempFromK(stdT_K, tempUnit), tempUnit, 6, false);
+    const P = parseFloat(pressureFromPa(stdP_Pa, pressUnit).toPrecision(6)).toString();
+
+    if (!tempNeedsAlt && !pressNeedsAlt) {
+        return `Standard sea-level conditions are ${T} ${tempUnitLabel} and ${P} ${pressUnit}.`;
+    }
+    if (tempNeedsAlt && pressNeedsAlt) {
+        return `Standard conditions at this altitude are ${T} ${tempUnitLabel} and ${P} ${pressUnit}.`;
+    }
+    if (pressNeedsAlt) {
+        return `Standard sea-level temperature is ${T} ${tempUnitLabel}; standard pressure at this altitude is ${P} ${pressUnit}.`;
+    }
+    const pressPhrase = pressMode === 'altimeter' ? 'altimeter setting' : 'sea level pressure';
+    return `Standard air temperature at this altitude is ${T} ${tempUnitLabel}; standard ${pressPhrase} is ${P} ${pressUnit}.`;
+}
+
 export function getSpeedOfSound(T_K: number, M: number): number {
     return Math.sqrt(1.4 * R * T_K / M);
+}
+
+// Atmospheric scale height (m): RT/(Mg) — the altitude over which pressure/density would
+// decay by a factor of e if temperature, molar mass, and gravity stayed constant at their
+// values at z. Uses the local gravity at z, not standard sea-level gravity.
+export function getScaleHeight(T_K: number, M: number, z: number): number {
+    return R * T_K / (M * _g(z));
 }
 
 // Sutherland's formula for dynamic viscosity of air (Pa·s).

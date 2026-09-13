@@ -193,6 +193,33 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					</select>
 				</div>
 				<div class="var-row">
+					<input type="checkbox" id="chk-geopotential_alt" data-var="geopotential_alt" />
+					<label for="chk-geopotential_alt">Geopotential altitude</label>
+					<select id="unit-geopotential_alt">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-geometric_alt" data-var="geometric_alt" />
+					<label for="chk-geometric_alt">Geometric altitude</label>
+					<select id="unit-geometric_alt">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-molar_mass" data-var="molar_mass" />
+					<label for="chk-molar_mass">Molar mass</label>
+					<select id="unit-molar_mass">
+						<option value="g/mol" selected>g/mol</option>
+					</select>
+				</div>
+				<div class="var-row">
 					<input type="checkbox" id="chk-speed_of_sound" data-var="speed_of_sound" />
 					<label for="chk-speed_of_sound">Speed of sound</label>
 					<select id="unit-speed_of_sound">
@@ -214,26 +241,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					</select>
 				</div>
 				<div class="var-row">
-					<input type="checkbox" id="chk-geopotential_alt" data-var="geopotential_alt" />
-					<label for="chk-geopotential_alt">Geopotential altitude</label>
-					<select id="unit-geopotential_alt">
-						<option value="m" selected>m</option>
-						<option value="ft">ft</option>
-						<option value="mi">mi</option>
-						<option value="km">km</option>
-					</select>
-				</div>
-				<div class="var-row">
-					<input type="checkbox" id="chk-geometric_alt" data-var="geometric_alt" />
-					<label for="chk-geometric_alt">Geometric altitude</label>
-					<select id="unit-geometric_alt">
-						<option value="m" selected>m</option>
-						<option value="ft">ft</option>
-						<option value="mi">mi</option>
-						<option value="km">km</option>
-					</select>
-				</div>
-				<div class="var-row">
 					<input type="checkbox" id="chk-mean_free_path" data-var="mean_free_path" />
 					<label for="chk-mean_free_path">Mean free path</label>
 					<select id="unit-mean_free_path">
@@ -248,10 +255,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					</select>
 				</div>
 				<div class="var-row">
-					<input type="checkbox" id="chk-molar_mass" data-var="molar_mass" />
-					<label for="chk-molar_mass">Molar mass</label>
-					<select id="unit-molar_mass">
-						<option value="g/mol" selected>g/mol</option>
+					<input type="checkbox" id="chk-scale_height" data-var="scale_height" />
+					<label for="chk-scale_height">Scale height</label>
+					<select id="unit-scale_height">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
 					</select>
 				</div>
 				<div class="var-row pp-header">
@@ -515,6 +525,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		pressure_altitude: 'Pressure altitude',
 		density_altitude:  'Density altitude',
 		speed_of_sound:    'Speed of sound',
+		scale_height:      'Scale height',
 		viscosity:         'Dynamic viscosity',
 		geopotential_alt:  'Geopotential altitude',
 		geometric_alt:     'Geometric altitude',
@@ -553,13 +564,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		return parseFloat(v.toPrecision(6)).toString();
 	}
 
-	function fmtTemp(v: number, unit: string, sigFigs = 6): string {
-		if (unit === 'K' || unit === 'R') return v.toPrecision(sigFigs);
-		const T_abs = v + (unit === 'C' ? 273.15 : 459.67);
-		const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
-		return v.toFixed(digits);
-	}
-
 	// Altitude-derived inversions can produce floating-point artifacts (~1e-8 m) when the
 	// true answer is exactly 0. Snap those to 0 before formatting.
 	const SNAP_ZERO_KEYS = new Set(['pressure_altitude', 'density_altitude', 'geopotential_alt', 'geometric_alt']);
@@ -567,7 +571,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	function fmtY(v: number, key: string, unit: string): string {
 		const sci = (document.getElementById('sci-notation') as HTMLInputElement).checked;
 		if (sci) return v.toExponential(5);
-		if (key === 'temperature' || key === 'boiling_point') return fmtTemp(v, unit);
+		if (key === 'temperature' || key === 'boiling_point') return atm.fmtTemp(v, unit);
 		if (SNAP_ZERO_KEYS.has(key) && Math.abs(v) < 5e-7) return '0';
 		return v.toPrecision(6);
 	}
@@ -638,7 +642,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const T_input_K = cv.tempToK(slTempVal, slTempUnit);
 		const z_cond = xVar === 'geopotential' ? atm.geopotentialToGeometric(condAlt_m) : condAlt_m;
 		const T0_K = tempMode === 'air' ? atm.getSeaLevelTemperature(z_cond, T_input_K) : T_input_K;
-		const loK = atm.SEA_LEVEL_TEMP_MIN_C + 273.15, hiK = atm.SEA_LEVEL_TEMP_MAX_C + 273.15;
+		const loK = atm.SEA_LEVEL_TEMP_MIN_K, hiK = atm.SEA_LEVEL_TEMP_MAX_K;
 		if (isNaN(T0_K) || T0_K < loK || T0_K > hiK) {
 			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
 			if (tempMode === 'air') {
@@ -664,19 +668,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const P_at_cond = P_input_Pa * atm.getPressure(z_cond, 1, 288.15);
 			P0_Pa = atm.getSeaLevelPressure(z_cond, P_at_cond, T0_K);
 		}
-		const fmtP = (Pa: number) => fmt6(cv.pressureFromPa(Pa, slPressUnit));
-		if (pressMode === 'altimeter') {
-			if (P_input_Pa < 0.5 * 101325 || P_input_Pa > 1.5 * 101325) {
-				errSlPressure.textContent = `Altimeter setting must be between ${fmtP(0.5 * 101325)} and ${fmtP(1.5 * 101325)} ${slPressUnit}.`;
-				thead.innerHTML = ''; tbody.innerHTML = '';
-				return;
-			}
-		} else {
-			if (P0_Pa < 0.5 * 101325 || P0_Pa > 1.5 * 101325) {
-				errSlPressure.textContent = `Sea-level pressure must be between ${fmtP(0.5 * 101325)} and ${fmtP(1.5 * 101325)} ${slPressUnit}.`;
-				thead.innerHTML = ''; tbody.innerHTML = '';
-				return;
-			}
+		if (P_input_Pa <= 0) {
+			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}.`;
+			thead.innerHTML = ''; tbody.innerHTML = '';
+			return;
 		}
 
 		const xMin_m = cv.altToM(xMin, xUnit);
@@ -718,9 +714,16 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					case 'sea_level_pressure': return cv.pressureFromPa(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), v.unit);
 					case 'temperature':        return cv.tempFromK(T_K, v.unit);
 					case 'density':            return cv.densityFromKgM3(rho, v.unit);
-					case 'pressure_altitude':  return cv.altFromM(atm.getPressureAltitude(P_Pa), v.unit);
-					case 'density_altitude':   return cv.altFromM(atm.getDensityAltitude(rho), v.unit);
+					case 'pressure_altitude': {
+						const pa = atm.getPressureAltitude(P_Pa);
+						return isNaN(pa) ? null : cv.altFromM(pa, v.unit);
+					}
+					case 'density_altitude': {
+						const da = atm.getDensityAltitude(rho);
+						return isNaN(da) ? null : cv.altFromM(da, v.unit);
+					}
 					case 'speed_of_sound':     return cv.speedFromMS(atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m)), v.unit);
+					case 'scale_height':       return cv.altFromM(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), v.unit);
 					case 'viscosity':          return cv.viscosityFromPaS(atm.getViscosity(T_K), v.unit);
 					case 'geopotential_alt':   return cv.altFromM(H, v.unit);
 					case 'geometric_alt':      return cv.altFromM(h_m, v.unit);

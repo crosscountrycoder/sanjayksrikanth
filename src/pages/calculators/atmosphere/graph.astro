@@ -125,12 +125,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<option value="density">Air density</option>
 					<option value="pressure_altitude">Pressure altitude</option>
 					<option value="density_altitude">Density altitude</option>
-					<option value="speed_of_sound">Speed of sound</option>
-					<option value="viscosity">Dynamic viscosity</option>
 					<option value="geopotential_alt">Geopotential altitude</option>
 					<option value="geometric_alt">Geometric altitude</option>
-					<option value="mean_free_path">Mean free path</option>
 					<option value="molar_mass">Molar mass</option>
+					<option value="speed_of_sound">Speed of sound</option>
+					<option value="viscosity">Dynamic viscosity</option>
+					<option value="mean_free_path">Mean free path</option>
+					<option value="scale_height">Scale height</option>
 					<option value="partial_pressure">Partial pressure</option>
 					<option value="boiling_point">Boiling point of water</option>
 				</select>
@@ -302,13 +303,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			ticks.push(Math.pow(10, logLo + (logHi - logLo) * i / n));
 		return ticks;
 	}
-	function fmtTemp(v: number, unit: string, sigFigs = 6): string {
-		if (unit === 'K' || unit === 'R') return v.toPrecision(sigFigs);
-		const T_abs = v + (unit === 'C' ? 273.15 : 459.67);
-		const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
-		return v.toFixed(digits);
-	}
-
 	function formatTick(v: number): string {
 		if (v === 0) return '0';
 		const abs = Math.abs(v);
@@ -359,6 +353,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			{ value: 'mph',  label: 'mph' },   { value: 'ft/s', label: 'ft/s' },
 			{ value: 'kn',   label: 'knots' },
 		],
+		scale_height:     ALT_UNITS,
 		viscosity:        [
 			{ value: 'Pa·s',     label: 'Pa·s' },
 			{ value: 'μPa·s', label: 'μPa·s' },
@@ -391,6 +386,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		pressure_altitude: 'Pressure altitude',
 		density_altitude:  'Density altitude',
 		speed_of_sound:    'Speed of sound',
+		scale_height:      'Scale height',
 		viscosity:         'Dynamic viscosity',
 		boiling_point:     'Boiling point of water',
 		geopotential_alt:  'Geopotential altitude',
@@ -495,7 +491,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const T_input_K = cv.tempToK(slTempVal, slTempUnit);
 		const z_cond = xVar === 'geopotential' ? atm.geopotentialToGeometric(condAlt_m) : condAlt_m;
 		const T0_K = tempMode === 'air' ? atm.getSeaLevelTemperature(z_cond, T_input_K) : T_input_K;
-		const loK = atm.SEA_LEVEL_TEMP_MIN_C + 273.15, hiK = atm.SEA_LEVEL_TEMP_MAX_C + 273.15;
+		const loK = atm.SEA_LEVEL_TEMP_MIN_K, hiK = atm.SEA_LEVEL_TEMP_MAX_K;
 		if (isNaN(T0_K) || T0_K < loK || T0_K > hiK) {
 			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
 			if (tempMode === 'air') {
@@ -521,17 +517,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const P_at_cond = P_input_Pa * atm.getPressure(z_cond, 1, 288.15);
 			P0_Pa = atm.getSeaLevelPressure(z_cond, P_at_cond, T0_K);
 		}
-		const fmt6p = (Pa: number) => parseFloat(cv.pressureFromPa(Pa, slPressUnit).toPrecision(6)).toString();
-		if (pressMode === 'altimeter') {
-			if (P_input_Pa < 0.5 * 101325 || P_input_Pa > 1.5 * 101325) {
-				errSlPressure.textContent = `Altimeter setting must be between ${fmt6p(0.5 * 101325)} and ${fmt6p(1.5 * 101325)} ${slPressUnit}.`;
-				return;
-			}
-		} else {
-			if (P0_Pa < 0.5 * 101325 || P0_Pa > 1.5 * 101325) {
-				errSlPressure.textContent = `Sea-level pressure must be between ${fmt6p(0.5 * 101325)} and ${fmt6p(1.5 * 101325)} ${slPressUnit}.`;
-				return;
-			}
+		if (P_input_Pa <= 0) {
+			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}.`;
+			return;
 		}
 
 		const xMin_m = cv.altToM(xMin, xUnit);
@@ -587,14 +576,22 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					y = cv.tempFromK(T_K, yUnit); break;
 				case 'density':
 					y = cv.densityFromKgM3(rho, yUnit); break;
-				case 'pressure_altitude':
-					y = cv.altFromM(atm.getPressureAltitude(P_Pa), yUnit); break;
-				case 'density_altitude':
-					y = cv.altFromM(atm.getDensityAltitude(rho), yUnit); break;
+				case 'pressure_altitude': {
+					const pa = atm.getPressureAltitude(P_Pa);
+					if (!isNaN(pa)) y = cv.altFromM(pa, yUnit);
+					break;
+				}
+				case 'density_altitude': {
+					const da = atm.getDensityAltitude(rho);
+					if (!isNaN(da)) y = cv.altFromM(da, yUnit);
+					break;
+				}
 				case 'speed_of_sound': {
 					const sos = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
 					y = cv.speedFromMS(sos, yUnit); break;
 				}
+				case 'scale_height':
+					y = cv.altFromM(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), yUnit); break;
 				case 'viscosity':
 					y = cv.viscosityFromPaS(atm.getViscosity(T_K), yUnit); break;
 				case 'boiling_point': {
@@ -698,13 +695,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			for (const ht of horzTicks) {
 				const x = mxLog(ht).toFixed(1);
 				s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
-				const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? fmtTemp(ht, yUnit, 4) : formatTick(ht);
+				const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(ht, yUnit, 4) : formatTick(ht);
 				s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 			}
 			for (const vt of vertTicks) {
 				const y = myLog(vt).toFixed(1);
 				s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
-				const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? fmtTemp(vt, yUnit, 4) : formatTick(vt);
+				const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(vt, yUnit, 4) : formatTick(vt);
 				s += `<text x="${pL - 8}" y="${(myLog(vt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 			}
 
@@ -782,7 +779,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		for (const ht of horzTicks) {
 			const x = mx(ht).toFixed(1);
 			s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
-			const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? fmtTemp(ht, yUnit, 4) : formatTick(ht);
+			const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(ht, yUnit, 4) : formatTick(ht);
 			s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 		}
 
@@ -790,7 +787,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		for (const vt of vertTicks) {
 			const y = my(vt).toFixed(1);
 			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
-			const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? fmtTemp(vt, yUnit, 4) : formatTick(vt);
+			const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(vt, yUnit, 4) : formatTick(vt);
 			s += `<text x="${pL - 8}" y="${(my(vt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 		}
 

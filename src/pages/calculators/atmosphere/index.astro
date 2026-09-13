@@ -203,6 +203,27 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
+					<label id="out-geo-alt-label" data-tooltip="Geopotential altitude corresponding to the input geometric altitude.">Geopotential altitude</label>
+					<div class="output-row">
+						<span id="out-geo-alt">—</span>
+						<select id="out-geo-alt-unit">
+							<option value="m" selected>m</option>
+							<option value="ft">ft</option>
+							<option value="mi">mi</option>
+							<option value="km">km</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
+					<label data-tooltip="Mean molecular mass of the air mixture at this altitude; decreases above ~90 km as lighter species dominate.">Molar mass</label>
+					<div class="output-row">
+						<span id="out-molar-mass">—</span>
+						<select disabled><option>g/mol</option></select>
+					</div>
+				</div>
+
+				<div class="field">
 					<label data-tooltip="Speed of acoustic waves in air, equal to √(γRT/M) with γ = 1.4.">Speed of sound</label>
 					<div class="output-row">
 						<span id="out-speed-of-sound">—</span>
@@ -230,19 +251,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label id="out-geo-alt-label" data-tooltip="Geopotential altitude corresponding to the input geometric altitude.">Geopotential altitude</label>
-					<div class="output-row">
-						<span id="out-geo-alt">—</span>
-						<select id="out-geo-alt-unit">
-							<option value="m" selected>m</option>
-							<option value="ft">ft</option>
-							<option value="mi">mi</option>
-							<option value="km">km</option>
-						</select>
-					</div>
-				</div>
-
-				<div class="field">
 					<label data-tooltip="Average distance a molecule travels between collisions.">Mean free path</label>
 					<div class="output-row">
 						<span id="out-mfp">—</span>
@@ -260,10 +268,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label data-tooltip="Mean molecular mass of the air mixture at this altitude; decreases above ~90 km as lighter species dominate.">Molar mass</label>
+					<label data-tooltip="Altitude over which pressure/density would decay by a factor of e if temperature, molar mass, and gravity stayed constant — RT/(Mg).">Scale height</label>
 					<div class="output-row">
-						<span id="out-molar-mass">—</span>
-						<select disabled><option>g/mol</option></select>
+						<span id="out-scale-height">—</span>
+						<select id="out-scale-height-unit">
+							<option value="m" selected>m</option>
+							<option value="ft">ft</option>
+							<option value="mi">mi</option>
+							<option value="km">km</option>
+						</select>
 					</div>
 				</div>
 
@@ -483,7 +496,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const T_input_K = cv.tempToK(tempVal, tempUnit);
 			const { h_m: z_v } = resolveAltitude(altVal, altUnit, useGeopot);
 			const T0_K_v = tempMode === 'air' ? atm.getSeaLevelTemperature(z_v, T_input_K) : T_input_K;
-			const loK = atm.SEA_LEVEL_TEMP_MIN_C + 273.15, hiK = atm.SEA_LEVEL_TEMP_MAX_C + 273.15;
+			const loK = atm.SEA_LEVEL_TEMP_MIN_K, hiK = atm.SEA_LEVEL_TEMP_MAX_K;
 			const unitLabel = tempUnit === 'C' ? '°C' : tempUnit === 'F' ? '°F' : tempUnit === 'R' ? '°R' : 'K';
 			if (isNaN(T0_K_v) || T0_K_v < loK || T0_K_v > hiK) {
 				if (tempMode === 'air') {
@@ -508,23 +521,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		if (!isNaN(pressVal)) {
 			const P_Pa = cv.pressureToPa(pressVal, pressUnit);
-			const toUnit = (p: number) => cv.pressureFromPa(p, pressUnit);
-			if (pressMode === 'air') {
-				if (P_Pa <= 0 || P_Pa > 1.2 * 101325) {
-					errPress.textContent = `Air pressure must be between 0 and ${fmtBound(toUnit(1.2 * 101325))} ${pressUnit}`;
-					valid = false;
-				} else {
-					errPress.textContent = '';
-				}
+			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+			if (P_Pa <= 0) {
+				errPress.textContent = `${label} must be greater than 0 ${pressUnit}`;
+				valid = false;
 			} else {
-				const label = pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
-				const loP = 0.5 * 101325, hiP = 1.5 * 101325;
-				if (P_Pa < loP || P_Pa > hiP) {
-					errPress.textContent = `${label} must be between ${fmtBound(toUnit(loP))} and ${fmtBound(toUnit(hiP))} ${pressUnit}`;
-					valid = false;
-				} else {
-					errPress.textContent = '';
-				}
+				errPress.textContent = '';
 			}
 		} else {
 			errPress.textContent = '';
@@ -537,19 +539,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		return n.toPrecision(6);
 	}
 
-	function fmtTemp(v: number, unit: string, sigFigs = 6): string {
-		if (unit === 'K' || unit === 'R') return v.toPrecision(sigFigs);
-		const T_abs = v + (unit === 'C' ? 273.15 : 459.67);
-		const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
-		return v.toFixed(digits);
-	}
-
 	function calculate() {
 		syncTempModeAvailability();
+		updateStdNote();
 
 		const outputIds = [
 			'out-pressure', 'out-press-out-2', 'out-temperature', 'out-density',
-			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
+			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-scale-height', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
 			'out-mfp', 'out-molar-mass', 'out-partial-pressure',
 		];
 		if (!validate()) {
@@ -606,7 +602,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const tUnit = (document.getElementById('out-temperature-unit') as HTMLSelectElement).value;
 		const tOut  = tempMode === 'air' ? T0_K : T_K;
-		(document.getElementById('out-temperature') as HTMLElement).textContent = fmtTemp(cv.tempFromK(tOut, tUnit), tUnit);
+		(document.getElementById('out-temperature') as HTMLElement).textContent = atm.fmtTemp(cv.tempFromK(tOut, tUnit), tUnit);
 
 		const dUnit = (document.getElementById('out-density-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-density') as HTMLElement).textContent = fmt6(cv.densityFromKgM3(rho, dUnit));
@@ -615,17 +611,21 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const paUnit = (document.getElementById('out-pressure-altitude-unit') as HTMLSelectElement).value;
 		const pa_out = cv.altFromM(pa_m, paUnit);
 		(document.getElementById('out-pressure-altitude') as HTMLElement).textContent =
-			Math.abs(pa_out) > 1 ? fmt6(pa_out) : pa_out.toFixed(5);
+			isNaN(pa_m) ? 'N/A' : Math.abs(pa_out) > 1 ? fmt6(pa_out) : pa_out.toFixed(5);
 
 		const da_m   = atm.getDensityAltitude(rho);
 		const daUnit = (document.getElementById('out-density-altitude-unit') as HTMLSelectElement).value;
 		const da_out = cv.altFromM(da_m, daUnit);
 		(document.getElementById('out-density-altitude') as HTMLElement).textContent =
-			Math.abs(da_out) > 1 ? fmt6(da_out) : da_out.toFixed(5);
+			isNaN(da_m) ? 'N/A' : Math.abs(da_out) > 1 ? fmt6(da_out) : da_out.toFixed(5);
 
 		const sos_ms  = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
 		const sosUnit = (document.getElementById('out-speed-of-sound-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-speed-of-sound') as HTMLElement).textContent = fmt6(cv.speedFromMS(sos_ms, sosUnit));
+
+		const H_scale  = atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m);
+		const shUnit   = (document.getElementById('out-scale-height-unit') as HTMLSelectElement).value;
+		(document.getElementById('out-scale-height') as HTMLElement).textContent = fmt6(cv.altFromM(H_scale, shUnit));
 
 		const mu_Pas = atm.getViscosity(T_K);
 		const muUnit = (document.getElementById('out-viscosity-unit') as HTMLSelectElement).value;
@@ -634,7 +634,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const bp_K = getBoilingPoint(P_Pa);
 		const bpEl = document.getElementById('out-boiling-point') as HTMLElement;
 		bpEl.textContent = bp_K >= 273.16
-			? (() => { const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value; return fmtTemp(cv.tempFromK(bp_K, u), u); })()
+			? (() => { const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value; return atm.fmtTemp(cv.tempFromK(bp_K, u), u); })()
 			: 'N/A';
 
 		const geoAltLbl = document.getElementById('out-geo-alt-label') as HTMLElement;
@@ -667,7 +667,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'sea-level-pressure', 'sea-level-pressure-unit',
 		'altitude-mode', 'temp-mode', 'pressure-mode',
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit', 'out-density-unit',
-		'out-pressure-altitude-unit', 'out-density-altitude-unit', 'out-speed-of-sound-unit',
+		'out-pressure-altitude-unit', 'out-density-altitude-unit', 'out-speed-of-sound-unit', 'out-scale-height-unit',
 		'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
 		'out-mfp-unit', 'out-partial-pressure-species', 'out-partial-pressure-unit',
 	];
@@ -704,18 +704,17 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	function updateStdNote() {
 		const tempUnit  = (document.getElementById('sea-level-temp-unit')      as HTMLSelectElement).value;
 		const pressUnit = (document.getElementById('sea-level-pressure-unit')  as HTMLSelectElement).value;
-		const fmt = (n: number) => parseFloat(n.toPrecision(6)).toString();
-		const stdT = tempUnit === 'F' ? fmt(59) : tempUnit === 'K' ? fmt(288.15) : tempUnit === 'R' ? fmt(518.67) : fmt(15);
-		const tLabel = tempUnit === 'F' ? '°F' : tempUnit === 'K' ? 'K' : tempUnit === 'R' ? '°R' : '°C';
-		const stdP = pressUnit === 'Pa'   ? fmt(101325)
-		           : pressUnit === 'hPa'  ? fmt(1013.25)
-		           : pressUnit === 'kPa'  ? fmt(101.325)
-		           : pressUnit === 'mmHg' ? fmt(760)
-		           : pressUnit === 'inHg' ? fmt(29.9212598)
-		           : pressUnit === 'psi'  ? fmt(14.6959488)
-		           : fmt(1);
-		(document.getElementById('std-conditions-note') as HTMLElement).textContent =
-			`Standard sea-level conditions are ${stdT} ${tLabel} and ${stdP} ${pressUnit}.`;
+		const tempMode  = (document.getElementById('temp-mode') as HTMLSelectElement).value as 'sea-level' | 'air';
+		const pressMode = (document.getElementById('pressure-mode') as HTMLSelectElement).value as 'sea-level' | 'air' | 'altimeter';
+		const altVal    = parseFloat((document.getElementById('altitude') as HTMLInputElement).value);
+		const altUnit   = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
+		const useGeopot = (document.getElementById('altitude-mode') as HTMLSelectElement).value === 'geopotential';
+		const { h_m }   = resolveAltitude(altVal, altUnit, useGeopot);
+
+		const note = atm.getStandardConditionsNote(h_m, tempMode, pressMode, tempUnit, pressUnit);
+		if (note !== null) {
+			(document.getElementById('std-conditions-note') as HTMLElement).textContent = note;
+		}
 	}
 
 	const PRESSURE_TOOLTIPS: Record<string, string> = {
@@ -794,6 +793,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		set('out-pressure-altitude-unit', p.alt);
 		set('out-density-altitude-unit', p.alt);
 		set('out-speed-of-sound-unit',   p.speed);
+		set('out-scale-height-unit',     p.alt);
 		set('out-viscosity-unit',        p.visc);
 		set('out-boiling-point-unit',      p.temp);
 		set('out-geo-alt-unit',            p.alt);
@@ -810,7 +810,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'altitude-unit', 'sea-level-temp-unit', 'sea-level-pressure-unit',
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit',
 		'out-density-unit', 'out-pressure-altitude-unit', 'out-density-altitude-unit',
-		'out-speed-of-sound-unit', 'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
+		'out-speed-of-sound-unit', 'out-scale-height-unit', 'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
 		'out-mfp-unit', 'out-partial-pressure-unit',
 	];
 	for (const id of unitDropdownIds) {
@@ -828,8 +828,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	document.getElementById('altitude-mode')!.addEventListener('change', updateAltitudeLabel);
 	document.getElementById('temp-mode')!.addEventListener('change', () => { updateTempLabels(); calculate(); });
 	document.getElementById('pressure-mode')!.addEventListener('change', () => { updatePressureLabels(); calculate(); });
-	document.getElementById('sea-level-temp-unit')!.addEventListener('change', updateStdNote);
-	document.getElementById('sea-level-pressure-unit')!.addEventListener('change', updateStdNote);
 	updateAltitudeLabel();
 	updateTempLabels();
 	updatePressureLabels();
