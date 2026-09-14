@@ -42,7 +42,7 @@ const UNIT_FACTORS: Record<string, UnitFactor> = {
 
 	// Speed (SI: m/s)
 	'km/h': { toSI: 1 / 3.6 },
-	'mph':  { toSI: 1 / 2.2369362920544 },
+	'mph':  { toSI: 0.44704 },
 	'ft/s': { toSI: 0.3048 },
 	'kn':   { toSI: 1852 / 3600 },
 
@@ -56,7 +56,7 @@ const UNIT_FACTORS: Record<string, UnitFactor> = {
 	// Dynamic viscosity (SI: Pa·s)
 	'μPa·s':     { toSI: 1e-6 },
 	'mPa·s':     { toSI: 1e-3 },
-	'lbf·s/ft2': { toSI: 1 / 0.0208854342331501 },
+	'lbf·s/ft2': { toSI: 47.8802589803358 },
 };
 
 // Converts a value between any two units of the same quantity (e.g. both
