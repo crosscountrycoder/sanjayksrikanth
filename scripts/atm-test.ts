@@ -2,6 +2,7 @@
 import * as atm from '../src/lib/atmosphere.ts';
 import { getBoilingPoint } from '../src/lib/water-properties.ts';
 import { convert } from '../src/lib/convert.ts';
+import { roundSig } from '../src/lib/helpers.ts';
 
 const args = process.argv.slice(2);
 
@@ -56,10 +57,6 @@ const da   = atm.getDensityAltitude(rho);
 const H_sc = atm.getScaleHeight(T, M, z);
 const n    = atm.getNumberDensity(P, T);
 
-function sf6(v: number): string {
-    return parseFloat(v.toPrecision(6)).toString();
-}
-
 function fmtC(K: number): string {
     const C = K - 273.15;
     const digits = Math.max(0, 5 - Math.floor(Math.log10(Math.abs(K))));
@@ -68,33 +65,33 @@ function fmtC(K: number): string {
 }
 
 function tempLine(label: string, K: number): void {
-    console.log(`${label}: ${parseFloat(K.toPrecision(6))} K  (${fmtC(K)} °C)`);
+    console.log(`${label}: ${roundSig(K, 6, 1e-6, true)} K  (${fmtC(K)} °C)`);
 }
 
 console.log(`Inputs`);
-console.log(`  Geometric altitude : ${sf6(z)} m`);
-console.log(`  Sea-level temp     : ${parseFloat(T0.toPrecision(6))} K  (${fmtC(T0)} °C)`);
-console.log(`  Sea-level pressure : ${sf6(P0)} Pa`);
+console.log(`  Geometric altitude : ${roundSig(z, 6, 1e-6, true)} m`);
+console.log(`  Sea-level temp     : ${roundSig(T0, 6, 1e-6, true)} K  (${fmtC(T0)} °C)`);
+console.log(`  Sea-level pressure : ${roundSig(P0, 6, 1e-6, true)} Pa`);
 
 console.log(`\nOutputs`);
-console.log(`  Air pressure       : ${sf6(P)} Pa`);
-console.log(`  Altimeter setting  : ${sf6(atm.getAltimeterSetting(z, P))} Pa`);
+console.log(`  Air pressure       : ${roundSig(P, 6, 1e-6, true)} Pa`);
+console.log(`  Altimeter setting  : ${roundSig(atm.getAltimeterSetting(z, P), 6, 1e-6, true)} Pa`);
 tempLine(`  Air temperature    `, T);
-console.log(`  Air density        : ${sf6(rho)} kg/m³`);
-console.log(`  Pressure altitude  : ${sf6(pa)} m`);
-console.log(`  Density altitude   : ${sf6(da)} m`);
-console.log(`  Geopotential alt   : ${sf6(H)} m`);
-console.log(`  Speed of sound     : ${sos !== null ? sf6(sos) + ' m/s' : 'N/A'}`);
-console.log(`  Dynamic viscosity  : ${sf6(mu)} Pa·s`);
-console.log(`  Mean free path     : ${sf6(mfp)} m`);
-console.log(`  Scale height       : ${sf6(H_sc)} m`);
-console.log(`  Number density     : ${sf6(n)} /m³  (${sf6(convert(n, 'per_m3', 'kmol_m3'))} kmol/m³)`);
-console.log(`  Molar mass         : ${sf6(M)} kg/kmol`);
+console.log(`  Air density        : ${roundSig(rho, 6, 1e-6, true)} kg/m³`);
+console.log(`  Pressure altitude  : ${roundSig(pa, 6, 1e-6, true)} m`);
+console.log(`  Density altitude   : ${roundSig(da, 6, 1e-6, true)} m`);
+console.log(`  Geopotential alt   : ${roundSig(H, 6, 1e-6, true)} m`);
+console.log(`  Speed of sound     : ${roundSig(sos, 6, 1e-6, true)} m/s`);
+console.log(`  Dynamic viscosity  : ${roundSig(mu, 6, 1e-6, true)} Pa·s`);
+console.log(`  Mean free path     : ${roundSig(mfp, 6, 1e-6, true)} m`);
+console.log(`  Scale height       : ${roundSig(H_sc, 6, 1e-6, true)} m`);
+console.log(`  Number density     : ${roundSig(n, 6, 1e-6, true)} /m³  (${roundSig(convert(n, 'per_m3', 'kmol_m3'), 6, 1e-6, true)} kmol/m³)`);
+console.log(`  Molar mass         : ${roundSig(M, 6, 1e-6, true)} kg/kmol`);
 if (bp !== null) tempLine(`  Boiling point      `, bp);
 else console.log(`  Boiling point      : N/A (below triple point)`);
 
 console.log(`\nMole fractions`);
 for (const species of MF_SPECIES) {
     const frac = atm.getMoleFraction(species, z);
-    if (frac > 1e-20) console.log(`  ${species.padEnd(4)}: ${sf6(frac)}`);
+    if (frac > 1e-20) console.log(`  ${species.padEnd(4)}: ${roundSig(frac, 6, 1e-6, true)}`);
 }

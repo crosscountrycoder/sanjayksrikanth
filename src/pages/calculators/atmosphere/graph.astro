@@ -263,8 +263,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import * as atmg from '../../../lib/atmosphere-graph.ts';
 	import { convert } from '../../../lib/convert.ts';
+	import { roundSig } from '../../../lib/helpers.ts';
 
 	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
+
+	// Geopotential-altitude equivalents of the model's geometric range (-5000 to 1000000 m),
+	// computed rather than hardcoded so bound-check messages round to the true value.
+	const GEOPOT_MIN = atm.geometricToGeopotential(-5000);
+	const GEOPOT_MAX = atm.geometricToGeopotential(1000000);
 
 	// Above 20 km geopotential, sea-level temp has no effect on air temp at all, so back-solving
 	// sea-level temp from an entered air temp is meaningless there — disable the "Air temperature"
@@ -305,15 +311,32 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			ticks.push(Math.pow(10, logLo + (logHi - logLo) * i / n));
 		return ticks;
 	}
-	function formatTick(v: number): string {
+	// Strips trailing zeros from a rounded number's string without reverting the notation
+	// roundSig chose — unlike roundSig's own stripTrailingZeros (which round-trips through
+	// Number(...).toString() and would flatten a large exponential value back to plain).
+	function stripZerosKeepNotation(s: string): string {
+		const eIdx = s.indexOf('e');
+		const mantissa = eIdx === -1 ? s : s.slice(0, eIdx);
+		const suffix = eIdx === -1 ? '' : s.slice(eIdx);
+		const trimmed = mantissa.includes('.') ? mantissa.replace(/0+$/, '').replace(/\.$/, '') : mantissa;
+		return trimmed + suffix;
+	}
+
+	// Axis tick label: 4 sig figs, scientific notation below 1e-3. Non-altitude quantities
+	// keep roundSig's native upper threshold (exponential once the value needs more than 4
+	// digits before the decimal point), with trailing zeros stripped without disturbing that
+	// notation. Altitude ticks instead use whichever of "4 significant figures" or "nearest
+	// integer" is closer to the true value — 4 sig figs alone would round 699995 to 700000,
+	// but the nearest integer (699995 itself) is far more precise for large altitude values,
+	// where this model's own range (up to 1,000,000 m) routinely needs more than 4 digits.
+	function formatTick(v: number, isAltitude: boolean): string {
 		if (v === 0) return '0';
-		const abs = Math.abs(v);
-		if (abs >= 1e6 || abs < 1e-3) return parseFloat(v.toPrecision(4)).toExponential();
-		if (Number.isInteger(v)) return v.toString();
-		const sig4 = parseFloat(v.toPrecision(4));
-		const rounded = Math.round(v);
-		const sig4Decimals = (sig4.toString().split('.')[1] ?? '').length;
-		return sig4Decimals > 0 ? sig4.toString() : rounded.toString();
+		if (!isAltitude) return stripZerosKeepNotation(roundSig(v, 4, 1e-3));
+		if (Math.abs(v) < 1e-3) return roundSig(v, 4, 1e-3, true);
+		const sigFigVal = Number(v.toPrecision(4));
+		const intVal = Math.round(v);
+		const chosen = Math.abs(v - intVal) < Math.abs(v - sigFigVal) ? intVal : sigFigVal;
+		return chosen.toString();
 	}
 
 	// Y-axis unit options per variable
@@ -477,6 +500,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const yIntervals  = parseInt((document.getElementById('y-intervals') as HTMLInputElement).value) || 5;
 		const yLog        = (document.getElementById('y-log') as HTMLInputElement).checked && !isLogDisabled();
 		const altOnY      = (document.getElementById('alt-on-y') as HTMLInputElement).checked;
+		// True when the dependent variable is itself an altitude (or altitude-like length)
+		// quantity, so its tick labels get the same rounding treatment as the altitude axis.
+		const yVarIsAltitude = yVar === 'pressure_altitude' || yVar === 'density_altitude'
+			|| yVar === 'geopotential_alt' || yVar === 'geometric_alt' || yVar === 'scale_height';
 
 		const errCondAlt    = document.getElementById('err-cond-alt') as HTMLElement;
 		const errSlTemp     = document.getElementById('err-sl-temp') as HTMLElement;
@@ -492,10 +519,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		// Conditions altitude → geopotential
 		const condAlt_m = convert(condAltVal, condAltUnit, 'm');
 		const H_cond = xVar === 'geopotential' ? condAlt_m : atm.geometricToGeopotential(condAlt_m);
-		const loH = xVar === 'geopotential' ? -5004 : -5000;
-		if (condAlt_m < loH) {
+		const loH = xVar === 'geopotential' ? GEOPOT_MIN : -5000;
+		const hiH = xVar === 'geopotential' ? GEOPOT_MAX : 1000000;
+		if (condAlt_m < loH || condAlt_m > hiH) {
 			const factor = convert(1, 'm', condAltUnit);
-			errCondAlt.textContent = `Altitude must be at least ${parseFloat((loH * factor).toPrecision(6))} ${condAltUnit}.`;
+			const label = xVar === 'geopotential' ? 'Geopotential altitude' : 'Geometric altitude';
+			errCondAlt.textContent = `${label} must be between ${roundSig(loH * factor, 6, 1e-6, true)} and ${roundSig(hiH * factor, 6, 1e-6, true)} ${condAltUnit}`;
 			return;
 		}
 
@@ -511,7 +540,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				const xK = atm.getTemperature(z_cond, hiK);
 				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}.`;
 			} else {
-				const fmt = (K: number) => parseFloat(convert(K, 'K', slTempUnit).toPrecision(6)).toString();
+				const fmt = (K: number) => roundSig(convert(K, 'K', slTempUnit), 6, 1e-6, true);
 				const lo = fmt(loK), hi = fmt(hiK);
 				errSlTemp.textContent = `Sea-level temperature must be between ${lo} and ${hi} ${unitLabel[slTempUnit]}.`;
 			}
@@ -537,12 +566,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const xMin_m = convert(xMin, xUnit, 'm');
 		const xMax_m = convert(xMax, xUnit, 'm');
-		const loX = xVar === 'geopotential' ? -5004 : -5000;
-		const hiX = xVar === 'geopotential' ? 864071 : 1000000;
+		const loX = xVar === 'geopotential' ? GEOPOT_MIN : -5000;
+		const hiX = xVar === 'geopotential' ? GEOPOT_MAX : 1000000;
 		if (xMin_m < loX || xMax_m > hiX) {
 			const factor = convert(1, 'm', xUnit);
-			const lo = parseFloat((loX * factor).toPrecision(6));
-			const hi = parseFloat((hiX * factor).toPrecision(6));
+			const lo = roundSig(loX * factor, 6, 1e-6, true);
+			const hi = roundSig(hiX * factor, 6, 1e-6, true);
 			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
 			return;
 		}
@@ -715,13 +744,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			for (const ht of horzTicks) {
 				const x = mxLog(ht).toFixed(1);
 				s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
-				const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(ht, yUnit, 4) : formatTick(ht);
+				const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(ht, 4, 1e-3, false, yUnit) : formatTick(ht, !altOnY || yVarIsAltitude);
 				s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 			}
 			for (const vt of vertTicks) {
 				const y = myLog(vt).toFixed(1);
 				s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
-				const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(vt, yUnit, 4) : formatTick(vt);
+				const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(vt, 4, 1e-3, false, yUnit) : formatTick(vt, altOnY || yVarIsAltitude);
 				s += `<text x="${pL - 8}" y="${(myLog(vt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 			}
 
@@ -801,7 +830,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		for (const ht of horzTicks) {
 			const x = mx(ht).toFixed(1);
 			s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
-			const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(ht, yUnit, 4) : formatTick(ht);
+			const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(ht, 4, 1e-3, false, yUnit) : formatTick(ht, !altOnY || yVarIsAltitude);
 			s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 		}
 
@@ -809,7 +838,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		for (const vt of vertTicks) {
 			const y = my(vt).toFixed(1);
 			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
-			const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? atm.fmtTemp(vt, yUnit, 4) : formatTick(vt);
+			const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(vt, 4, 1e-3, false, yUnit) : formatTick(vt, altOnY || yVarIsAltitude);
 			s += `<text x="${pL - 8}" y="${(my(vt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 		}
 
@@ -877,11 +906,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const tempUnit = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
 		const pressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
 		(document.getElementById('cond-alt') as HTMLInputElement).value =
-			parseFloat(convert(0, 'm', altUnit).toPrecision(6)).toString();
+			roundSig(convert(0, 'm', altUnit), 6, 1e-6, true);
 		(document.getElementById('sl-temp') as HTMLInputElement).value =
-			parseFloat(convert(288.15, 'K', tempUnit).toPrecision(6)).toString();
+			roundSig(convert(288.15, 'K', tempUnit), 6, 1e-6, true);
 		(document.getElementById('sl-pressure') as HTMLInputElement).value =
-			parseFloat(convert(101325, 'Pa', pressUnit).toPrecision(6)).toString();
+			roundSig(convert(101325, 'Pa', pressUnit), 6, 1e-6, true);
 		generateGraph();
 	});
 

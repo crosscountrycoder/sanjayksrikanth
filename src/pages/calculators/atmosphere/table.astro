@@ -511,8 +511,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import * as atm from '../../../lib/atmosphere.ts';
 	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import { convert } from '../../../lib/convert.ts';
+	import { roundSig } from '../../../lib/helpers.ts';
 
 	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
+
+	// Geopotential-altitude equivalents of the model's geometric range (-5000 to 1000000 m),
+	// computed rather than hardcoded so bound-check messages round to the true value.
+	const GEOPOT_MIN = atm.geometricToGeopotential(-5000);
+	const GEOPOT_MAX = atm.geometricToGeopotential(1000000);
 
 	// Above 20 km geopotential, sea-level temp has no effect on air temp at all, so back-solving
 	// sea-level temp from an entered air temp is meaningless there — disable the "Air temperature"
@@ -592,20 +598,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		});
 	}
 
-	function fmt6(v: number): string {
-		return parseFloat(v.toPrecision(6)).toString();
-	}
-
-	// Altitude-derived inversions can produce floating-point artifacts (~1e-8 m) when the
-	// true answer is exactly 0. Snap those to 0 before formatting.
-	const SNAP_ZERO_KEYS = new Set(['pressure_altitude', 'density_altitude', 'geopotential_alt', 'geometric_alt']);
-
 	function fmtY(v: number, key: string, unit: string): string {
 		const sci = (document.getElementById('sci-notation') as HTMLInputElement).checked;
 		if (sci) return v.toExponential(5);
-		if (key === 'temperature' || key === 'boiling_point') return atm.fmtTemp(v, unit);
-		if (SNAP_ZERO_KEYS.has(key) && Math.abs(v) < 5e-7) return '0';
-		return v.toPrecision(6);
+		if (key === 'temperature' || key === 'boiling_point') return roundSig(v, 6, 1e-4, false, unit);
+		return roundSig(v, 6);
 	}
 
 	let tableData: { x: number; ys: (number | null)[] }[] = [];
@@ -661,11 +658,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		// Conditions altitude → geopotential
 		const condAlt_m = convert(condAltVal, condAltUnit, 'm');
 		const H_cond = xVar === 'geopotential' ? condAlt_m : atm.geometricToGeopotential(condAlt_m);
-		const loH = xVar === 'geopotential' ? -5004 : -5000;
-		const hiH = xVar === 'geopotential' ? 864071 : 1000000;
+		const loH = xVar === 'geopotential' ? GEOPOT_MIN : -5000;
+		const hiH = xVar === 'geopotential' ? GEOPOT_MAX : 1000000;
 		if (condAlt_m < loH || condAlt_m > hiH) {
 			const factor = convert(1, 'm', condAltUnit);
-			errCondAlt.textContent = `Altitude must be between ${fmt6(loH * factor)} and ${fmt6(hiH * factor)} ${condAltUnit}.`;
+			errCondAlt.textContent = `Altitude must be between ${roundSig(loH * factor, 6, 1e-6, true)} and ${roundSig(hiH * factor, 6, 1e-6, true)} ${condAltUnit}.`;
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
 		}
@@ -682,7 +679,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				const xK = atm.getTemperature(z_cond, hiK);
 				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}.`;
 			} else {
-				const fmt = (K: number) => fmt6(convert(K, 'K', slTempUnit));
+				const fmt = (K: number) => roundSig(convert(K, 'K', slTempUnit), 6, 1e-6, true);
 				errSlTemp.textContent = `Sea-level temperature must be between ${fmt(loK)} and ${fmt(hiK)} ${unitLabel[slTempUnit]}.`;
 			}
 			thead.innerHTML = ''; tbody.innerHTML = '';
@@ -709,12 +706,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const xMin_m = convert(xMin, xUnit, 'm');
 		const xMax_m = convert(xMax, xUnit, 'm');
-		const loX = xVar === 'geopotential' ? -5004 : -5000;
-		const hiX = xVar === 'geopotential' ? 864071 : 1000000;
+		const loX = xVar === 'geopotential' ? GEOPOT_MIN : -5000;
+		const hiX = xVar === 'geopotential' ? GEOPOT_MAX : 1000000;
 		if (xMin_m < loX || xMax_m > hiX) {
 			const factor = convert(1, 'm', xUnit);
-			const lo = parseFloat((loX * factor).toPrecision(6));
-			const hi = parseFloat((hiX * factor).toPrecision(6));
+			const lo = roundSig(loX * factor, 6, 1e-6, true);
+			const hi = roundSig(hiX * factor, 6, 1e-6, true);
 			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
@@ -785,7 +782,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		// Render
 		thead.innerHTML = `<th>${xLabel}</th>` + vars.map(v => `<th>${v.label}</th>`).join('');
 		tbody.innerHTML = tableData.map(row =>
-			`<tr><td>${fmt6(row.x)}</td>${row.ys.map((y, i) =>
+			`<tr><td>${roundSig(row.x, 6, 1e-4, true)}</td>${row.ys.map((y, i) =>
 				`<td>${y !== null ? fmtY(y, vars[i].key, vars[i].unit) : 'N/A'}</td>`
 			).join('')}</tr>`
 		).join('');
@@ -825,11 +822,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const tempUnit  = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
 		const pressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
 		(document.getElementById('cond-alt') as HTMLInputElement).value =
-			parseFloat(convert(0, 'm', altUnit).toPrecision(6)).toString();
+			roundSig(convert(0, 'm', altUnit), 6, 1e-6, true);
 		(document.getElementById('sl-temp') as HTMLInputElement).value =
-			parseFloat(convert(288.15, 'K', tempUnit).toPrecision(6)).toString();
+			roundSig(convert(288.15, 'K', tempUnit), 6, 1e-6, true);
 		(document.getElementById('sl-pressure') as HTMLInputElement).value =
-			parseFloat(convert(101325, 'Pa', pressUnit).toPrecision(6)).toString();
+			roundSig(convert(101325, 'Pa', pressUnit), 6, 1e-6, true);
 		generateTable();
 	});
 
@@ -838,7 +835,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if (tableData.length === 0 || tableYConfigs.length === 0) return;
 		let csv = `"${tableXLabel}",${tableYConfigs.map(v => `"${v.label}"`).join(',')}\n`;
 		for (const row of tableData) {
-			csv += `${fmt6(row.x)},${row.ys.map((y, i) =>
+			csv += `${roundSig(row.x, 6, 1e-4, true)},${row.ys.map((y, i) =>
 				y !== null ? fmtY(y, tableYConfigs[i].key, tableYConfigs[i].unit) : 'N/A'
 			).join(',')}\n`;
 		}

@@ -455,13 +455,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import * as atm from '../../../lib/atmosphere.ts';
 	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import { convert } from '../../../lib/convert.ts';
+	import { roundSig, getStandardConditionsNote } from '../../../lib/helpers.ts';
 
-	function fmtBound(n: number): string {
-		return parseFloat(n.toPrecision(6)).toString();
-	}
-
-	const GEOPOT_MIN = atm.geometricToGeopotential(-5000); // ≈ -5004 m geopotential
-	const GEOPOT_MAX = atm.geometricToGeopotential(1000000); // ≈ 864049 m geopotential
+	const GEOPOT_MIN = atm.geometricToGeopotential(-5000); // ≈ -5003.94 m geopotential
+	const GEOPOT_MAX = atm.geometricToGeopotential(1000000); // ≈ 864071 m geopotential
 	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
 
 	function resolveAltitude(altVal: number, altUnit: string, useGeopot: boolean) {
@@ -510,7 +507,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const label = useGeopot ? 'Geopotential altitude' : 'Geometric altitude';
 			const factor = convert(1, 'm', altUnit);
 			if (input_m < loM || input_m > hiM) {
-				errAlt.textContent = `${label} must be between ${fmtBound(loM * factor)} and ${fmtBound(hiM * factor)} ${altUnit}`;
+				errAlt.textContent = `${label} must be between ${roundSig(loM * factor, 6, 1e-6, true)} and ${roundSig(hiM * factor, 6, 1e-6, true)} ${altUnit}`;
 				valid = false;
 			} else {
 				errAlt.textContent = '';
@@ -538,7 +535,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					const xK = atm.getTemperature(z_v, hiK);
 					errTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel}`;
 				} else {
-					errTemp.textContent = `Sea-level temperature must be between ${fmtBound(convert(loK, 'K', tempUnit))} and ${fmtBound(convert(hiK, 'K', tempUnit))} ${unitLabel}`;
+					errTemp.textContent = `Sea-level temperature must be between ${roundSig(convert(loK, 'K', tempUnit), 6, 1e-6, true)} and ${roundSig(convert(hiK, 'K', tempUnit), 6, 1e-6, true)} ${unitLabel}`;
 				}
 				valid = false;
 			} else {
@@ -567,10 +564,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		}
 
 		return valid;
-	}
-
-	function fmt6(n: number): string {
-		return n.toPrecision(6);
 	}
 
 	function calculate() {
@@ -629,53 +622,53 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		const out1_Pa = pressMode === 'air' ? P0_Pa : P_Pa;
 		const pUnit = (document.getElementById('out-pressure-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-pressure') as HTMLElement).textContent = fmt6(convert(out1_Pa, 'Pa', pUnit));
+		(document.getElementById('out-pressure') as HTMLElement).textContent = roundSig(convert(out1_Pa, 'Pa', pUnit), 6);
 
 		const out2_Pa = pressMode === 'altimeter' ? P0_Pa : altimeter_Pa;
 		const p2Unit  = (document.getElementById('out-press-out-2-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-press-out-2') as HTMLElement).textContent =
-			out2_Pa !== null ? fmt6(convert(out2_Pa, 'Pa', p2Unit)) : 'N/A';
+			out2_Pa !== null ? roundSig(convert(out2_Pa, 'Pa', p2Unit), 6) : 'N/A';
 
 		const tUnit = (document.getElementById('out-temperature-unit') as HTMLSelectElement).value;
 		const tOut  = tempMode === 'air' ? T0_K : T_K;
-		(document.getElementById('out-temperature') as HTMLElement).textContent = atm.fmtTemp(convert(tOut, 'K', tUnit), tUnit);
+		(document.getElementById('out-temperature') as HTMLElement).textContent = roundSig(convert(tOut, 'K', tUnit), 6, 1e-4, false, tUnit);
 
 		const dUnit = (document.getElementById('out-density-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-density') as HTMLElement).textContent = fmt6(convert(rho, 'kg/m3', dUnit));
+		(document.getElementById('out-density') as HTMLElement).textContent = roundSig(convert(rho, 'kg/m3', dUnit), 6);
 
 		const pa_m   = atm.getPressureAltitude(P_Pa);
 		const paUnit = (document.getElementById('out-pressure-altitude-unit') as HTMLSelectElement).value;
 		const pa_out = convert(pa_m, 'm', paUnit);
 		(document.getElementById('out-pressure-altitude') as HTMLElement).textContent =
-			isNaN(pa_m) ? 'N/A' : Math.abs(pa_out) > 1 ? fmt6(pa_out) : pa_out.toFixed(5);
+			isNaN(pa_m) ? 'N/A' : roundSig(pa_out, 6);
 
 		const da_m   = atm.getDensityAltitude(rho);
 		const daUnit = (document.getElementById('out-density-altitude-unit') as HTMLSelectElement).value;
 		const da_out = convert(da_m, 'm', daUnit);
 		(document.getElementById('out-density-altitude') as HTMLElement).textContent =
-			isNaN(da_m) ? 'N/A' : Math.abs(da_out) > 1 ? fmt6(da_out) : da_out.toFixed(5);
+			isNaN(da_m) ? 'N/A' : roundSig(da_out, 6);
 
 		const sos_ms  = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
 		const sosUnit = (document.getElementById('out-speed-of-sound-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-speed-of-sound') as HTMLElement).textContent = fmt6(convert(sos_ms, 'm/s', sosUnit));
+		(document.getElementById('out-speed-of-sound') as HTMLElement).textContent = roundSig(convert(sos_ms, 'm/s', sosUnit), 6);
 		(document.getElementById('err-speed-of-sound') as HTMLElement).textContent = P_Pa < 0.01
 			? 'At this pressure, air is too thin for normal sound propagation. The displayed sound speed is theoretical.'
 			: '';
 
 		const H_scale  = atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m);
 		const shUnit   = (document.getElementById('out-scale-height-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-scale-height') as HTMLElement).textContent = fmt6(convert(H_scale, 'm', shUnit));
+		(document.getElementById('out-scale-height') as HTMLElement).textContent = roundSig(convert(H_scale, 'm', shUnit), 6);
 
 		const mu_Pas = atm.getViscosity(T_K);
 		const muUnit = (document.getElementById('out-viscosity-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-viscosity') as HTMLElement).textContent = fmt6(convert(mu_Pas, 'Pa·s', muUnit));
+		(document.getElementById('out-viscosity') as HTMLElement).textContent = roundSig(convert(mu_Pas, 'Pa·s', muUnit), 6);
 
 		const bp_K = getBoilingPoint(P_Pa);
 		const bpEl = document.getElementById('out-boiling-point') as HTMLElement;
 		const errBoilingPoint = document.getElementById('err-boiling-point') as HTMLElement;
 		if (bp_K >= 273.16) {
 			const u = (document.getElementById('out-boiling-point-unit') as HTMLSelectElement).value;
-			bpEl.textContent = atm.fmtTemp(convert(bp_K, 'K', u), u);
+			bpEl.textContent = roundSig(convert(bp_K, 'K', u), 6, 1e-4, false, u);
 			errBoilingPoint.textContent = '';
 		} else {
 			bpEl.textContent = 'N/A';
@@ -684,7 +677,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const airPressureUnit = pressMode === 'air'
 				? (document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value
 				: (document.getElementById('out-pressure-unit') as HTMLSelectElement).value;
-			const triplePoint = fmtBound(convert(611.657, 'Pa', airPressureUnit));
+			const triplePoint = roundSig(convert(611.657, 'Pa', airPressureUnit), 6, 1e-6, true);
 			errBoilingPoint.textContent = `Air pressure is below water's triple point (${triplePoint} ${airPressureUnit})`;
 		}
 
@@ -695,27 +688,27 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			: 'Geopotential altitude corresponding to the input geometric altitude.';
 		const altOther_m = useGeopot ? h_m : atm.geometricToGeopotential(h_m);
 		const geoAltUnit = (document.getElementById('out-geo-alt-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-geo-alt') as HTMLElement).textContent = fmt6(convert(altOther_m, 'm', geoAltUnit));
+		(document.getElementById('out-geo-alt') as HTMLElement).textContent = roundSig(convert(altOther_m, 'm', geoAltUnit), 6);
 
 		const ppSpecies = (document.getElementById('out-partial-pressure-species') as HTMLSelectElement).value;
 		const ppUnit    = (document.getElementById('out-partial-pressure-unit') as HTMLSelectElement).value;
 		const mf = atm.getMoleFraction(ppSpecies, h_m) ?? 0;
 		const pp_Pa = mf * P_Pa;
 		const ppVal = ppUnit === 'fraction'
-			? fmt6(mf)
-			: fmt6(convert(pp_Pa, 'Pa', ppUnit));
+			? roundSig(mf, 6)
+			: roundSig(convert(pp_Pa, 'Pa', ppUnit), 6);
 		(document.getElementById('out-partial-pressure') as HTMLElement).textContent = ppVal;
 
 		const mdSpecies = (document.getElementById('out-molecular-density-species') as HTMLSelectElement).value;
 		const mdUnit    = (document.getElementById('out-molecular-density-unit') as HTMLSelectElement).value;
 		const n_total   = atm.getNumberDensity(P_Pa, T_K);
 		const n         = mdSpecies === 'total' ? n_total : (atm.getMoleFraction(mdSpecies, h_m) ?? 0) * n_total;
-		(document.getElementById('out-molecular-density') as HTMLElement).textContent = fmt6(convert(n, 'per_m3', mdUnit));
+		(document.getElementById('out-molecular-density') as HTMLElement).textContent = roundSig(convert(n, 'per_m3', mdUnit), 6);
 
 		const mfpUnit = (document.getElementById('out-mfp-unit') as HTMLSelectElement).value;
-		(document.getElementById('out-mfp') as HTMLElement).textContent = fmt6(convert(atm.getMeanFreePath(P_Pa, T_K), 'm', mfpUnit));
+		(document.getElementById('out-mfp') as HTMLElement).textContent = roundSig(convert(atm.getMeanFreePath(P_Pa, T_K), 'm', mfpUnit), 6);
 
-		(document.getElementById('out-molar-mass') as HTMLElement).textContent = fmt6(atm.getMolarMass(h_m));
+		(document.getElementById('out-molar-mass') as HTMLElement).textContent = roundSig(atm.getMolarMass(h_m), 6);
 	}
 
 	const inputIds = [
@@ -769,7 +762,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const useGeopot = (document.getElementById('altitude-mode') as HTMLSelectElement).value === 'geopotential';
 		const { h_m }   = resolveAltitude(altVal, altUnit, useGeopot);
 
-		const note = atm.getStandardConditionsNote(h_m, tempMode, pressMode, tempUnit, pressUnit);
+		const note = getStandardConditionsNote(h_m, tempMode, pressMode, tempUnit, pressUnit);
 		if (note !== null) {
 			(document.getElementById('std-conditions-note') as HTMLElement).textContent = note;
 		}
@@ -831,13 +824,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 		if (!isNaN(altVal))
 			(document.getElementById('altitude') as HTMLInputElement).value =
-				parseFloat(convert(convert(altVal, altUnit, 'm'), 'm', p.alt).toPrecision(6)).toString();
+				roundSig(convert(convert(altVal, altUnit, 'm'), 'm', p.alt), 6, 1e-6, true);
 		if (!isNaN(tmpVal))
 			(document.getElementById('sea-level-temp') as HTMLInputElement).value =
-				parseFloat(convert(convert(tmpVal, tmpUnit, 'K'), 'K', p.temp).toPrecision(6)).toString();
+				roundSig(convert(convert(tmpVal, tmpUnit, 'K'), 'K', p.temp), 6, 1e-6, true);
 		if (!isNaN(prVal))
 			(document.getElementById('sea-level-pressure') as HTMLInputElement).value =
-				parseFloat(convert(convert(prVal, prUnit, 'Pa'), 'Pa', p.press).toPrecision(6)).toString();
+				roundSig(convert(convert(prVal, prUnit, 'Pa'), 'Pa', p.press), 6, 1e-6, true);
 
 		// Set all unit selects
 		const set = (id: string, v: string) => { (document.getElementById(id) as HTMLSelectElement).value = v; };
