@@ -886,27 +886,33 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	calculate();
 
 	document.getElementById('btn-reset')!.addEventListener('click', () => {
+		const altVal    = parseFloat((document.getElementById('altitude') as HTMLInputElement).value);
 		const altUnit   = (document.getElementById('altitude-unit') as HTMLSelectElement).value;
+		const useGeopot = (document.getElementById('altitude-mode') as HTMLSelectElement).value === 'geopotential';
+		const tempMode  = (document.getElementById('temp-mode') as HTMLSelectElement).value;
+		const pressMode = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
 		const tempUnit  = (document.getElementById('sea-level-temp-unit') as HTMLSelectElement).value;
 		const pressUnit = (document.getElementById('sea-level-pressure-unit') as HTMLSelectElement).value;
 
-		// Standard conditions: 0 m, 288.15 K, 101325 Pa — converted to current input units
-		const alt_out = altUnit === 'ft' ? 0 : altUnit === 'mi' ? 0 : altUnit === 'km' ? 0 : 0;
-		const temp_out = tempUnit === 'C' ? 15
-		               : tempUnit === 'F' ? 59
-		               : tempUnit === 'R' ? 518.67
-		               : 288.15;
-		const press_out = pressUnit === 'Pa'   ? 101_325
-		                : pressUnit === 'hPa'  ? 1013.25
-		                : pressUnit === 'kPa'  ? 101.325
-		                : pressUnit === 'mmHg' ? 760
-		                : pressUnit === 'inHg' ? 29.9213
-		                : pressUnit === 'psi'  ? 14.6959
-		                : 1;
+		// Leaves altitude untouched — resets only the temperature/pressure inputs to the
+		// standard values for the current altitude and mode (matching getStandardConditionsNote):
+		// sea-level mode uses the fixed 288.15 K / 101325 Pa; "air" mode uses the standard
+		// value at the current altitude; altimeter setting is always the fixed sea-level value
+		// by definition, regardless of altitude.
+		const { h_m } = resolveAltitude(altVal, altUnit, useGeopot);
 
-		(document.getElementById('altitude') as HTMLInputElement).value = String(alt_out);
-		(document.getElementById('sea-level-temp') as HTMLInputElement).value = String(temp_out);
-		(document.getElementById('sea-level-pressure') as HTMLInputElement).value = String(press_out);
+		const stdT_K = tempMode === 'air' ? atm.getTemperature(h_m) : 288.15;
+		if (!isNaN(stdT_K)) {
+			(document.getElementById('sea-level-temp') as HTMLInputElement).value =
+				roundSig(convert(stdT_K, 'K', tempUnit), 6, 1e-6, true, tempUnit);
+		}
+
+		const stdP_Pa = pressMode === 'air' ? atm.getStandardPressure(h_m) : 101325;
+		if (!isNaN(stdP_Pa)) {
+			(document.getElementById('sea-level-pressure') as HTMLInputElement).value =
+				roundSig(convert(stdP_Pa, 'Pa', pressUnit), 6, 1e-6, true);
+		}
+
 		calculate();
 	});
 </script>

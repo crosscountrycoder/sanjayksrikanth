@@ -827,6 +827,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			roundSig(convert(288.15, 'K', tempUnit), 6, 1e-6, true);
 		(document.getElementById('sl-pressure') as HTMLInputElement).value =
 			roundSig(convert(101325, 'Pa', pressUnit), 6, 1e-6, true);
+		(document.getElementById('temp-mode') as HTMLSelectElement).value = 'sea-level';
+		(document.getElementById('pressure-mode') as HTMLSelectElement).value = 'sea-level';
+		updateConditionLabels();
 		generateTable();
 	});
 
