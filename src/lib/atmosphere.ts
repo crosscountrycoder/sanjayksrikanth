@@ -102,11 +102,6 @@ export function getMoleFraction(species: string, z: number): number {
     return _mfInterp(z, si + 2);
 }
 
-// Partial pressure of a species (Pa) given its mole fraction and total pressure.
-export function getPartialPressure(moleFraction: number, totalPressure: number): number {
-    return moleFraction * totalPressure;
-}
-
 export function getDensity(P_Pa: number, T_K: number, z: number): number {
     return P_Pa * getMolarMass(z) / (R * T_K);
 }

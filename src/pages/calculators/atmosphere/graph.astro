@@ -12,7 +12,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	]} />
 	<h1>Standard Atmosphere Calculator</h1>
 	<AtmosphereNav active="graph" />
-	<p>Graph atmospheric properties as a function of altitude using the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
+	<p>Graph atmospheric properties as a function of altitude using a version of
+		the <a href="https://en.wikipedia.org/wiki/U.S._Standard_Atmosphere" target="_blank">U.S. Standard Atmosphere 1976 model</a>.</p>
 
 	<section class="graph-page">
 		<div class="controls">
@@ -113,69 +114,326 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				<input type="checkbox" id="alt-on-y" />
 				<label for="alt-on-y">Altitude on y-axis</label>
 			</div>
+			<p class="hint">With 2+ variables selected below, altitude is always on the y-axis.</p>
 
-			<h3>Dependent variable</h3>
-			<div class="field">
-				<label for="y-var">Variable</label>
-				<select id="y-var">
-					<option value="pressure" selected>Air pressure</option>
-					<option value="altimeter_setting">Altimeter setting</option>
-					<option value="sea_level_pressure">Sea-level pressure</option>
-					<option value="temperature">Air temperature</option>
-					<option value="density">Air density</option>
-					<option value="pressure_altitude">Pressure altitude</option>
-					<option value="density_altitude">Density altitude</option>
-					<option value="geopotential_alt">Geopotential altitude</option>
-					<option value="geometric_alt">Geometric altitude</option>
-					<option value="molar_mass">Molar mass</option>
-					<option value="speed_of_sound">Speed of sound</option>
-					<option value="viscosity">Dynamic viscosity</option>
-					<option value="mean_free_path">Mean free path</option>
-					<option value="scale_height">Scale height</option>
-					<option value="partial_pressure">Partial pressure</option>
-					<option value="molecular_density">Number density</option>
-					<option value="boiling_point">Boiling point of water</option>
-				</select>
-			</div>
-			<div class="field" id="y-species-field" style="display:none;">
-				<label for="y-species">Gas</label>
-				<select id="y-species">
-					<option value="N2" selected>N₂</option>
-					<option value="O2">O₂</option>
-					<option value="Ar">Ar</option>
-					<option value="CO2">CO₂</option>
-					<option value="Ne">Ne</option>
-					<option value="He">He</option>
-					<option value="CH4">CH₄</option>
-					<option value="Kr">Kr</option>
-					<option value="H2">H₂</option>
-					<option value="N2O">N₂O</option>
-					<option value="Xe">Xe</option>
-					<option value="O">O</option>
-					<option value="H">H</option>
-					<option value="N">N</option>
-					<option value="total">Total</option>
-				</select>
-			</div>
-			<div class="field">
-				<label>Range</label>
-				<div class="range-row">
-					<input type="number" id="y-min" placeholder="auto" />
-					<span>–</span>
-					<input type="number" id="y-max" placeholder="auto" />
-					<select id="y-unit">
-						<!-- populated by JS -->
-					</select>
-				</div>
-			</div>
+			<h3>Dependent variables</h3>
+			<p class="hint">Each variable has its own range (defaults to auto) and, except for temperature quantities, its own logarithmic-scale option. The interval count below always applies to every variable's axis alike.</p>
 			<div class="field">
 				<label for="y-intervals">Intervals</label>
 				<input type="number" id="y-intervals" value="5" min="1" step="1" />
 			</div>
-			<div class="checkbox-row">
-				<input type="checkbox" id="y-log" />
-				<label for="y-log">Use logarithmic scale</label>
+			<div class="var-list" id="var-list">
+				<div class="var-row">
+					<input type="checkbox" id="chk-pressure" data-var="pressure" checked />
+					<label for="chk-pressure">Air pressure</label>
+					<select id="unit-pressure">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-pressure" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-pressure" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-pressure" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-altimeter_setting" data-var="altimeter_setting" />
+					<label for="chk-altimeter_setting">Altimeter setting</label>
+					<select id="unit-altimeter_setting">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-altimeter_setting" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-altimeter_setting" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-altimeter_setting" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-sea_level_pressure" data-var="sea_level_pressure" />
+					<label for="chk-sea_level_pressure">Sea-level pressure</label>
+					<select id="unit-sea_level_pressure">
+						<option value="atm" selected>atm</option>
+						<option value="Pa">Pa</option>
+						<option value="hPa">hPa (mbar)</option>
+						<option value="kPa">kPa</option>
+						<option value="mmHg">mmHg (Torr)</option>
+						<option value="inHg">inHg</option>
+						<option value="psi">psi</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-sea_level_pressure" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-sea_level_pressure" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-sea_level_pressure" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-temperature" data-var="temperature" />
+					<label for="chk-temperature">Air temperature</label>
+					<select id="unit-temperature">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+						<option value="R">°R</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-temperature" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-temperature" placeholder="auto" />
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-density" data-var="density" />
+					<label for="chk-density">Air density</label>
+					<select id="unit-density">
+						<option value="kg/m3" selected>kg/m³</option>
+						<option value="lb/ft3">lb/ft³</option>
+						<option value="slug/ft3">slug/ft³</option>
+						<option value="sigma">sigma (SL std=1)</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-density" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-density" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-density" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-pressure_altitude" data-var="pressure_altitude" />
+					<label for="chk-pressure_altitude">Pressure altitude</label>
+					<select id="unit-pressure_altitude">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-pressure_altitude" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-pressure_altitude" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-pressure_altitude" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-density_altitude" data-var="density_altitude" />
+					<label for="chk-density_altitude">Density altitude</label>
+					<select id="unit-density_altitude">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-density_altitude" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-density_altitude" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-density_altitude" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-geopotential_alt" data-var="geopotential_alt" />
+					<label for="chk-geopotential_alt">Geopotential altitude</label>
+					<select id="unit-geopotential_alt">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-geopotential_alt" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-geopotential_alt" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-geopotential_alt" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-geometric_alt" data-var="geometric_alt" />
+					<label for="chk-geometric_alt">Geometric altitude</label>
+					<select id="unit-geometric_alt">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-geometric_alt" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-geometric_alt" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-geometric_alt" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-molar_mass" data-var="molar_mass" />
+					<label for="chk-molar_mass">Molar mass</label>
+					<select id="unit-molar_mass">
+						<option value="g/mol" selected>g/mol</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-molar_mass" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-molar_mass" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-molar_mass" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-speed_of_sound" data-var="speed_of_sound" />
+					<label for="chk-speed_of_sound">Speed of sound</label>
+					<select id="unit-speed_of_sound">
+						<option value="m/s" selected>m/s</option>
+						<option value="km/h">km/h</option>
+						<option value="mph">mph</option>
+						<option value="ft/s">ft/s</option>
+						<option value="kn">knots</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-speed_of_sound" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-speed_of_sound" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-speed_of_sound" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-viscosity" data-var="viscosity" />
+					<label for="chk-viscosity">Dynamic viscosity</label>
+					<select id="unit-viscosity">
+						<option value="Pa·s" selected>Pa·s</option>
+						<option value="μPa·s">μPa·s</option>
+						<option value="mPa·s">mPa·s (centipoise)</option>
+						<option value="lbf·s/ft2">lbf·s/ft²</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-viscosity" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-viscosity" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-viscosity" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-mean_free_path" data-var="mean_free_path" />
+					<label for="chk-mean_free_path">Mean free path</label>
+					<select id="unit-mean_free_path">
+						<option value="nm">nm</option>
+						<option value="μm">μm</option>
+						<option value="mm">mm</option>
+						<option value="m" selected>m</option>
+						<option value="km">km</option>
+						<option value="in">in</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-mean_free_path" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-mean_free_path" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-mean_free_path" /> log</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-scale_height" data-var="scale_height" />
+					<label for="chk-scale_height">Scale height</label>
+					<select id="unit-scale_height">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+						<option value="mi">mi</option>
+						<option value="km">km</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-scale_height" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-scale_height" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-scale_height" /> log</label>
+				</div>
+				<div class="var-row pp-header">
+					<span class="pp-label">Number density</span>
+					<select id="unit-molecular_density">
+						<option value="per_m3" selected>/m³</option>
+						<option value="per_L">/L</option>
+						<option value="per_ft3">/ft³</option>
+						<option value="mol_m3">mol/m³</option>
+						<option value="kmol_m3">kmol/m³ (mol/L)</option>
+						<option value="lbmol_ft3">lbmol/ft³</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-molecular_density" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-molecular_density" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-molecular_density" /> log</label>
+				</div>
+				<div class="pp-species">
+					<label><input type="checkbox" data-var="molecular_density" data-species="total"> Total</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="N2"> N₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="O2"> O₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Ar"> Ar</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="CO2"> CO₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Ne"> Ne</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="He"> He</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="CH4"> CH₄</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Kr"> Kr</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="H2"> H₂</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="N2O"> N₂O</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="Xe"> Xe</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="O"> O</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="H"> H</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="N"> N</label>
+				</div>
+				<div class="var-row pp-header">
+					<span class="pp-label">Mole fraction</span>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-mole_fraction" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-mole_fraction" placeholder="auto" />
+					<label class="log-label"><input type="checkbox" id="log-mole_fraction" /> log</label>
+				</div>
+				<div class="pp-species">
+					<label><input type="checkbox" data-var="mole_fraction" data-species="total"> Total</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="N2"> N₂</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="O2"> O₂</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="Ar"> Ar</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="CO2"> CO₂</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="Ne"> Ne</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="He"> He</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="CH4"> CH₄</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="Kr"> Kr</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="H2"> H₂</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="N2O"> N₂O</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="Xe"> Xe</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="O"> O</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="H"> H</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="N"> N</label>
+				</div>
+				<div class="var-row">
+					<input type="checkbox" id="chk-boiling_point" data-var="boiling_point" />
+					<label for="chk-boiling_point">Boiling point of water</label>
+					<select id="unit-boiling_point">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+						<option value="R">°R</option>
+					</select>
+				</div>
+				<div class="var-range-row">
+					<input type="number" id="min-boiling_point" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="max-boiling_point" placeholder="auto" />
+				</div>
 			</div>
+			<p class="error" id="err-var-count"></p>
 			<p class="error" id="err-y-log"></p>
 		</div>
 
@@ -231,6 +489,91 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 	.checkbox-row {
 		margin-bottom: 0.4rem;
+	}
+
+	.hint {
+		font-size: 0.8125rem;
+		color: var(--color-text);
+		opacity: 0.7;
+		margin: 0 0 0.4rem;
+	}
+
+	.var-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		max-height: 24rem;
+		overflow-y: auto;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		padding: 0.4rem 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.var-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.var-row input[type="checkbox"] {
+		flex-shrink: 0;
+	}
+
+	.var-row label {
+		flex: 1;
+		min-width: 0;
+		font-size: 0.9375rem;
+	}
+
+	.var-row select {
+		width: auto;
+		flex-shrink: 0;
+		font-size: 0.9375rem;
+		padding: 0.15rem 0.25rem;
+	}
+
+	.pp-header .pp-label {
+		flex: 1;
+		font-size: 0.9375rem;
+	}
+
+	.pp-species {
+		display: grid;
+		grid-template-columns: repeat(4, auto);
+		justify-content: start;
+		gap: 0.1rem 0.6rem;
+		padding: 0.1rem 0 0.2rem 1.25rem;
+		font-size: 0.9375rem;
+	}
+
+	.pp-species label {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+		cursor: pointer;
+	}
+
+	.var-range-row {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0 0 0.3rem 1.4rem;
+		font-size: 0.8125rem;
+	}
+
+	.var-range-row input[type="number"] {
+		max-width: 3.4rem;
+		min-width: 0;
+	}
+
+	.var-range-row .log-label {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+		margin-left: 0.3rem;
+		white-space: nowrap;
+		cursor: pointer;
 	}
 
 	.graph-area {
@@ -339,75 +682,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		return chosen.toString();
 	}
 
-	// Y-axis unit options per variable
-	const PRESSURE_UNITS = [
-		{ value: 'atm',  label: 'atm' }, { value: 'Pa',   label: 'Pa'        },
-		{ value: 'hPa',  label: 'hPa (mbar)' }, { value: 'kPa', label: 'kPa' },
-		{ value: 'mmHg', label: 'mmHg (Torr)' }, { value: 'inHg', label: 'inHg' },
-		{ value: 'psi',  label: 'psi' },
-	];
-	const MFP_UNITS = [
-		{ value: 'nm', label: 'nm' }, { value: 'μm', label: 'μm' },
-		{ value: 'mm', label: 'mm' }, { value: 'm',  label: 'm'  },
-		{ value: 'km', label: 'km' }, { value: 'in', label: 'in' },
-		{ value: 'ft', label: 'ft' }, { value: 'mi', label: 'mi' },
-	];
-	const ALT_UNITS = [
-		{ value: 'm', label: 'm' }, { value: 'ft', label: 'ft' },
-		{ value: 'mi', label: 'mi' }, { value: 'km', label: 'km' },
-	];
-
-	const Y_UNITS: Record<string, { value: string; label: string }[]> = {
-		pressure:         PRESSURE_UNITS,
-		altimeter_setting: PRESSURE_UNITS,
-		sea_level_pressure: PRESSURE_UNITS,
-		temperature:      [
-			{ value: 'C', label: '°C' }, { value: 'F', label: '°F' },
-			{ value: 'K', label: 'K' },       { value: 'R', label: '°R' },
-		],
-		density:          [
-			{ value: 'kg/m3',    label: 'kg/m³' },
-			{ value: 'lb/ft3',   label: 'lb/ft³' },
-			{ value: 'slug/ft3', label: 'slug/ft³' },
-			{ value: 'sigma',    label: 'sigma (SL std=1)' },
-		],
-		pressure_altitude: ALT_UNITS,
-		density_altitude: ALT_UNITS,
-		speed_of_sound:   [
-			{ value: 'm/s',  label: 'm/s' },   { value: 'km/h', label: 'km/h' },
-			{ value: 'mph',  label: 'mph' },   { value: 'ft/s', label: 'ft/s' },
-			{ value: 'kn',   label: 'knots' },
-		],
-		scale_height:     ALT_UNITS,
-		viscosity:        [
-			{ value: 'Pa·s',     label: 'Pa·s' },
-			{ value: 'μPa·s', label: 'μPa·s' },
-			{ value: 'mPa·s',         label: 'mPa·s (centipoise)' },
-			{ value: 'lbf·s/ft2', label: 'lbf·s/ft²' },
-		],
-		boiling_point:    [
-			{ value: 'C', label: '°C' }, { value: 'F', label: '°F' },
-			{ value: 'K', label: 'K' },       { value: 'R', label: '°R' },
-		],
-		geopotential_alt: ALT_UNITS,
-		geometric_alt:    ALT_UNITS,
-		partial_pressure: [...PRESSURE_UNITS, { value: 'fraction', label: 'mole fraction' }],
-		mean_free_path:   MFP_UNITS,
-		molar_mass:       [{ value: 'g/mol', label: 'g/mol' }],
-		molecular_density: [
-			{ value: 'per_m3',     label: '/m³' },
-			{ value: 'per_L',      label: '/L' },
-			{ value: 'per_ft3',    label: '/ft³' },
-			{ value: 'mol_m3',     label: 'mol/m³' },
-			{ value: 'kmol_m3',    label: 'kmol/m³ (mol/L)' },
-			{ value: 'lbmol_ft3',  label: 'lbmol/ft³' },
-		],
-	};
+	const MAX_VARS = 6;
 
 	const SPECIES_DISPLAY: Record<string, string> = {
+		total: 'Total',
 		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂',
-		Ne: 'Ne', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
-		O: 'O', He: 'He', H: 'H', N: 'N', total: 'Total',
+		Ne: 'Ne', He: 'He', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
+		O: 'O', H: 'H', N: 'N',
 	};
 
 	const Y_LABELS: Record<string, string> = {
@@ -424,41 +705,71 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		boiling_point:     'Boiling point of water',
 		geopotential_alt:  'Geopotential altitude',
 		geometric_alt:     'Geometric altitude',
-		partial_pressure:  'Partial pressure',
 		mean_free_path:    'Mean free path',
 		molar_mass:        'Molar mass',
 		molecular_density: 'Number density',
+		mole_fraction:     'Mole fraction',
 	};
 
-	function isLogDisabled(): boolean {
-		const yVar  = (document.getElementById('y-var') as HTMLSelectElement).value;
-		const yUnit = (document.getElementById('y-unit') as HTMLSelectElement).value;
-		return yVar === 'temperature' && (yUnit === 'C' || yUnit === 'F');
+	// Quantities that are themselves a length/altitude, so their tick labels get the
+	// same "4 sig figs vs. nearest integer" treatment as the altitude axis.
+	const ALTITUDE_LIKE_KEYS = new Set([
+		'pressure_altitude', 'density_altitude', 'geopotential_alt', 'geometric_alt',
+	]);
+
+	// Per-series line/axis colors when 2+ variables are plotted together.
+	const LINE_COLORS = ['#0000ff', '#ff0000', '#00e000', '#e0e000', '#00e0e0', '#ff00ff'];
+
+	interface VarConfig {
+		key: string;
+		unit: string;
+		unitLabel: string;
+		species: string;
+		label: string;
+		yMin: number | null;
+		yMax: number | null;
+		logScale: boolean;
 	}
 
-	function updateLogCheckbox() {
-		const cb = document.getElementById('y-log') as HTMLInputElement;
-		const disabled = isLogDisabled();
-		cb.disabled = disabled;
-		if (disabled) cb.checked = false;
-		(document.getElementById('err-y-log') as HTMLElement).textContent = '';
+	// Only variable checkboxes carry data-var; the per-variable "log" checkboxes added
+	// alongside them do not, so this selector (unlike a bare :checked) never counts them.
+	function getCheckedVars(): VarConfig[] {
+		return Array.from(
+			document.querySelectorAll<HTMLInputElement>('#var-list input[type=checkbox][data-var]:checked')
+		).map(chk => {
+			const key = chk.dataset.var!;
+			const unitSel = document.getElementById(`unit-${key}`) as HTMLSelectElement | null;
+			const unit = unitSel?.value ?? '';
+			const unitLabel = unitSel ? unitSel.options[unitSel.selectedIndex].text : '';
+			const species = chk.dataset.species ?? '';
+			const label = key === 'mole_fraction'
+				? `Mole fraction ${SPECIES_DISPLAY[species]}`
+				: key === 'molecular_density'
+				? `Number density (${unitLabel}) ${SPECIES_DISPLAY[species]}`
+				: `${Y_LABELS[key]} (${unitLabel})`;
+
+			const minEl = document.getElementById(`min-${key}`) as HTMLInputElement | null;
+			const maxEl = document.getElementById(`max-${key}`) as HTMLInputElement | null;
+			const logEl = document.getElementById(`log-${key}`) as HTMLInputElement | null;
+			const minVal = minEl && minEl.value !== '' ? parseFloat(minEl.value) : NaN;
+			const maxVal = maxEl && maxEl.value !== '' ? parseFloat(maxEl.value) : NaN;
+			const yMin = isNaN(minVal) ? null : minVal;
+			const yMax = isNaN(maxVal) ? null : maxVal;
+			// Temperature and boiling point have no log checkbox in the markup (log scale
+			// doesn't suit a quantity that can be zero or negative depending on unit), so
+			// logEl is null for them and logScale is always false.
+			const logScale = logEl?.checked ?? false;
+
+			return { key, unit, unitLabel, species, label, yMin, yMax, logScale };
+		});
 	}
 
-	function populateYUnits() {
-		const yVar = (document.getElementById('y-var') as HTMLSelectElement).value;
-		const sel  = document.getElementById('y-unit') as HTMLSelectElement;
-		const prev = sel.value;
-		sel.innerHTML = '';
-		for (const opt of Y_UNITS[yVar]) {
-			const o = document.createElement('option');
-			o.value = opt.value; o.textContent = opt.label;
-			sel.appendChild(o);
-		}
-		if (Y_UNITS[yVar].some(o => o.value === prev)) sel.value = prev;
-		const speciesRelevant = yVar === 'partial_pressure' || yVar === 'molecular_density';
-		(document.getElementById('y-species-field') as HTMLElement).style.display = speciesRelevant ? '' : 'none';
-		if (yVar === 'molecular_density') (document.getElementById('y-species') as HTMLSelectElement).value = 'total';
-		updateLogCheckbox();
+	function updateModeUI() {
+		const vars  = getCheckedVars();
+		const multi = vars.length >= 2;
+		const altOnYEl = document.getElementById('alt-on-y') as HTMLInputElement;
+		altOnYEl.disabled = multi;
+		if (multi) altOnYEl.checked = true;
 	}
 
 	function graphColors() {
@@ -469,14 +780,62 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			grid:    dark ? '#333333' : '#e0e0e0',
 			axis:    dark ? '#cccccc' : '#333333',
 			text:    dark ? '#cccccc' : '#333333',
-			line:    '#3245ff',
+			line:    '#0000ff',
 		};
+	}
+
+	// Computes one variable's value at a single altitude's physical state.
+	function computeVarValue(v: VarConfig, ctx: {
+		P_Pa: number; T_K: number; rho: number; H: number; h_m: number; T0_K: number;
+	}): number | null {
+		const { P_Pa, T_K, rho, H, h_m, T0_K } = ctx;
+		switch (v.key) {
+			case 'pressure':           return convert(P_Pa, 'Pa', v.unit);
+			case 'altimeter_setting':  return convert(atm.getAltimeterSetting(h_m, P_Pa), 'Pa', v.unit);
+			case 'sea_level_pressure': return convert(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), 'Pa', v.unit);
+			case 'temperature':        return convert(T_K, 'K', v.unit);
+			case 'density':            return convert(rho, 'kg/m3', v.unit);
+			case 'pressure_altitude': {
+				const pa = atm.getPressureAltitude(P_Pa);
+				return isNaN(pa) ? null : convert(pa, 'm', v.unit);
+			}
+			case 'density_altitude': {
+				const da = atm.getDensityAltitude(rho);
+				return isNaN(da) ? null : convert(da, 'm', v.unit);
+			}
+			case 'speed_of_sound':     return convert(atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m)), 'm/s', v.unit);
+			case 'scale_height':       return convert(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), 'm', v.unit);
+			case 'viscosity':          return convert(atm.getViscosity(T_K), 'Pa·s', v.unit);
+			case 'boiling_point':      return P_Pa >= 611.657 ? convert(getBoilingPoint(P_Pa), 'K', v.unit) : null;
+			case 'geopotential_alt':   return convert(H, 'm', v.unit);
+			case 'geometric_alt':      return convert(h_m, 'm', v.unit);
+			case 'molecular_density': {
+				const n_total = atm.getNumberDensity(P_Pa, T_K);
+				const mf = v.species === 'total' ? 1 : (atm.getMoleFraction(v.species, h_m) ?? 0);
+				return convert(mf * n_total, 'per_m3', v.unit);
+			}
+			case 'mole_fraction':
+				return v.species === 'total' ? 1 : (atm.getMoleFraction(v.species, h_m) ?? 0);
+			case 'mean_free_path':     return convert(atm.getMeanFreePath(P_Pa, T_K), 'm', v.unit);
+			case 'molar_mass':         return atm.getMolarMass(h_m);
+			default: return null;
+		}
+	}
+
+	// Tick label for a variable's own axis: temperature/boiling-point use roundSig (to
+	// avoid e.g. "-0°C"), altitude-like quantities get integer-vs-4-sig-fig treatment,
+	// everything else uses formatTick's general rule.
+	function tickLabelFor(v: VarConfig, value: number): string {
+		if (v.key === 'temperature' || v.key === 'boiling_point')
+			return roundSig(value, 4, 1e-3, false, v.unit);
+		return formatTick(value, ALTITUDE_LIKE_KEYS.has(v.key));
 	}
 
 	function generateGraph() {
 		syncTempModeAvailability();
 
 		const C = graphColors();
+		const svgEl = document.getElementById('graph-svg') as unknown as SVGSVGElement;
 		const condAltVal  = parseFloat((document.getElementById('cond-alt') as HTMLInputElement).value);
 		const condAltUnit = (document.getElementById('cond-alt-unit') as HTMLSelectElement).value;
 		const slTempVal   = parseFloat((document.getElementById('sl-temp') as HTMLInputElement).value);
@@ -490,31 +849,24 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const xMin        = parseFloat((document.getElementById('x-min') as HTMLInputElement).value);
 		const xMax        = parseFloat((document.getElementById('x-max') as HTMLInputElement).value);
 		const xIntervals  = parseInt((document.getElementById('x-intervals') as HTMLInputElement).value) || 5;
-		const yVar        = (document.getElementById('y-var') as HTMLSelectElement).value;
-		const yUnit       = (document.getElementById('y-unit') as HTMLSelectElement).value;
-		const ySpecies    = (document.getElementById('y-species') as HTMLSelectElement).value;
-		const yMinRaw     = (document.getElementById('y-min') as HTMLInputElement).value;
-		const yMaxRaw     = (document.getElementById('y-max') as HTMLInputElement).value;
-		const yMinUser    = yMinRaw !== '' ? parseFloat(yMinRaw) : null;
-		const yMaxUser    = yMaxRaw !== '' ? parseFloat(yMaxRaw) : null;
 		const yIntervals  = parseInt((document.getElementById('y-intervals') as HTMLInputElement).value) || 5;
-		const yLog        = (document.getElementById('y-log') as HTMLInputElement).checked && !isLogDisabled();
-		const altOnY      = (document.getElementById('alt-on-y') as HTMLInputElement).checked;
-		// True when the dependent variable is itself an altitude (or altitude-like length)
-		// quantity, so its tick labels get the same rounding treatment as the altitude axis.
-		const yVarIsAltitude = yVar === 'pressure_altitude' || yVar === 'density_altitude'
-			|| yVar === 'geopotential_alt' || yVar === 'geometric_alt' || yVar === 'scale_height';
+		const vars        = getCheckedVars().slice(0, MAX_VARS);
+		const multi       = vars.length >= 2;
+		const altOnY      = multi || (document.getElementById('alt-on-y') as HTMLInputElement).checked;
 
 		const errCondAlt    = document.getElementById('err-cond-alt') as HTMLElement;
 		const errSlTemp     = document.getElementById('err-sl-temp') as HTMLElement;
 		const errSlPressure = document.getElementById('err-sl-pressure') as HTMLElement;
 		const errXRange     = document.getElementById('err-x-range') as HTMLElement;
+		const errYLog       = document.getElementById('err-y-log') as HTMLElement;
 		errCondAlt.textContent = '';
 		errSlTemp.textContent = '';
 		errSlPressure.textContent = '';
 		errXRange.textContent = '';
+		errYLog.textContent = '';
 
-		if ([condAltVal, slTempVal, slPressVal, xMin, xMax].some(isNaN) || xMin >= xMax) return;
+		if (vars.length === 0) { svgEl.innerHTML = ''; return; }
+		if ([condAltVal, slTempVal, slPressVal, xMin, xMax].some(isNaN) || xMin >= xMax) { svgEl.innerHTML = ''; return; }
 
 		// Conditions altitude → geopotential
 		const condAlt_m = convert(condAltVal, condAltUnit, 'm');
@@ -525,7 +877,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const factor = convert(1, 'm', condAltUnit);
 			const label = xVar === 'geopotential' ? 'Geopotential altitude' : 'Geometric altitude';
 			errCondAlt.textContent = `${label} must be between ${roundSig(loH * factor, 6, 1e-6, true)} and ${roundSig(hiH * factor, 6, 1e-6, true)} ${condAltUnit}`;
-			return;
+			svgEl.innerHTML = ''; return;
 		}
 
 		// Derive T0_K from temp mode
@@ -544,7 +896,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				const lo = fmt(loK), hi = fmt(hiK);
 				errSlTemp.textContent = `Sea-level temperature must be between ${lo} and ${hi} ${unitLabel[slTempUnit]}.`;
 			}
-			return;
+			svgEl.innerHTML = ''; return;
 		}
 
 		// Derive P0_Pa from pressure mode
@@ -561,7 +913,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if (P_input_Pa <= 0) {
 			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
 			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}.`;
-			return;
+			svgEl.innerHTML = ''; return;
 		}
 
 		const xMin_m = convert(xMin, xUnit, 'm');
@@ -573,7 +925,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const lo = roundSig(loX * factor, 6, 1e-6, true);
 			const hi = roundSig(hiX * factor, 6, 1e-6, true);
 			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
-			return;
+			svgEl.innerHTML = ''; return;
 		}
 
 		// Geometric altitude extent of the graph
@@ -587,7 +939,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const prof    = atm.buildAtmosphereProfile(profZ, P0_Pa, T0_K);
 		const rhoArr  = atmg.profileDensity(prof);
 
-		const pts: { x: number; y: number | null }[] = [];
+		const xVals: number[] = [];
+		const series: (number | null)[][] = vars.map(() => []);
 
 		for (let i = 0; i < geoZ.length; i++) {
 			const h_m  = geoZ[i];
@@ -595,134 +948,80 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const xVal = i === 0 ? xMin
 				: i === geoZ.length - 1 ? xMax
 				: xVar === 'geometric' ? convert(h_m, 'm', xUnit) : convert(H, 'm', xUnit);
+			xVals.push(xVal);
 
-			if (h_m < -5000) { pts.push({ x: xVal, y: null }); continue; }
+			if (h_m < -5000) { vars.forEach((_, vi) => series[vi].push(null)); continue; }
 
 			const pi   = i - profOff;
-			const P_Pa = prof.P[pi];
-			const T_K  = prof.T[pi];
-			const rho  = rhoArr[pi];
-
-			let y: number | null = null;
-			switch (yVar) {
-				case 'pressure':
-					y = convert(P_Pa, 'Pa', yUnit); break;
-				case 'altimeter_setting':
-					y = convert(atm.getAltimeterSetting(h_m, P_Pa), 'Pa', yUnit);
-					break;
-				case 'sea_level_pressure':
-					y = convert(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), 'Pa', yUnit);
-					break;
-				case 'temperature':
-					y = convert(T_K, 'K', yUnit); break;
-				case 'density':
-					y = convert(rho, 'kg/m3', yUnit); break;
-				case 'pressure_altitude': {
-					const pa = atm.getPressureAltitude(P_Pa);
-					if (!isNaN(pa)) y = convert(pa, 'm', yUnit);
-					break;
-				}
-				case 'density_altitude': {
-					const da = atm.getDensityAltitude(rho);
-					if (!isNaN(da)) y = convert(da, 'm', yUnit);
-					break;
-				}
-				case 'speed_of_sound': {
-					const sos = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
-					y = convert(sos, 'm/s', yUnit); break;
-				}
-				case 'scale_height':
-					y = convert(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), 'm', yUnit); break;
-				case 'viscosity':
-					y = convert(atm.getViscosity(T_K), 'Pa·s', yUnit); break;
-				case 'boiling_point': {
-					if (P_Pa >= 611.657) y = convert(getBoilingPoint(P_Pa), 'K', yUnit);
-					break;
-				}
-				case 'geopotential_alt':
-					y = convert(H, 'm', yUnit); break;
-				case 'geometric_alt':
-					y = convert(h_m, 'm', yUnit); break;
-				case 'partial_pressure': {
-					const mf = ySpecies === 'total' ? 1 : (atm.getMoleFraction(ySpecies, h_m) ?? 0);
-					const pp_Pa = mf * P_Pa;
-					y = yUnit === 'fraction'
-						? mf
-						: convert(pp_Pa, 'Pa', yUnit);
-					break;
-				}
-				case 'molecular_density': {
-					const n_total = atm.getNumberDensity(P_Pa, T_K);
-					const n = ySpecies === 'total' ? n_total : (atm.getMoleFraction(ySpecies, h_m) ?? 0) * n_total;
-					y = convert(n, 'per_m3', yUnit);
-					break;
-				}
-				case 'mean_free_path':
-					y = convert(atm.getMeanFreePath(P_Pa, T_K), 'm', yUnit); break;
-				case 'molar_mass':
-					y = atm.getMolarMass(h_m); break;
-			}
-			pts.push({ x: xVal, y });
+			const ctx  = { P_Pa: prof.P[pi], T_K: prof.T[pi], rho: rhoArr[pi], H, h_m, T0_K };
+			vars.forEach((v, vi) => series[vi].push(computeVarValue(v, ctx)));
 		}
 
+		if (!multi) {
+			renderSingle(svgEl, C, vars[0], xVals, series[0],
+				{ xVar, xUnit, xMin, xMax, xIntervals, yIntervals, altOnY, errYLog });
+		} else {
+			renderMulti(svgEl, C, vars, xVals, series, { xVar, xUnit, xMin, xMax, xIntervals, yIntervals });
+		}
+	}
+
+	// ── Single-variable render: full real axis, range override, log scale, orientation toggle ──
+	function renderSingle(
+		svgEl: SVGSVGElement, C: ReturnType<typeof graphColors>, v: VarConfig,
+		xVals: number[], yVals: (number | null)[],
+		opts: {
+			xVar: string; xUnit: string; xMin: number; xMax: number; xIntervals: number;
+			yIntervals: number; altOnY: boolean; errYLog: HTMLElement;
+		},
+	) {
+		const { xVar, xUnit, xMin, xMax, xIntervals, yIntervals, altOnY, errYLog } = opts;
+		const yMinUser = v.yMin, yMaxUser = v.yMax, yLog = v.logScale;
+		const pts = xVals.map((x, i) => ({ x, y: yVals[i] }));
 		const validY = pts.filter(p => p.y !== null).map(p => p.y as number);
-		if (validY.length < 2) return;
+		if (validY.length < 2) { svgEl.innerHTML = ''; return; }
 		const yDataMin = Math.min(...validY), yDataMax = Math.max(...validY);
-		if (yDataMin === yDataMax) return;
+		if (yDataMin === yDataMax) { svgEl.innerHTML = ''; return; }
 
-		const errYLog = document.getElementById('err-y-log') as HTMLElement;
-		errYLog.textContent = '';
+		const W = 600, HS = 400;
+		svgEl.setAttribute('viewBox', `0 0 ${W} ${HS}`);
 
-		let yLo: number, yHi: number;
-		let yTicks: number[];
-		let my: (v: number) => number;
+		let yLo: number, yHi: number, yTicks: number[], my: (val: number) => number;
 
 		if (yLog) {
-			// For log scale, data must be strictly positive
-			const posY = validY.filter(v => v > 0);
+			const posY = validY.filter(x => x > 0);
 			if (posY.length < 2) {
 				errYLog.textContent = 'Logarithmic scale requires all y-values to be positive.';
-				return;
+				svgEl.innerHTML = ''; return;
 			}
 			const logDataMin = Math.min(...posY), logDataMax = Math.max(...posY);
 			yLo = yMinUser !== null && yMinUser > 0 ? yMinUser : logDataMin;
 			yHi = yMaxUser !== null && yMaxUser > 0 ? yMaxUser : logDataMax;
 			if (yMinUser !== null && yMinUser <= 0) {
 				errYLog.textContent = 'Y-axis minimum must be positive for logarithmic scale.';
-				return;
+				svgEl.innerHTML = ''; return;
 			}
-			if (yLo >= yHi) return;
+			if (yLo >= yHi) { svgEl.innerHTML = ''; return; }
 			yTicks = logTicks(yLo, yHi, yIntervals);
 			const logLo = Math.log10(yLo), logHi = Math.log10(yHi);
-			const W = 600, HS = 400;
 			const pL = 62, pR = W - 20, pT = 35, pB = HS - 50;
 			const pW = pR - pL, pH = pB - pT;
 			const xTicks = linearTicks(xMin, xMax, xIntervals);
-	
+
 			// log scale maps the variable axis; altitude axis is always linear
 			const mxLog = altOnY
-				? (v: number) => v > 0 ? pL + (Math.log10(v) - logLo) / (logHi - logLo) * pW : pL - 999
-				: (v: number) => pL + (v - xMin) / (xMax - xMin) * pW;
+				? (val: number) => val > 0 ? pL + (Math.log10(val) - logLo) / (logHi - logLo) * pW : pL - 999
+				: (val: number) => pL + (val - xMin) / (xMax - xMin) * pW;
 			const myLog = altOnY
-				? (v: number) => pB - (v - xMin) / (xMax - xMin) * pH
-				: (v: number) => v > 0 ? pB - (Math.log10(v) - logLo) / (logHi - logLo) * pH : pB + 999;
+				? (val: number) => pB - (val - xMin) / (xMax - xMin) * pH
+				: (val: number) => val > 0 ? pB - (Math.log10(val) - logLo) / (logHi - logLo) * pH : pB + 999;
 			my = myLog;
 
 			const horzTicks = altOnY ? yTicks  : xTicks;
 			const vertTicks = altOnY ? xTicks  : yTicks;
 
-			const yUnitLabel = (document.getElementById('y-unit') as HTMLSelectElement)
-				.options[(document.getElementById('y-unit') as HTMLSelectElement).selectedIndex].text;
 			const altLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
-			const varLabel = yVar === 'partial_pressure'
-				? yUnit === 'fraction'
-					? `Mole fraction ${SPECIES_DISPLAY[ySpecies]}`
-					: `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
-				: yVar === 'molecular_density'
-				? `Number density (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
-				: `${Y_LABELS[yVar]} (${yUnitLabel})`;
-			const xLabel = altOnY ? varLabel : altLabel;
-			const yLabel = altOnY ? altLabel : varLabel;
+			const xLabel = altOnY ? v.label : altLabel;
+			const yLabel = altOnY ? altLabel : v.label;
 
 			let s = '';
 			s += `<rect width="${W}" height="${HS}" fill="${C.bg}"/>`;
@@ -744,13 +1043,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			for (const ht of horzTicks) {
 				const x = mxLog(ht).toFixed(1);
 				s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
-				const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(ht, 4, 1e-3, false, yUnit) : formatTick(ht, !altOnY || yVarIsAltitude);
+				const lbl = altOnY ? tickLabelFor(v, ht) : formatTick(ht, true);
 				s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 			}
 			for (const vt of vertTicks) {
 				const y = myLog(vt).toFixed(1);
 				s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
-				const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(vt, 4, 1e-3, false, yUnit) : formatTick(vt, altOnY || yVarIsAltitude);
+				const lbl = altOnY ? formatTick(vt, true) : tickLabelFor(v, vt);
 				s += `<text x="${pL - 8}" y="${(myLog(vt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 			}
 
@@ -767,21 +1066,19 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				started = true;
 			}
 			if (d) s += `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="2" clip-path="url(#c)"/>`;
-			(document.getElementById('graph-svg') as Element).innerHTML = s;
+			svgEl.innerHTML = s;
 			return;
 		}
 
 		// ── Linear scale ───────────────────────────────────────────────────────
-		const autoYMin = (yVar !== 'temperature' && yVar !== 'boiling_point' && yDataMin >= 0 && yDataMax > yDataMin * 2) ? 0 : yDataMin;
+		const autoYMin = (v.key !== 'temperature' && v.key !== 'boiling_point' && yDataMin >= 0 && yDataMax > yDataMin * 2) ? 0 : yDataMin;
 		yLo = yMinUser !== null ? yMinUser : autoYMin;
 		yHi = yMaxUser !== null ? yMaxUser : yDataMax;
-		if (yLo >= yHi) return;
+		if (yLo >= yHi) { svgEl.innerHTML = ''; return; }
 
 		yTicks = linearTicks(yLo, yHi, yIntervals);
 		const xTicks = linearTicks(xMin, xMax, xIntervals);
 
-		// SVG layout constants
-		const W = 600, HS = 400;
 		const pL = 62, pR = W - 20, pT = 35, pB = HS - 50;
 		const pW = pR - pL, pH = pB - pT;
 
@@ -793,19 +1090,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const horzTicks = altOnY ? yTicks  : xTicks;
 		const vertTicks = altOnY ? xTicks  : yTicks;
 
-		const mx = (v: number) => pL + (v - horzLo) / (horzHi - horzLo) * pW;
-		my = (v: number) => pB - (v - vertLo) / (vertHi - vertLo) * pH;
+		const mx = (val: number) => pL + (val - horzLo) / (horzHi - horzLo) * pW;
+		my = (val: number) => pB - (val - vertLo) / (vertHi - vertLo) * pH;
 
-		const yUnitLabel = (document.getElementById('y-unit') as HTMLSelectElement)
-			.options[(document.getElementById('y-unit') as HTMLSelectElement).selectedIndex].text;
 		const altLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
-		const varLabel = yVar === 'partial_pressure'
-			? `Partial pressure (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
-			: yVar === 'molecular_density'
-			? `Number density (${yUnitLabel}) ${SPECIES_DISPLAY[ySpecies]}`
-			: `${Y_LABELS[yVar]} (${yUnitLabel})`;
-		const xLabel = altOnY ? varLabel : altLabel;
-		const yLabel = altOnY ? altLabel : varLabel;
+		const xLabel = altOnY ? v.label : altLabel;
+		const yLabel = altOnY ? altLabel : v.label;
 
 		let s = '';
 		s += `<rect width="${W}" height="${HS}" fill="${C.bg}"/>`;
@@ -830,7 +1120,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		for (const ht of horzTicks) {
 			const x = mx(ht).toFixed(1);
 			s += `<line x1="${x}" y1="${pB}" x2="${x}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
-			const lbl = (altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(ht, 4, 1e-3, false, yUnit) : formatTick(ht, !altOnY || yVarIsAltitude);
+			const lbl = altOnY ? tickLabelFor(v, ht) : formatTick(ht, true);
 			s += `<text x="${x}" y="${pB + 18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 		}
 
@@ -838,7 +1128,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		for (const vt of vertTicks) {
 			const y = my(vt).toFixed(1);
 			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
-			const lbl = (!altOnY ? (yVar === 'temperature' || yVar === 'boiling_point') : false) ? roundSig(vt, 4, 1e-3, false, yUnit) : formatTick(vt, altOnY || yVarIsAltitude);
+			const lbl = altOnY ? formatTick(vt, true) : tickLabelFor(v, vt);
 			s += `<text x="${pL - 8}" y="${(my(vt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${lbl}</text>`;
 		}
 
@@ -858,22 +1148,166 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		}
 		if (d) s += `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="2" clip-path="url(#c)"/>`;
 
-		(document.getElementById('graph-svg') as Element).innerHTML = s;
+		svgEl.innerHTML = s;
+	}
+
+	// ── Multi-variable render: altitude always vertical (shared real axis); each
+	// variable gets its own auto-scaled horizontal axis, stacked below the plot with
+	// its name to the right of its tick numbers, plus a color-keyed legend underneath. ──
+	function renderMulti(
+		svgEl: SVGSVGElement, C: ReturnType<typeof graphColors>, vars: VarConfig[],
+		xVals: number[], series: (number | null)[][],
+		opts: { xVar: string; xUnit: string; xMin: number; xMax: number; xIntervals: number; yIntervals: number },
+	) {
+		const { xVar, xUnit, xMin, xMax, xIntervals, yIntervals } = opts;
+		const N = vars.length;
+
+		// Reserve enough right-margin width for the last tick's number (which can be as
+		// wide as scientific notation, e.g. "5.333e+24") plus a "[N]" marker referencing
+		// the legend below, so nothing overflows past the viewBox or collides with the plot.
+		const tickGap = 34;
+		const labelSpace = 70;
+
+		const W = 600;
+		const pL = 62, pR = W - labelSpace, pT = 35;
+		const plotH = 260;
+		const pB = pT + plotH;
+		const pW = pR - pL;
+		const axisRowH = 20;
+		const axisRowsStart = pB + 4;
+		const legendGap = 14;
+		const legendRowH = 16;
+		const legendStart = axisRowsStart + N * axisRowH + legendGap;
+		const HS = legendStart + N * legendRowH + 12;
+
+		svgEl.setAttribute('viewBox', `0 0 ${W} ${HS}`);
+
+		// Per-series axis: each variable's own range (its own min/max fields, else auto
+		// from data) and its own scale (log only if that variable's checkbox is on and the
+		// resulting range is strictly positive — falls back to linear otherwise). Every
+		// axis gets the same tick COUNT (yIntervals); only the tick values differ.
+		interface AxisInfo { lo: number; hi: number; ticks: number[]; map: (val: number) => number; isLog: boolean }
+		const axes: (AxisInfo | null)[] = vars.map((v, vi) => {
+			const valid = series[vi].filter((y): y is number => y !== null);
+			if (valid.length < 2) return null;
+			const dataLo = Math.min(...valid), dataHi = Math.max(...valid);
+
+			if (v.logScale) {
+				let lo = v.yMin !== null && v.yMin > 0 ? v.yMin : dataLo;
+				let hi = v.yMax !== null && v.yMax > 0 ? v.yMax : dataHi;
+				if (lo <= 0 || hi <= 0 || lo >= hi) { lo = dataLo; hi = dataHi; }
+				if (lo > 0 && hi > lo) {
+					const ticks = logTicks(lo, hi, yIntervals);
+					const logLo = Math.log10(lo), logHi = Math.log10(hi);
+					const map = (val: number) => val > 0 ? pL + (Math.log10(val) - logLo) / (logHi - logLo) * pW : pL;
+					return { lo, hi, ticks, map, isLog: true };
+				}
+				// Data/range isn't strictly positive — fall through to a linear axis.
+			}
+
+			let lo = v.yMin !== null ? v.yMin : dataLo;
+			let hi = v.yMax !== null ? v.yMax : dataHi;
+			if (lo >= hi) { lo = dataLo; hi = dataHi; }
+			if (lo === hi) {
+				const pad = lo !== 0 ? Math.abs(lo) * 0.1 : 1;
+				lo -= pad; hi += pad;
+			} else if (v.yMin === null && v.key !== 'temperature' && v.key !== 'boiling_point' && lo >= 0 && hi > lo * 2) {
+				lo = 0;
+			}
+			const ticks = linearTicks(lo, hi, yIntervals);
+			const map = (val: number) => pL + (val - lo) / (hi - lo) * pW;
+			return { lo, hi, ticks, map, isLog: false };
+		});
+		if (axes.every(a => a === null)) { svgEl.innerHTML = ''; return; }
+
+		const xTicks = linearTicks(xMin, xMax, xIntervals);
+		const myAlt = (val: number) => pB - (val - xMin) / (xMax - xMin) * plotH;
+
+		let s = '';
+		s += `<rect width="${W}" height="${HS}" fill="${C.bg}"/>`;
+		s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${plotH}" fill="${C.plotBg}"/>`;
+		s += `<defs><clipPath id="c"><rect x="${pL}" y="${pT}" width="${pW}" height="${plotH}"/></clipPath></defs>`;
+
+		// Shared altitude gridlines (horizontal)
+		for (const xt of xTicks) {
+			const y = myAlt(xt).toFixed(1);
+			s += `<line x1="${pL}" y1="${y}" x2="${pR}" y2="${y}" stroke="${C.grid}" stroke-width="1"/>`;
+		}
+		// Per-variable gridlines (vertical) — every axis contributes its own ticks, all
+		// drawn in the same neutral grid color so they read as gridlines, not data.
+		for (const a of axes) {
+			if (!a) continue;
+			for (const t of a.ticks) {
+				const x = a.map(t).toFixed(1);
+				s += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pB}" stroke="${C.grid}" stroke-width="1"/>`;
+			}
+		}
+
+		// Plot border
+		s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
+		s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
+
+		// Shared altitude axis (left)
+		for (const xt of xTicks) {
+			const y = myAlt(xt).toFixed(1);
+			s += `<line x1="${pL - 5}" y1="${y}" x2="${pL}" y2="${y}" stroke="${C.axis}" stroke-width="1"/>`;
+			s += `<text x="${pL - 8}" y="${(myAlt(xt) + 4).toFixed(1)}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">${formatTick(xt, true)}</text>`;
+		}
+		const altLabel = `${xVar === 'geometric' ? 'Geometric' : 'Geopotential'} altitude (${xUnit})`;
+		s += `<text transform="rotate(-90)" x="${-(pT + plotH / 2).toFixed(1)}" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="${C.text}">${altLabel}</text>`;
+
+		// One line per variable, each on its own horizontal scale
+		vars.forEach((v, vi) => {
+			const a = axes[vi];
+			if (!a) return;
+			const color = LINE_COLORS[vi % LINE_COLORS.length];
+			let d = '';
+			let started = false;
+			for (let i = 0; i < xVals.length; i++) {
+				const yVal = series[vi][i];
+				if (yVal === null || (a.isLog && yVal <= 0)) { started = false; continue; }
+				const svgX = a.map(yVal);
+				const svgY = myAlt(xVals[i]);
+				d += started ? ` L${svgX.toFixed(2)},${svgY.toFixed(2)}` : `M${svgX.toFixed(2)},${svgY.toFixed(2)}`;
+				started = true;
+			}
+			if (d) s += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" clip-path="url(#c)"/>`;
+		});
+
+		// Per-variable axis rows: tick numbers with a "[N]" marker to their right,
+		// referencing that variable's full name/unit in the legend below.
+		vars.forEach((v, vi) => {
+			const a = axes[vi];
+			if (!a) return;
+			const color = LINE_COLORS[vi % LINE_COLORS.length];
+			const rowY = axisRowsStart + vi * axisRowH + 12;
+			for (const t of a.ticks) {
+				const x = a.map(t).toFixed(1);
+				s += `<text x="${x}" y="${rowY}" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="${color}">${tickLabelFor(v, t)}</text>`;
+			}
+			s += `<text x="${pR + tickGap}" y="${rowY}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" fill="${color}">[${vi + 1}]</text>`;
+		});
+
+		// Legend
+		vars.forEach((v, vi) => {
+			const a = axes[vi];
+			if (!a) return;
+			const color = LINE_COLORS[vi % LINE_COLORS.length];
+			const rowY = legendStart + vi * legendRowH + 9;
+			s += `<rect x="${pL}" y="${(rowY - 9).toFixed(1)}" width="10" height="10" fill="${color}"/>`;
+			s += `<text x="${pL + 16}" y="${rowY}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" fill="${C.text}">[${vi + 1}] ${v.label}</text>`;
+		});
+
+		svgEl.innerHTML = s;
 	}
 
 	// Initial population and render
-	populateYUnits();
+	updateModeUI();
 	generateGraph();
 
 	// Re-render graph when dark mode is toggled
 	document.getElementById('theme-toggle')
 		?.addEventListener('click', () => setTimeout(generateGraph, 0));
-
-	// y-var: repopulate units then redraw
-	document.getElementById('y-var')!.addEventListener('change', () => {
-		populateYUnits();
-		generateGraph();
-	});
 
 	(document.getElementById('x-unit') as HTMLSelectElement).addEventListener('change', generateGraph);
 
@@ -891,14 +1325,36 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	updateConditionLabels();
 
 	// All other inputs
-	// y-unit change also affects log-checkbox disability
-	document.getElementById('y-unit')!.addEventListener('change', updateLogCheckbox);
-
-	for (const id of ['cond-alt', 'cond-alt-unit', 'sl-temp', 'sl-temp-unit', 'sl-pressure', 'sl-pressure-unit', 'x-var', 'x-min', 'x-max', 'x-intervals', 'alt-on-y', 'y-unit', 'y-min', 'y-max', 'y-intervals', 'y-species', 'y-log']) {
+	for (const id of ['cond-alt', 'cond-alt-unit', 'sl-temp', 'sl-temp-unit', 'sl-pressure', 'sl-pressure-unit', 'x-var', 'x-min', 'x-max', 'x-intervals', 'alt-on-y', 'y-intervals']) {
 		const el = document.getElementById(id)!;
 		el.addEventListener('input', generateGraph);
 		el.addEventListener('change', generateGraph);
 	}
+
+	// Dependent-variable checklist: enforce the max selection count, keep the
+	// value-axis controls' enabled state in sync with single vs. multi mode, and redraw.
+	document.getElementById('var-list')!.addEventListener('change', (e) => {
+		const target = e.target as HTMLInputElement;
+		const errVarCount = document.getElementById('err-var-count') as HTMLElement;
+		// Only the variable/species checkboxes (data-var) count toward the cap — the
+		// per-variable log checkboxes are plain <input type=checkbox> with no data-var.
+		if (target?.type === 'checkbox' && target.dataset.var !== undefined) {
+			const checkedCount = document.querySelectorAll('#var-list input[type=checkbox][data-var]:checked').length;
+			if (checkedCount > MAX_VARS) {
+				target.checked = false;
+				errVarCount.textContent = `You can select up to ${MAX_VARS} variables at once.`;
+				return;
+			}
+			errVarCount.textContent = '';
+		}
+		updateModeUI();
+		generateGraph();
+	});
+	// The per-variable min/max fields also want live updates while typing, not just on blur.
+	document.getElementById('var-list')!.addEventListener('input', (e) => {
+		const target = e.target as HTMLInputElement;
+		if (target?.type === 'number') { updateModeUI(); generateGraph(); }
+	});
 
 	// Reset to standard conditions
 	document.getElementById('btn-reset')!.addEventListener('click', () => {

@@ -282,21 +282,20 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label data-tooltip="Pressure contribution of the selected gas species, equal to its mole fraction times total pressure.">Partial pressure</label>
+					<label data-tooltip="Number (or moles) of particles of the selected gas species per unit volume; select Total for all species combined.">Number density</label>
 					<div class="output-row">
-						<span id="out-partial-pressure">—</span>
-						<select id="out-partial-pressure-unit">
-							<option value="atm" selected>atm</option>
-							<option value="Pa">Pa</option>
-							<option value="hPa">hPa (mbar)</option>
-							<option value="kPa">kPa</option>
-							<option value="mmHg">mmHg (Torr)</option>
-							<option value="inHg">inHg</option>
-							<option value="psi">psi</option>
-							<option value="fraction">mole fraction</option>
+						<span id="out-molecular-density">—</span>
+						<select id="out-molecular-density-unit">
+							<option value="per_m3" selected>/m³</option>
+							<option value="per_L">/L</option>
+							<option value="per_ft3">/ft³</option>
+							<option value="mol_m3">mol/m³</option>
+							<option value="kmol_m3">kmol/m³ (mol/L)</option>
+							<option value="lbmol_ft3">lbmol/ft³</option>
 						</select>
-						<select id="out-partial-pressure-species">
-							<option value="N2" selected>N₂</option>
+						<select id="out-molecular-density-species">
+							<option value="total" selected>Total</option>
+							<option value="N2">N₂</option>
 							<option value="O2">O₂</option>
 							<option value="Ar">Ar</option>
 							<option value="CO2">CO₂</option>
@@ -315,18 +314,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label data-tooltip="Number (or moles) of particles of the selected gas species per unit volume; select Total for all species combined.">Number density</label>
+					<label data-tooltip="Share of total particles that are the selected gas species; select Total for all species combined (always 1).">Mole fraction</label>
 					<div class="output-row">
-						<span id="out-molecular-density">—</span>
-						<select id="out-molecular-density-unit">
-							<option value="per_m3" selected>/m³</option>
-							<option value="per_L">/L</option>
-							<option value="per_ft3">/ft³</option>
-							<option value="mol_m3">mol/m³</option>
-							<option value="kmol_m3">kmol/m³ (mol/L)</option>
-							<option value="lbmol_ft3">lbmol/ft³</option>
-						</select>
-						<select id="out-molecular-density-species">
+						<span id="out-mole-fraction">—</span>
+						<select id="out-mole-fraction-species">
 							<option value="total" selected>Total</option>
 							<option value="N2">N₂</option>
 							<option value="O2">O₂</option>
@@ -573,7 +564,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const outputIds = [
 			'out-pressure', 'out-press-out-2', 'out-temperature', 'out-density',
 			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-scale-height', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
-			'out-mfp', 'out-molar-mass', 'out-partial-pressure', 'out-molecular-density',
+			'out-mfp', 'out-molar-mass', 'out-molecular-density', 'out-mole-fraction',
 		];
 		if (!validate()) {
 			for (const id of outputIds) (document.getElementById(id) as HTMLElement).textContent = '—';
@@ -690,20 +681,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const geoAltUnit = (document.getElementById('out-geo-alt-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-geo-alt') as HTMLElement).textContent = roundSig(convert(altOther_m, 'm', geoAltUnit), 6);
 
-		const ppSpecies = (document.getElementById('out-partial-pressure-species') as HTMLSelectElement).value;
-		const ppUnit    = (document.getElementById('out-partial-pressure-unit') as HTMLSelectElement).value;
-		const mf = atm.getMoleFraction(ppSpecies, h_m) ?? 0;
-		const pp_Pa = mf * P_Pa;
-		const ppVal = ppUnit === 'fraction'
-			? roundSig(mf, 6)
-			: roundSig(convert(pp_Pa, 'Pa', ppUnit), 6);
-		(document.getElementById('out-partial-pressure') as HTMLElement).textContent = ppVal;
-
 		const mdSpecies = (document.getElementById('out-molecular-density-species') as HTMLSelectElement).value;
 		const mdUnit    = (document.getElementById('out-molecular-density-unit') as HTMLSelectElement).value;
 		const n_total   = atm.getNumberDensity(P_Pa, T_K);
-		const n         = mdSpecies === 'total' ? n_total : (atm.getMoleFraction(mdSpecies, h_m) ?? 0) * n_total;
-		(document.getElementById('out-molecular-density') as HTMLElement).textContent = roundSig(convert(n, 'per_m3', mdUnit), 6);
+		const mdMoleFraction = mdSpecies === 'total' ? 1 : (atm.getMoleFraction(mdSpecies, h_m) ?? 0);
+		(document.getElementById('out-molecular-density') as HTMLElement).textContent = roundSig(convert(mdMoleFraction * n_total, 'per_m3', mdUnit), 6);
+
+		const mfSpecies = (document.getElementById('out-mole-fraction-species') as HTMLSelectElement).value;
+		const mf = mfSpecies === 'total' ? 1 : (atm.getMoleFraction(mfSpecies, h_m) ?? 0);
+		(document.getElementById('out-mole-fraction') as HTMLElement).textContent = roundSig(mf, 6);
 
 		const mfpUnit = (document.getElementById('out-mfp-unit') as HTMLSelectElement).value;
 		(document.getElementById('out-mfp') as HTMLElement).textContent = roundSig(convert(atm.getMeanFreePath(P_Pa, T_K), 'm', mfpUnit), 6);
@@ -719,8 +705,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit', 'out-density-unit',
 		'out-pressure-altitude-unit', 'out-density-altitude-unit', 'out-speed-of-sound-unit', 'out-scale-height-unit',
 		'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
-		'out-mfp-unit', 'out-partial-pressure-species', 'out-partial-pressure-unit',
-		'out-molecular-density-species', 'out-molecular-density-unit',
+		'out-mfp-unit', 'out-molecular-density-species', 'out-molecular-density-unit',
+		'out-mole-fraction-species',
 	];
 
 	for (const id of inputIds) {
@@ -849,7 +835,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		set('out-boiling-point-unit',      p.temp);
 		set('out-geo-alt-unit',            p.alt);
 		set('out-mfp-unit',                p.mfp);
-		set('out-partial-pressure-unit',   p.press);
 
 		applyingPreset = false;
 		updateStdNote();
@@ -862,7 +847,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit',
 		'out-density-unit', 'out-pressure-altitude-unit', 'out-density-altitude-unit',
 		'out-speed-of-sound-unit', 'out-scale-height-unit', 'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
-		'out-mfp-unit', 'out-partial-pressure-unit', 'out-molecular-density-unit',
+		'out-mfp-unit', 'out-molecular-density-unit',
 	];
 	for (const id of unitDropdownIds) {
 		document.getElementById(id)!.addEventListener('change', () => {
