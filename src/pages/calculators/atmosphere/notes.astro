@@ -23,7 +23,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<ul>
 		<li>Pressure: 1 atm (1,013.25 hPa / 760 mmHg / 14.6959 psi / 29.9213 inHg)</li>
 		<li>Temperature: 15°C (59°F / 288.15 K / 518.67°R)</li>
-		<li>Lapse rate: -6.5°C/km (0.00357°F/ft) under 11 km geopotential, varies above 11 km</li>
+		<li>Lapse rate: -6.5°C/km (-0.00357°F/ft) under 11 km geopotential, varies above 11 km</li>
 	</ul>
 	<h2>Changes with altitude</h2>
 	<p>
@@ -54,8 +54,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<ul>
 		<li>Source code for this calculator: <a href="https://github.com/crosscountrycoder/sanjayksrikanth" target="_blank">GitHub</a> (<a href="https://github.com/crosscountrycoder/atmos-model" target="_blank">Python version</a>)</li>
 		<li>U.S. Standard Atmosphere (USSA) formulas from <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a></li>
-		<li><a href="https://gml.noaa.gov/ccgg/trends/">NOAA GML</a>, <a href="https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.1/">NRLMSIS 2.1</a>, <a href="https://ncar.ucar.edu/what-we-offer/models/whole-atmosphere-community-climate-model-waccm">WACCM</a>, 
-			and diffusion models for atmospheric composition</li>
+		<li>
+			<a href="https://gml.noaa.gov/ccgg/trends/">NOAA GML</a>, <a href="https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.1/">NRLMSIS 2.1</a>, <a href="https://ncar.ucar.edu/what-we-offer/models/whole-atmosphere-community-climate-model-waccm">WACCM</a>, 
+			and diffusion models for atmospheric composition
+			<ul>
+				<li>Extends continuously from -5 to 1,000 km, smoothing USSA's 86 km discontinuity, and includes more gases with up-to-date concentrations</li>
+				<li>Lower-atmosphere molar mass is 28.9659 g/mol versus USSA's 28.9644 — gap widens above 86 km but stays small</li>
+			</ul>
+		</li>
 		<li><a href="https://ciaaw.org/" target="_blank">IUPAC Commission on Isotopic Abundances and Atomic Weights</a> for molar masses</li>
 		<li><a href="https://www.iapws.org/relguide/IF97-Rev.html" target="_blank">IAPWS-95</a> for water vapor pressure and boiling point</li>
 	</ul>

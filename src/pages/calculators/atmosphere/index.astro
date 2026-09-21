@@ -203,6 +203,18 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
+					<label data-tooltip="Local gravitational acceleration at this altitude, decreasing with distance from Earth's center. Basis for the geopotential altitude below.">Gravitational acceleration</label>
+					<div class="output-row">
+						<span id="out-gravity">—</span>
+						<select id="out-gravity-unit">
+							<option value="m/s2" selected>m/s²</option>
+							<option value="ft/s2">ft/s²</option>
+							<option value="g0">g (SL std=1)</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="field">
 					<label id="out-geo-alt-label" data-tooltip="Geopotential altitude corresponding to the input geometric altitude.">Geopotential altitude</label>
 					<div class="output-row">
 						<span id="out-geo-alt">—</span>
@@ -244,8 +256,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<span id="out-viscosity">—</span>
 						<select id="out-viscosity-unit">
 							<option value="Pa·s" selected>Pa·s</option>
-							<option value="μPa·s">μPa·s</option>
 							<option value="mPa·s">mPa·s (cP)</option>
+							<option value="μPa·s">μPa·s</option>
 							<option value="lbf·s/ft2">lbf·s/ft²</option>
 						</select>
 					</div>
@@ -269,7 +281,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 				</div>
 
 				<div class="field">
-					<label data-tooltip="Altitude over which pressure/density would decay by a factor of e if temperature, molar mass, and gravity stayed constant — RT/(Mg).">Scale height</label>
+					<label data-tooltip="Altitude over which pressure/density would decay by a factor of e if temperature, molar mass, and gravity stayed constant — RT/(Mg) = P/(ρg).">Scale height</label>
 					<div class="output-row">
 						<span id="out-scale-height">—</span>
 						<select id="out-scale-height-unit">
@@ -368,7 +380,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		align-items: center;
 		column-gap: 0.75rem;
 		row-gap: 0.15rem;
-		margin-bottom: 0.75rem;
+		margin-bottom: 0.4rem;
 	}
 
 	.input-row,
@@ -450,7 +462,6 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 
 	const GEOPOT_MIN = atm.geometricToGeopotential(-5000); // ≈ -5003.94 m geopotential
 	const GEOPOT_MAX = atm.geometricToGeopotential(1000000); // ≈ 864071 m geopotential
-	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
 
 	function resolveAltitude(altVal: number, altUnit: string, useGeopot: boolean) {
 		const input_m = convert(altVal, altUnit, 'm');
@@ -458,9 +469,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		return { h_m };
 	}
 
-	// Above 20 km geopotential, sea-level temp has no effect on air temp at all, so back-solving
-	// sea-level temp from an entered air temp is meaningless there — disable the "Air temperature"
-	// option and fall back to "Sea-level temperature" mode if it was selected.
+	// At or above atm.AIR_TEMP_MAX_GEOPOT, sea-level temp has no effect on air temp at all,
+	// so back-solving sea-level temp from an entered air temp is meaningless there —
+	// disable the "Air temperature" option and fall back to "Sea-level temperature" mode
+	// if it was selected.
 	function syncTempModeAvailability() {
 		const tempModeSel = document.getElementById('temp-mode') as HTMLSelectElement;
 		const airOption   = tempModeSel.querySelector('option[value="air"]') as HTMLOptionElement;
@@ -473,7 +485,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			return;
 		}
 		const { h_m } = resolveAltitude(altVal, altUnit, useGeopot);
-		const aboveLimit = atm.geometricToGeopotential(h_m) > AIR_TEMP_MAX_GEOPOT;
+		const aboveLimit = atm.geometricToGeopotential(h_m) >= atm.AIR_TEMP_MAX_GEOPOT;
 		airOption.disabled = aboveLimit;
 		if (aboveLimit && tempModeSel.value === 'air') {
 			tempModeSel.value = 'sea-level';
@@ -564,7 +576,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const outputIds = [
 			'out-pressure', 'out-press-out-2', 'out-temperature', 'out-density',
 			'out-pressure-altitude', 'out-density-altitude', 'out-speed-of-sound', 'out-scale-height', 'out-viscosity', 'out-boiling-point', 'out-geo-alt',
-			'out-mfp', 'out-molar-mass', 'out-molecular-density', 'out-mole-fraction',
+			'out-mfp', 'out-molar-mass', 'out-molecular-density', 'out-mole-fraction', 'out-gravity',
 		];
 		if (!validate()) {
 			for (const id of outputIds) (document.getElementById(id) as HTMLElement).textContent = '—';
@@ -672,6 +684,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			errBoilingPoint.textContent = `Air pressure is below water's triple point (${triplePoint} ${airPressureUnit})`;
 		}
 
+		const gravityUnit = (document.getElementById('out-gravity-unit') as HTMLSelectElement).value;
+		(document.getElementById('out-gravity') as HTMLElement).textContent = roundSig(convert(atm.getGravity(h_m), 'm/s2', gravityUnit), 6);
+
 		const geoAltLbl = document.getElementById('out-geo-alt-label') as HTMLElement;
 		geoAltLbl.textContent = useGeopot ? 'Geometric altitude' : 'Geopotential altitude';
 		geoAltLbl.dataset.tooltip = useGeopot
@@ -704,7 +719,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'altitude-mode', 'temp-mode', 'pressure-mode',
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit', 'out-density-unit',
 		'out-pressure-altitude-unit', 'out-density-altitude-unit', 'out-speed-of-sound-unit', 'out-scale-height-unit',
-		'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
+		'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit', 'out-gravity-unit',
 		'out-mfp-unit', 'out-molecular-density-species', 'out-molecular-density-unit',
 		'out-mole-fraction-species',
 	];
@@ -834,6 +849,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		set('out-viscosity-unit',        p.visc);
 		set('out-boiling-point-unit',      p.temp);
 		set('out-geo-alt-unit',            p.alt);
+		set('out-gravity-unit',            p.alt === 'ft' ? 'ft/s2' : 'm/s2');
 		set('out-mfp-unit',                p.mfp);
 
 		applyingPreset = false;
@@ -846,7 +862,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'altitude-unit', 'sea-level-temp-unit', 'sea-level-pressure-unit',
 		'out-pressure-unit', 'out-press-out-2-unit', 'out-temperature-unit',
 		'out-density-unit', 'out-pressure-altitude-unit', 'out-density-altitude-unit',
-		'out-speed-of-sound-unit', 'out-scale-height-unit', 'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit',
+		'out-speed-of-sound-unit', 'out-scale-height-unit', 'out-viscosity-unit', 'out-boiling-point-unit', 'out-geo-alt-unit', 'out-gravity-unit',
 		'out-mfp-unit', 'out-molecular-density-unit',
 	];
 	for (const id of unitDropdownIds) {

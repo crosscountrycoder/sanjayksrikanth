@@ -13,7 +13,9 @@ export function geopotentialToGeometric(H: number): number {
     return (EARTH_RADIUS_M * H) / (EARTH_RADIUS_M - H);
 }
 
-function _g(z: number): number {
+// Local gravitational acceleration (m/s²) at geometric altitude z, via the inverse-square
+// law from Earth's center — the basis for the geometric/geopotential altitude conversion.
+export function getGravity(z: number): number {
     return G0 * (EARTH_RADIUS_M / (EARTH_RADIUS_M + z)) ** 2;
 }
 
@@ -37,14 +39,15 @@ const TEMP_LAYERS = [
 ] as const;
 
 const TROPOPAUSE_T = 216.65;   // K (-56.5 °C) — floor of the sea-level-driven layer
-const LAPSE_RATE   = 6.5 / 1000; // K/m
-const EPS = 1e-9; // floating-point slack for boundary comparisons
+const LAPSE_RATE   = 0.0065; // K/m
+export const EPS = 1e-9; // floating-point slack for boundary comparisons
 export const SEA_LEVEL_TEMP_MIN_K = 216.65 - EPS; // -56.5 °C
 export const SEA_LEVEL_TEMP_MAX_K = 346.65 + EPS; // 73.5 °C
+export const AIR_TEMP_MAX_GEOPOT = 20000 - EPS; // 20 km geopotential — above this, T0 has no effect
 
 export function getTemperature(z: number, T0_K: number = 288.15): number {
     if (T0_K < SEA_LEVEL_TEMP_MIN_K || T0_K > SEA_LEVEL_TEMP_MAX_K) return NaN;
-    if (z > 86000) {
+    if (z >= 86000) {
         if (z < 91000)  return 186.8673;
         if (z < 110000) { const b = (z - 91000) / 19942.9; return 263.1905 - 76.3232 * Math.sqrt(1 - b * b); }
         if (z < 120000) return 240.0 + 0.012 * (z - 110000);
@@ -52,7 +55,7 @@ export function getTemperature(z: number, T0_K: number = 288.15): number {
         return 1000 - 640 * Math.exp(-1.875e-5 * (z - 120000) * b);
     }
     const H = geometricToGeopotential(z);
-    if (H <= 20000) {
+    if (H < AIR_TEMP_MAX_GEOPOT) {
         return Math.max(T0_K - LAPSE_RATE * H, TROPOPAUSE_T);
     }
     const L = TEMP_LAYERS;
@@ -117,7 +120,7 @@ const Z_MAX  = 1000000;
 
 // One RK4 step of the unified hydrostatic equation.
 function _rk4P(z: number, P: number, h: number, T0_K: number): number {
-    const f = (zi: number) => getMolarMass(zi) * _g(zi) / (R * getTemperature(zi, T0_K));
+    const f = (zi: number) => getMolarMass(zi) * getGravity(zi) / (R * getTemperature(zi, T0_K));
     const k1 = -P               * f(z);
     const k2 = -(P + 0.5*h*k1) * f(z + 0.5*h);
     const k3 = -(P + 0.5*h*k2) * f(z + 0.5*h);
@@ -146,13 +149,14 @@ export function getPressure(z: number, P0: number, T0_K: number): number {
 }
 
 // Inverts the tiered temperature model: given an air temperature at z, finds
-// the sea-level temperature that produces it. Only solvable at or below 20 km
-// geopotential (T0 has no effect above that), and only for temperatures that
-// are actually reachable (>= 216.65 K, the tropopause floor).
+// the sea-level temperature that produces it. Only solvable strictly below 20 km
+// geopotential (T0 has no effect at or above that — see getTemperature's own
+// H < 20000 - EPS boundary), and only for temperatures that are actually
+// reachable (>= 216.65 K, the tropopause floor).
 
 export function getSeaLevelTemperature(z: number, T_K: number): number {
     const H = geometricToGeopotential(z);
-    if (H > 20000 || T_K < SEA_LEVEL_TEMP_MIN_K) return NaN;
+    if (H >= AIR_TEMP_MAX_GEOPOT || T_K < SEA_LEVEL_TEMP_MIN_K) return NaN;
     const T0_K = T_K + LAPSE_RATE * H;
     if (T0_K < SEA_LEVEL_TEMP_MIN_K || T0_K > SEA_LEVEL_TEMP_MAX_K) return NaN;
     return T0_K;
@@ -247,7 +251,7 @@ export function getSpeedOfSound(T_K: number, M: number): number {
 // decay by a factor of e if temperature, molar mass, and gravity stayed constant at their
 // values at z. Uses the local gravity at z, not standard sea-level gravity.
 export function getScaleHeight(T_K: number, M: number, z: number): number {
-    return R * T_K / (M * _g(z));
+    return R * T_K / (M * getGravity(z));
 }
 
 // Sutherland's formula for dynamic viscosity of air (Pa·s).

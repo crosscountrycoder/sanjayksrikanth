@@ -1,14 +1,14 @@
 // USSA 1976 reference implementation using the standard analytical formulas.
 // Constant molar mass, geopotential-based temperature layers, no integration.
-// Sea-level temperature T0 only affects the troposphere/lower stratosphere (H <= 20 km
-// geopotential); above that the profile always matches the fixed standard layers,
-// matching the tiered model in src/lib/atmosphere.ts's getTemperature/getPressure.
+// Sea-level temperature T0 only affects the troposphere/lower stratosphere
+// (H < AIR_TEMP_MAX_GEOPOT); at or above that the profile always matches the fixed
+// standard layers, matching the tiered model in src/lib/atmosphere.ts's getTemperature/getPressure.
 // Range: −5000 m to 86000 m geometric altitude. Valid T0: -56.5 to 73.5 °C (216.65 to
 // 346.65 K, SEA_LEVEL_TEMP_MIN_K/MAX_K in atmosphere.ts). T0 may be given in either unit —
 // a value in [-56.5, 73.5] is read as °C (the two valid ranges never overlap numerically).
 // Usage: node scripts/atm-test-simple.ts [z_m] [T0_K_or_C] [P0_Pa]
 
-import {getSpeedOfSound, getMeanFreePath, geometricToGeopotential, getViscosity, getScaleHeight, getNumberDensity, SEA_LEVEL_TEMP_MIN_K, SEA_LEVEL_TEMP_MAX_K,} from '../src/lib/atmosphere.ts';
+import * as atm from '../src/lib/atmosphere.ts';
 import {getBoilingPoint} from '../src/lib/water-properties.ts';
 import {convert} from '../src/lib/convert.ts';
 import {roundSig} from '../src/lib/helpers.ts';
@@ -18,9 +18,9 @@ const R  = 8314.46261815324;      // gas constant J/(kmol·K)
 const M  = 28.9659;               // Sea-level molar mass (g/mol = kg/kmol), updated to 2026
 const RE = 6356766;               // USSA 1976 Earth radius (m)
 
-// Sea-level temp only shifts the troposphere/lower-stratosphere (H <= 20 km geopotential):
-// cools at LAPSE from T0 until hitting TROPOPAUSE_T, then holds there up to 20 km. Above
-// 20 km the profile is the fixed standard-atmosphere layers, unaffected by T0.
+// Sea-level temp only shifts the troposphere/lower-stratosphere (H < AIR_TEMP_MAX_GEOPOT):
+// cools at LAPSE from T0 until hitting TROPOPAUSE_T, then holds there up to 20 km. At or
+// above 20 km the profile is the fixed standard-atmosphere layers, unaffected by T0.
 const TROPOPAUSE_T = 216.65; // K (-56.5 °C)
 const LAPSE        = 0.0065; // K/m
 
@@ -47,7 +47,7 @@ function _Htrop(T0_K: number): number {
 
 // Temperature at geopotential altitude H given sea-level temperature T0_K.
 function _T(H: number, T0_K: number): number {
-    if (H <= 20000) return Math.max(T0_K - LAPSE * H, TROPOPAUSE_T);
+    if (H < atm.AIR_TEMP_MAX_GEOPOT) return Math.max(T0_K - LAPSE * H, TROPOPAUSE_T);
     for (let i = 0; i < LAYERS.length - 1; i++) {
         if (H <= LAYERS[i + 1].H)
             return LAYERS[i].T + LAYERS[i].L * (H - LAYERS[i].H);
@@ -123,7 +123,7 @@ if (isNaN(z) || isNaN(T0) || isNaN(P0)) {
 // (216.65 to 346.65) never overlap, so a value in the Celsius range must be Celsius.
 if (T0 >= -56.5 && T0 <= 73.5) T0 += 273.15;
 
-if (T0 < SEA_LEVEL_TEMP_MIN_K || T0 > SEA_LEVEL_TEMP_MAX_K) {
+if (T0 < atm.SEA_LEVEL_TEMP_MIN_K || T0 > atm.SEA_LEVEL_TEMP_MAX_K) {
     console.error(`Error: sea-level temperature ${T0} K is outside the valid range ` +
         `[216.65, 346.65] K (-56.5 to 73.5 °C).`);
     process.exit(1);
@@ -136,13 +136,13 @@ const rho = P * M / (R * T);
 const pa  = _pressureAltitude(P);
 const da  = _densityAltitude(rho);
 const alt = P * 101325 / _P(H, 101325, 288.15);  // altimeter setting
-const mu  = getViscosity(T);
-const sos = getSpeedOfSound(T, M);
+const mu  = atm.getViscosity(T);
+const sos = atm.getSpeedOfSound(T, M);
 const bp  = getBoilingPoint(P);
-const mfp = getMeanFreePath(P, T);
-const Geo = geometricToGeopotential(z);
-const H_sc = getScaleHeight(T, M, z);
-const n    = getNumberDensity(P, T);
+const mfp = atm.getMeanFreePath(P, T);
+const Geo = atm.geometricToGeopotential(z);
+const H_sc = atm.getScaleHeight(T, M, z);
+const n    = atm.getNumberDensity(P, T);
 
 function fmtC(K: number): string {
     const C      = K - 273.15;

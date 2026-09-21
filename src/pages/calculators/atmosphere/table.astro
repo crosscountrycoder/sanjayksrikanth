@@ -194,6 +194,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					</select>
 				</div>
 				<div class="var-row">
+					<input type="checkbox" id="chk-gravity" data-var="gravity" />
+					<label for="chk-gravity">Gravitational acceleration</label>
+					<select id="unit-gravity">
+						<option value="m/s2" selected>m/s²</option>
+						<option value="ft/s2">ft/s²</option>
+						<option value="g0">g (SL std=1)</option>
+					</select>
+				</div>
+				<div class="var-row">
 					<input type="checkbox" id="chk-geopotential_alt" data-var="geopotential_alt" />
 					<label for="chk-geopotential_alt">Geopotential altitude</label>
 					<select id="unit-geopotential_alt">
@@ -236,8 +245,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<label for="chk-viscosity">Dynamic viscosity</label>
 					<select id="unit-viscosity">
 						<option value="Pa·s" selected>Pa·s</option>
+						<option value="mPa·s">mPa·s (cP)</option>
 						<option value="μPa·s">μPa·s</option>
-						<option value="mPa·s">mPa·s (centipoise)</option>
 						<option value="lbf·s/ft2">lbf·s/ft²</option>
 					</select>
 				</div>
@@ -505,16 +514,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import { convert } from '../../../lib/convert.ts';
 	import { roundSig } from '../../../lib/helpers.ts';
 
-	const AIR_TEMP_MAX_GEOPOT = 20000; // m — above this, air temperature no longer depends on sea-level temp, so "Air temperature" input mode is unavailable
-
 	// Geopotential-altitude equivalents of the model's geometric range (-5000 to 1000000 m),
 	// computed rather than hardcoded so bound-check messages round to the true value.
 	const GEOPOT_MIN = atm.geometricToGeopotential(-5000);
 	const GEOPOT_MAX = atm.geometricToGeopotential(1000000);
 
-	// Above 20 km geopotential, sea-level temp has no effect on air temp at all, so back-solving
-	// sea-level temp from an entered air temp is meaningless there — disable the "Air temperature"
-	// option and fall back to "Sea-level temperature" mode if it was selected.
+	// At or above atm.AIR_TEMP_MAX_GEOPOT, sea-level temp has no effect on air temp at all,
+	// so back-solving sea-level temp from an entered air temp is meaningless there —
+	// disable the "Air temperature" option and fall back to "Sea-level temperature" mode
+	// if it was selected.
 	function syncTempModeAvailability() {
 		const tempModeSel = document.getElementById('temp-mode') as HTMLSelectElement;
 		const airOption   = tempModeSel.querySelector('option[value="air"]') as HTMLOptionElement;
@@ -528,7 +536,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		}
 		const condAlt_m = convert(condAltVal, condAltUnit, 'm');
 		const H_cond = xVar === 'geopotential' ? condAlt_m : atm.geometricToGeopotential(condAlt_m);
-		const aboveLimit = H_cond > AIR_TEMP_MAX_GEOPOT;
+		const aboveLimit = H_cond >= atm.AIR_TEMP_MAX_GEOPOT;
 		airOption.disabled = aboveLimit;
 		if (aboveLimit && tempModeSel.value === 'air') {
 			tempModeSel.value = 'sea-level';
@@ -554,6 +562,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		speed_of_sound:    'Speed of sound',
 		scale_height:      'Scale height',
 		viscosity:         'Dynamic viscosity',
+		gravity:           'Gravitational acceleration',
 		geopotential_alt:  'Geopotential altitude',
 		geometric_alt:     'Geometric altitude',
 		molecular_density: 'Number density',
@@ -744,6 +753,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					case 'speed_of_sound':     return convert(atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m)), 'm/s', v.unit);
 					case 'scale_height':       return convert(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), 'm', v.unit);
 					case 'viscosity':          return convert(atm.getViscosity(T_K), 'Pa·s', v.unit);
+					case 'gravity':            return convert(atm.getGravity(h_m), 'm/s2', v.unit);
 					case 'geopotential_alt':   return convert(H, 'm', v.unit);
 					case 'geometric_alt':      return convert(h_m, 'm', v.unit);
 					case 'molecular_density': {

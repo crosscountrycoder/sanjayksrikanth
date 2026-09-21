@@ -57,6 +57,10 @@ const UNIT_FACTORS: Record<string, UnitFactor> = {
 	'μPa·s':     { toSI: 1e-6 },
 	'mPa·s':     { toSI: 1e-3 },
 	'lbf·s/ft2': { toSI: 47.8802589803358 },
+
+	// Acceleration (SI: m/s²) — gravity
+	'ft/s2': { toSI: 0.3048 },
+	'g0':    { toSI: 9.80665 }, // ratio to standard gravity
 };
 
 // Converts a value between any two units of the same quantity (e.g. both
