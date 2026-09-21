@@ -24,15 +24,17 @@ const RE = 6356766;               // USSA 1976 Earth radius (m)
 const TROPOPAUSE_T = 216.65; // K (-56.5 °C)
 const LAPSE        = 0.0065; // K/m
 
-// Standard layers from 20 km up (geopotential altitude, base temperature, lapse rate).
+// Standard layers from 20 km up (geopotential altitude, base temperature). Lapse rate
+// between consecutive breakpoints is derived where needed rather than stored.
 // Unaffected by sea-level temperature — base temperatures here are fixed constants.
+const KM_86 = atm.geometricToGeopotential(86000);
 const LAYERS = [
-    { H: 20000, T: 216.65,   L:  0.001  },
-    { H: 32000, T: 228.65,   L:  0.0028 },
-    { H: 47000, T: 270.65,   L:  0.0    },
-    { H: 51000, T: 270.65,   L: -0.0028 },
-    { H: 71000, T: 214.65,   L: -0.002  },
-    { H: 86000, T: 186.8673, L:  0.0    },
+    { H: 20000, T: 216.65  },
+    { H: 32000, T: 228.65  },
+    { H: 47000, T: 270.65  },
+    { H: 51000, T: 270.65  },
+    { H: 71000, T: 214.65  },
+    { H: KM_86, T: 186.8673 },
 ] as const;
 
 // Geometric altitude → geopotential altitude (m).
@@ -49,8 +51,10 @@ function _Htrop(T0_K: number): number {
 function _T(H: number, T0_K: number): number {
     if (H < atm.AIR_TEMP_MAX_GEOPOT) return Math.max(T0_K - LAPSE * H, TROPOPAUSE_T);
     for (let i = 0; i < LAYERS.length - 1; i++) {
-        if (H <= LAYERS[i + 1].H)
-            return LAYERS[i].T + LAYERS[i].L * (H - LAYERS[i].H);
+        if (H <= LAYERS[i + 1].H) {
+            const t = (H - LAYERS[i].H) / (LAYERS[i + 1].H - LAYERS[i].H);
+            return LAYERS[i].T + t * (LAYERS[i + 1].T - LAYERS[i].T);
+        }
     }
     return LAYERS[LAYERS.length - 1].T;
 }
@@ -71,12 +75,13 @@ function _P(H: number, P0: number, T0_K: number): number {
     Pb *= Math.exp(-M * G0 * dH2 / (R * TROPOPAUSE_T));
     if (H <= 20000) return Pb;
 
-    // Above 20 km: standard layers, unaffected by T0.
+    // Above 20 km: standard layers, unaffected by T0. Lapse rate derived from consecutive
+    // breakpoints' temperatures rather than stored, same as _T.
     for (let i = 0; i < LAYERS.length - 1; i++) {
         const Hb   = LAYERS[i].H;
         const Hnxt = LAYERS[i + 1].H;
         const Tb   = LAYERS[i].T;
-        const L    = LAYERS[i].L;
+        const L    = (LAYERS[i + 1].T - Tb) / (Hnxt - Hb);
         const dH   = Math.min(H, Hnxt) - Hb;
         if (Math.abs(L) < 1e-12) Pb *= Math.exp(-M * G0 * dH / (R * Tb));
         else                     Pb *= Math.pow(Tb / (Tb + L * dH), M * G0 / (R * L));
