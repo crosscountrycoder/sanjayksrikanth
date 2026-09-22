@@ -1,17 +1,17 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
-import CalculatorsList from '../../components/CalculatorsList.astro';
+import OnlineToolsList from '../../components/OnlineToolsList.astro';
 ---
 
-<Layout title="Calculators">
+<Layout title="Online tools">
 	<Breadcrumb crumbs={[
 		{ label: 'Home', href: '/' },
-		{ label: 'Calculators' },
+		{ label: 'Online tools' },
 	]} />
-	<h1>Calculators</h1>
+	<h1>Online tools</h1>
 	<section>
-		<CalculatorsList />
+		<OnlineToolsList />
 	</section>
 </Layout>
 

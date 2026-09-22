@@ -38,7 +38,7 @@ const UNIT_FACTORS: Record<string, UnitFactor> = {
 	// Density (SI: kg/m³)
 	'lb/ft3':   { toSI: LB_TO_KG / FT3_TO_M3 },
 	'slug/ft3': { toSI: 14.5939029372064 / FT3_TO_M3 },
-	'sigma':    { toSI: 1.22504083326539 }, // ratio to USSA 1976 sea-level standard density
+	'sigma':    { toSI: 1.22504277026388 }, // ratio to USSA 1976 sea-level standard density
 
 	// Speed (SI: m/s)
 	'km/h': { toSI: 1 / 3.6 },

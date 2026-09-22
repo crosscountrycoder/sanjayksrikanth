@@ -7,7 +7,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <Layout title="Table | Standard Atmosphere Calculator">
 	<Breadcrumb crumbs={[
 		{ label: 'Home', href: '/' },
-		{ label: 'Calculators', href: '/calculators' },
+		{ label: 'Online tools', href: '/online-tools' },
 		{ label: 'Standard Atmosphere Calculator' },
 	]} />
 	<h1>Standard Atmosphere Calculator</h1>
@@ -170,7 +170,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<option value="kg/m3" selected>kg/m³</option>
 						<option value="lb/ft3">lb/ft³</option>
 						<option value="slug/ft3">slug/ft³</option>
-						<option value="sigma">sigma (SL std=1)</option>
+						<option value="sigma">Density ratio (σ)</option>
 					</select>
 				</div>
 				<div class="var-row">
@@ -199,7 +199,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<select id="unit-gravity">
 						<option value="m/s2" selected>m/s²</option>
 						<option value="ft/s2">ft/s²</option>
-						<option value="g0">g (SL std=1)</option>
+						<option value="g0">g₀</option>
 					</select>
 				</div>
 				<div class="var-row">
@@ -298,6 +298,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<label><input type="checkbox" data-var="molecular_density" data-species="H2"> H₂</label>
 					<label><input type="checkbox" data-var="molecular_density" data-species="N2O"> N₂O</label>
 					<label><input type="checkbox" data-var="molecular_density" data-species="Xe"> Xe</label>
+					<label><input type="checkbox" data-var="molecular_density" data-species="O3"> O₃</label>
 					<label><input type="checkbox" data-var="molecular_density" data-species="O"> O</label>
 					<label><input type="checkbox" data-var="molecular_density" data-species="H"> H</label>
 					<label><input type="checkbox" data-var="molecular_density" data-species="N"> N</label>
@@ -318,6 +319,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					<label><input type="checkbox" data-var="mole_fraction" data-species="H2"> H₂</label>
 					<label><input type="checkbox" data-var="mole_fraction" data-species="N2O"> N₂O</label>
 					<label><input type="checkbox" data-var="mole_fraction" data-species="Xe"> Xe</label>
+					<label><input type="checkbox" data-var="mole_fraction" data-species="O3"> O₃</label>
 					<label><input type="checkbox" data-var="mole_fraction" data-species="O"> O</label>
 					<label><input type="checkbox" data-var="mole_fraction" data-species="H"> H</label>
 					<label><input type="checkbox" data-var="mole_fraction" data-species="N"> N</label>
@@ -548,7 +550,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		total: 'Total',
 		N2: 'N₂', O2: 'O₂', Ar: 'Ar', CO2: 'CO₂',
 		Ne: 'Ne', He: 'He', CH4: 'CH₄', Kr: 'Kr', H2: 'H₂', N2O: 'N₂O', Xe: 'Xe',
-		O: 'O', H: 'H', N: 'N',
+		O3: 'O₃', O: 'O', H: 'H', N: 'N',
 	};
 
 	const Y_LABELS: Record<string, string> = {

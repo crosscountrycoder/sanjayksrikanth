@@ -3,13 +3,13 @@
 Personal website for Sanjay Srikanth, built with [Astro](https://astro.build) and deployed on Cloudflare Workers. Includes a biography, links, and 
 scientific calculators.
 
-## Calculators
+## Online tools
 
-### Atmosphere (`/calculators/atmosphere/`)
+### Atmosphere (`/online-tools/atmosphere/`)
 
-A USSA 1976 atmosphere calculator covering −5 km to 1000 km geometric altitude with non-standard temperature and pressure support. Outputs air 
-pressure, temperature, density, altimeter setting, pressure altitude, density altitude, geopotential altitude, speed of sound, dynamic viscosity, 
-mean free path, boiling point, and species mole fractions.
+A USSA 1976 atmosphere calculator covering −5 km to 1000 km geometric altitude with non-standard temperature and pressure support. Outputs 
+pressure, altimeter setting, temperature, density, pressure altitude, density altitude, gravitational acceleration, geopotential altitude, 
+molar mass, speed of sound, dynamic viscosity, mean free path, scale height, number density, mole fraction of each gas, and boiling point of water.
 
 The model integrates the hydrostatic equation using RK4 at 50 m steps with variable molar mass and gravity from a pre-computed composition table 
 (`src/lib/mole-fractions.ts`), covering all altitudes in a single unified formulation. Four views are available: point calculator, table, graph, and 
@@ -20,15 +20,14 @@ technical notes.
 ```
 src/
   lib/
-    atmosphere.ts          — core atmosphere model (pressure, temperature, composition, derived quantities)
-    atmosphere-graph.ts    — profile builder optimized for graph rendering
+    atmosphere.ts          — core atmosphere model (pressure, temperature, composition, derived quantities, graph profile builder)
     convert.ts             — unit conversion helpers
     water-properties.ts    — boiling point, vapor pressure, humidity/dew point
     mole-fractions.ts      — pre-computed composition table (−5 km to 1000 km, 1 km steps)
   pages/
     index.astro            — home page / biography
-    calculators/
-      index.astro          — calculators index
+    online-tools/
+      index.astro          — online tools index
       atmosphere/
         index.astro        — point calculator
         table.astro        — altitude table

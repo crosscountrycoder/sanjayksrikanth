@@ -7,7 +7,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <Layout title="Standard Atmosphere Calculator">
 	<Breadcrumb crumbs={[
 			{ label: 'Home', href: '/' },
-			{ label: 'Calculators', href: '/calculators' },
+			{ label: 'Online tools', href: '/online-tools' },
 			{ label: 'Standard Atmosphere Calculator' },
 		]} />
 		<h1>Standard Atmosphere Calculator</h1>
@@ -171,7 +171,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="kg/m3" selected>kg/m³</option>
 							<option value="lb/ft3">lb/ft³</option>
 							<option value="slug/ft3">slug/ft³</option>
-							<option value="sigma">sigma (SL std=1)</option>
+							<option value="sigma">Density ratio (σ)</option>
 						</select>
 					</div>
 				</div>
@@ -209,7 +209,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<select id="out-gravity-unit">
 							<option value="m/s2" selected>m/s²</option>
 							<option value="ft/s2">ft/s²</option>
-							<option value="g0">g (SL std=1)</option>
+							<option value="g0">g₀</option>
 						</select>
 					</div>
 				</div>
@@ -318,6 +318,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="H2">H₂</option>
 							<option value="N2O">N₂O</option>
 							<option value="Xe">Xe</option>
+							<option value="O3">O₃</option>
 							<option value="O">O</option>
 							<option value="H">H</option>
 							<option value="N">N</option>
@@ -342,6 +343,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="H2">H₂</option>
 							<option value="N2O">N₂O</option>
 							<option value="Xe">Xe</option>
+							<option value="O3">O₃</option>
 							<option value="O">O</option>
 							<option value="H">H</option>
 							<option value="N">N</option>

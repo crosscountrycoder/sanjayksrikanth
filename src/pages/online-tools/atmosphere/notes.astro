@@ -7,7 +7,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 <Layout title="Notes | Standard Atmosphere Calculator">
 	<Breadcrumb crumbs={[
 		{ label: 'Home', href: '/' },
-		{ label: 'Calculators', href: '/calculators' },
+		{ label: 'Online tools', href: '/online-tools' },
 		{ label: 'Standard Atmosphere Calculator' },
 	]} />
 	<h1>Standard Atmosphere Calculator</h1>
@@ -15,9 +15,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<h2>About the U.S. Standard Atmosphere</h2>
 	<p>
 	The <a href="https://www.pdas.com/atmosdownload.html" target="_blank">U.S. Standard Atmosphere</a> (USSA) is a model of Earth's atmospheric
-	temperature, pressure and other properties from -5 to 1000 km (-16,404 to 3,280,840 ft), an extension of the International Standard Atmosphere (ISA).
-	Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure. The USSA is most 
-	representative of mid-latitude conditions.
+	temperature, pressure and other properties from -5 to 1,000 km (-16,404 to 3,280,840 ft), an extension of the International Standard Atmosphere 
+	(ISA). Properties are calculated for dry air; humid air can be up to 2% less dense than dry air at the same temperature and pressure. The USSA is 
+	most representative of mid-latitude conditions.
 	</p>
 	<h2>Standard sea-level conditions</h2>
 	<ul>
@@ -25,10 +25,15 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		<li>Temperature: 15°C (59°F / 288.15 K / 518.67°R)</li>
 		<li>Lapse rate: -6.5°C/km (-0.00357°F/ft) under 11 km geopotential, varies above 11 km</li>
 	</ul>
+	<p>
+	Note that adjusting sea-level temperature or air temperature in this calculator only affects temperatures below the -56.5°C (-69.7°F) height in
+	the troposphere/lower stratosphere, which may be up to 20 km. Above that, temperatures are fixed at USSA values. This is because temperatures 
+	in the stratosphere and above aren't strongly affected by surface conditions.
+	</p>
 	<h2>Changes with altitude</h2>
 	<p>
-	In the troposphere (below 11 km), temperature decreases with altitude at the standard lapse rate. In the stratosphere (11-50 km), temperature is 
-	initially constant before increasing with altitude due to UV absorption by ozone. Temperature decreases again in the mesosphere (50-86 km) and 
+	In the troposphere (below 11 km), temperature decreases with altitude at the standard lapse rate. In the stratosphere (11-47 km), temperature is 
+	initially constant before increasing with altitude due to UV absorption by ozone. Temperature decreases again in the mesosphere (47-86 km) and 
 	rises in the thermosphere (above 86 km). Pressure decreases roughly exponentially throughout the atmosphere.
 	</p>
 	<p>
