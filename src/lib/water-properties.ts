@@ -1,11 +1,12 @@
 // ── Water vapor and boiling point ────────────────────────────────────────────
-// IAPWS-95 saturation pressure formula, accurate to 0.01°C.
+// IAPWS saturation pressure formula, accurate to within 72 ppm.
+// Formulas from https://iapws.org/public/documents/6dGkr/Supp-sat.pdf (water) and https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf (ice)
 // Below the triple point (611.657 Pa) liquid water cannot exist.
 
 export function waterVaporPressure(T: number): number {
     if (T > 647.096) return NaN; // no vapor pressure above critical temperature
     if (T >= 273.1600117513473) {
-        /* The IAPWS-95 ice and water formulas intersect at precisely 273.1600117513473 K due to rounding. 
+        /* The IAPWS ice and water formulas intersect at precisely 273.1600117513473 K due to rounding. 
         The actual triple point is still 273.16 K.*/
         const Tc = 647.096, Pc = 22064000, tau = 1 - T / Tc;
         return Pc * Math.exp((Tc / T) * (
@@ -23,6 +24,7 @@ export function waterVaporPressure(T: number): number {
 
 /** Returns the boiling or sublimation point of water in kelvins, at pressure P_Pa pascals.
  * If the value returned is over 273.16 K, this is the boiling point; otherwise, it's the sublimation point.
+ * Formula is accurate to within 0.0024 K, and to within 0.0011 K for pressures below 10 megapascals.
 */
 export function getBoilingPoint(P_Pa: number): number {
     if (P_Pa > 22064000) return NaN; // supercritical fluid, no boiling point

@@ -813,11 +813,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			case 'density':            return convert(rho, 'kg/m3', v.unit);
 			case 'pressure_altitude': {
 				const pa = atm.getPressureAltitude(P_Pa);
-				return isNaN(pa) ? null : convert(pa, 'm', v.unit);
+				return isFinite(pa) ? convert(pa, 'm', v.unit) : null;
 			}
 			case 'density_altitude': {
 				const da = atm.getDensityAltitude(rho);
-				return isNaN(da) ? null : convert(da, 'm', v.unit);
+				return isFinite(da) ? convert(da, 'm', v.unit) : null;
 			}
 			case 'speed_of_sound':     return convert(atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m)), 'm/s', v.unit);
 			case 'scale_height':       return convert(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), 'm', v.unit);

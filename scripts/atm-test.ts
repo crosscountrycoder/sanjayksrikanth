@@ -56,6 +56,7 @@ const pa   = atm.getPressureAltitude(P);
 const da   = atm.getDensityAltitude(rho);
 const H_sc = atm.getScaleHeight(T, M, z);
 const n    = atm.getNumberDensity(P, T);
+const g    = atm.getGravity(z);
 
 function fmtC(K: number): string {
     const C = K - 273.15;
@@ -80,6 +81,7 @@ tempLine(`  Air temperature    `, T);
 console.log(`  Air density        : ${roundSig(rho, 6, 1e-6, true)} kg/m³`);
 console.log(`  Pressure altitude  : ${roundSig(pa, 6, 1e-6, true)} m`);
 console.log(`  Density altitude   : ${roundSig(da, 6, 1e-6, true)} m`);
+console.log(`  Gravity            : ${roundSig(g, 6, 1e-6, true)} m/s²`);
 console.log(`  Geopotential alt   : ${roundSig(H, 6, 1e-6, true)} m`);
 console.log(`  Molar mass         : ${roundSig(M, 6, 1e-6, true)} kg/kmol`);
 console.log(`  Speed of sound     : ${roundSig(sos, 6, 1e-6, true)} m/s`);

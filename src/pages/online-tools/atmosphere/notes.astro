@@ -26,9 +26,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		<li>Lapse rate: -6.5°C/km (-0.00357°F/ft) under 11 km geopotential, varies above 11 km</li>
 	</ul>
 	<p>
-	Note that adjusting sea-level temperature or air temperature in this calculator only affects temperatures below the -56.5°C (-69.7°F) height in
-	the troposphere/lower stratosphere, which may be up to 20 km. Above that, temperatures are fixed at USSA values. This is because temperatures 
-	in the stratosphere and above aren't strongly affected by surface conditions.
+	In this calculator, adjusting "sea-level temperature" or "air temperature" only affects temperatures below 20 km geopotential altitude. Temperature 
+	decreases with altitude until it reaches -56.5°C (-69.7°F), remains at -56.5°C through 20 km, and follows standard USSA values above 20 km. This is 
+	because temperatures in the stratosphere and above are only weakly related to surface temperature and are influenced by different atmospheric 
+	processes.
 	</p>
 	<h2>Changes with altitude</h2>
 	<p>
@@ -48,19 +49,22 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	below the actual elevation because the pressure is slightly above standard. Due to the high temperature, however, the density altitude is much higher 
 	at 2,497 m.
 	</p>
+	<p>
+	In the troposphere, the USSA pressure in atmospheres can be calculated as <span style="white-space: nowrap;">P = (1 - H / 44,331)<sup>5.256</sup></span>,
+	where H is geopotential height in meters.
+	</p>
 	<h2>Geometric versus geopotential altitude</h2>
 	<p>
-	Geometric altitude is the actual height above mean sea level, while geopotential altitude is a "corrected" altitude representing the altitude in a
-	uniform gravitational field of 9.80665 m/s<sup>2</sup> that would require the same work to reach as the actual altitude in the real gravity field. 
-	Gravity weakens slightly at higher altitudes, due to the greater distance from earth's center, so at very high altitudes geopotential altitude is 
-	significantly less than geometric altitude.
+	Geometric altitude is the actual height above mean sea level, while geopotential altitude is a "corrected" altitude representing the height in a 
+	uniform gravitational field of 9.80665 m/s² that would require the same work to reach. Because gravity weakens with increasing distance from 
+	Earth's center, geopotential altitude becomes significantly lower than geometric altitude at very high altitudes.
 	</p>
 	<h2>Sources</h2>
 	<ul>
 		<li>Source code for this calculator: <a href="https://github.com/crosscountrycoder/sanjayksrikanth" target="_blank">GitHub</a> (<a href="https://github.com/crosscountrycoder/atmos-model" target="_blank">Python version</a>)</li>
 		<li>U.S. Standard Atmosphere (USSA) formulas from <a href="https://www.pdas.com/atmosdownload.html" target="_blank">PDAS</a></li>
 		<li>
-			<a href="https://gml.noaa.gov/ccgg/trends/">NOAA GML</a>, <a href="https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.1/">NRLMSIS 2.1</a>, <a href="https://ncar.ucar.edu/what-we-offer/models/whole-atmosphere-community-climate-model-waccm">WACCM</a>, 
+			<a href="https://gml.noaa.gov/ccgg/trends/">NOAA GML</a>, <a href="https://ccmc.gsfc.nasa.gov/models/NRLMSIS~2.1/">NRLMSIS 2.1</a>, <a href="https://www2.hao.ucar.edu/modeling/waccm-x">WACCM-X</a>, 
 			and diffusion models for atmospheric composition
 			<ul>
 				<li>Extends continuously from -5 to 1,000 km, smoothing USSA's 86 km discontinuity, and includes more gases with up-to-date concentrations</li>
@@ -68,6 +72,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			</ul>
 		</li>
 		<li><a href="https://ciaaw.org/" target="_blank">IUPAC Commission on Isotopic Abundances and Atomic Weights</a> for molar masses</li>
-		<li><a href="https://www.iapws.org/relguide/IF97-Rev.html" target="_blank">IAPWS-95</a> for water vapor pressure and boiling point</li>
+		<li><a href="https://iapws.org/public/documents/6dGkr/Supp-sat.pdf" target="_blank">IAPWS correlation</a> for water vapor pressure 
+			and boiling point, accurate to 0.001°C (0.002°F)</li>
 	</ul>
 </Layout>

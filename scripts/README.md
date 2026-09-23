@@ -38,13 +38,14 @@ npx tsx scripts/atm-test.ts [z_m] [T0_K] [P0_Pa]
 - Air density (kg/m³)
 - Pressure altitude (m)
 - Density altitude (m)
+- Gravity (m/s²)
 - Geopotential altitude (m)
+- Molar mass (kg/kmol)
 - Speed of sound (m/s)
 - Dynamic viscosity (Pa·s)
 - Mean free path (m)
 - Scale height (m)
 - Number density (/m³, kmol/m³)
-- Molar mass (kg/kmol)
 - Boiling point (K / °C) — `N/A` below the triple point (611.657 Pa)
 - Mole fractions of all species present above 10<sup>-20</sup>
 
@@ -56,7 +57,7 @@ T0 − 288.15 K.
 
 ## atm-test-simple.ts
 
-Independent USSA 1976 reference implementation using the standard analytical formulas. Uses a constant molar mass (0.028965742 kg/mol) and 
+Independent USSA 1976 reference implementation using the standard analytical formulas. Uses a constant molar mass (28.9659 kg/kmol) and 
 piecewise-linear temperature layers in geopotential altitude, with no numerical integration. Intended for cross-checking `atm-test.ts` results 
 against the USSA 1976 standard.
 
@@ -82,13 +83,14 @@ npx tsx scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
 - Air density (kg/m³)
 - Pressure altitude (m)
 - Density altitude (m)
+- Gravity (m/s²)
 - Geopotential altitude (m)
+- Molar mass (kg/kmol)
 - Speed of sound (m/s)
 - Dynamic viscosity (Pa·s)
 - Mean free path (m)
 - Scale height (m)
 - Number density (/m³, kmol/m³)
-- Molar mass (kg/kmol)
 - Boiling point (K / °C)
 
 **Model notes:** Geometric altitude is converted to geopotential altitude (H = R_E · z / (R_E + z); R_E = 6,356,766 m) before applying the USSA 1976 

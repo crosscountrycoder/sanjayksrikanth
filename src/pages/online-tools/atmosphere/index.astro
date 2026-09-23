@@ -187,6 +187,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="km">km</option>
 						</select>
 					</div>
+					<p class="error" id="err-pressure-altitude"></p>
 				</div>
 
 				<div class="field">
@@ -200,6 +201,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 							<option value="km">km</option>
 						</select>
 					</div>
+					<p class="error" id="err-density-altitude"></p>
 				</div>
 
 				<div class="field">
@@ -584,6 +586,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			for (const id of outputIds) (document.getElementById(id) as HTMLElement).textContent = '—';
 			(document.getElementById('err-boiling-point') as HTMLElement).textContent = '';
 			(document.getElementById('err-speed-of-sound') as HTMLElement).textContent = '';
+			(document.getElementById('err-pressure-altitude') as HTMLElement).textContent = '';
+			(document.getElementById('err-density-altitude') as HTMLElement).textContent = '';
 			return;
 		}
 
@@ -645,13 +649,19 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const paUnit = (document.getElementById('out-pressure-altitude-unit') as HTMLSelectElement).value;
 		const pa_out = convert(pa_m, 'm', paUnit);
 		(document.getElementById('out-pressure-altitude') as HTMLElement).textContent =
-			isNaN(pa_m) ? 'N/A' : roundSig(pa_out, 6);
+			isFinite(pa_m) ? roundSig(pa_out, 6) : 'N/A';
+		(document.getElementById('err-pressure-altitude') as HTMLElement).textContent =
+			pa_m === Infinity ? `Pressure altitude is greater than ${roundSig(convert(1000000, 'm', paUnit), 6, 1e-6, true)} ${paUnit}` :
+			pa_m === -Infinity ? `Pressure altitude is less than ${roundSig(convert(-5000, 'm', paUnit), 6, 1e-6, true)} ${paUnit}` : '';
 
 		const da_m   = atm.getDensityAltitude(rho);
 		const daUnit = (document.getElementById('out-density-altitude-unit') as HTMLSelectElement).value;
 		const da_out = convert(da_m, 'm', daUnit);
 		(document.getElementById('out-density-altitude') as HTMLElement).textContent =
-			isNaN(da_m) ? 'N/A' : roundSig(da_out, 6);
+			isFinite(da_m) ? roundSig(da_out, 6) : 'N/A';
+		(document.getElementById('err-density-altitude') as HTMLElement).textContent =
+			da_m === Infinity ? `Density altitude is greater than ${roundSig(convert(1000000, 'm', daUnit), 6, 1e-6, true)} ${daUnit}` :
+			da_m === -Infinity ? `Density altitude is less than ${roundSig(convert(-5000, 'm', daUnit), 6, 1e-6, true)} ${daUnit}` : '';
 
 		const sos_ms  = atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m));
 		const sosUnit = (document.getElementById('out-speed-of-sound-unit') as HTMLSelectElement).value;

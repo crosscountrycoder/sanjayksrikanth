@@ -377,6 +377,36 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		margin-bottom: 0.4rem;
 	}
 
+	label[data-tooltip] {
+		text-decoration: underline dotted;
+		cursor: help;
+		position: relative;
+	}
+
+	label[data-tooltip]::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		left: 0;
+		top: calc(100% + 4px);
+		width: 16rem;
+		padding: 0.3rem 0.5rem;
+		background: var(--color-output-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		color: var(--color-text);
+		font-size: 0.8125rem;
+		font-weight: normal;
+		white-space: normal;
+		z-index: 100;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+
+	label[data-tooltip]:hover::after {
+		opacity: 1;
+	}
+
 	input[type="number"] {
 		flex: 1;
 		min-width: 0;
@@ -744,14 +774,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 					case 'sea_level_pressure': return convert(atm.getSeaLevelPressure(h_m, P_Pa, T0_K), 'Pa', v.unit);
 					case 'temperature':        return convert(T_K, 'K', v.unit);
 					case 'density':            return convert(rho, 'kg/m3', v.unit);
-					case 'pressure_altitude': {
-						const pa = atm.getPressureAltitude(P_Pa);
-						return isNaN(pa) ? null : convert(pa, 'm', v.unit);
-					}
-					case 'density_altitude': {
-						const da = atm.getDensityAltitude(rho);
-						return isNaN(da) ? null : convert(da, 'm', v.unit);
-					}
+					case 'pressure_altitude':  return convert(atm.getPressureAltitude(P_Pa), 'm', v.unit);
+					case 'density_altitude':   return convert(atm.getDensityAltitude(rho), 'm', v.unit);
 					case 'speed_of_sound':     return convert(atm.getSpeedOfSound(T_K, atm.getMolarMass(h_m)), 'm/s', v.unit);
 					case 'scale_height':       return convert(atm.getScaleHeight(T_K, atm.getMolarMass(h_m), h_m), 'm', v.unit);
 					case 'viscosity':          return convert(atm.getViscosity(T_K), 'Pa·s', v.unit);
@@ -781,7 +805,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		thead.innerHTML = `<th>${xLabel}</th>` + vars.map(v => `<th>${v.label}</th>`).join('');
 		tbody.innerHTML = tableData.map(row =>
 			`<tr><td>${roundSig(row.x, 6, 1e-4, true)}</td>${row.ys.map((y, i) =>
-				`<td>${y !== null ? fmtY(y, vars[i].key, vars[i].unit) : 'N/A'}</td>`
+				`<td>${y === null || !isFinite(y) ? 'N/A' : fmtY(y, vars[i].key, vars[i].unit)}</td>`
 			).join('')}</tr>`
 		).join('');
 	}
@@ -791,8 +815,17 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		(document.getElementById('lbl-sl-temp') as HTMLElement).textContent =
 			tMode === 'air' ? 'Air temperature' : 'Sea-level temperature';
 		const pMode = (document.getElementById('pressure-mode') as HTMLSelectElement).value;
-		(document.getElementById('lbl-sl-pressure') as HTMLElement).textContent =
+		const lblPressure = document.getElementById('lbl-sl-pressure') as HTMLElement;
+		lblPressure.textContent =
 			pMode === 'air' ? 'Air pressure' : pMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+		if (pMode === 'altimeter') {
+			lblPressure.setAttribute('data-tooltip',
+				'This altimeter setting is for the input altitude only; the rest of the column follows the ' +
+				'standard lapse rate, so altimeter setting will not stay constant along the column unless ' +
+				'temperature is standard. At sea level, it equals sea-level pressure.');
+		} else {
+			lblPressure.removeAttribute('data-tooltip');
+		}
 	}
 
 	// Initial render

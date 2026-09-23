@@ -202,9 +202,10 @@ function _bsearchDecreasing(table: Float64Array, value: number): number {
 }
 
 // Pressure altitude: altitude in the standard atmosphere with pressure P_Pa.
-// Returns NaN if that altitude would fall outside -5 km to 1000 km.
+// Returns -Infinity/+Infinity if that altitude would fall below -5 km / above 1000 km.
 export function getPressureAltitude(P_Pa: number): number {
-    if (P_Pa > _stdP[0] || P_Pa < _stdP[_STD_N - 1]) return NaN;
+    if (P_Pa > _stdP[0]) return -Infinity;
+    if (P_Pa < _stdP[_STD_N - 1]) return Infinity;
     const i    = _bsearchDecreasing(_stdP, P_Pa);
     const z_lo = Z_MIN + i * Z_STEP;
     const P_lo = _stdP[i];
@@ -217,9 +218,10 @@ export function getPressureAltitude(P_Pa: number): number {
 }
 
 // Density altitude: altitude in the standard atmosphere with density rho.
-// Returns NaN if that altitude would fall outside -5 km to 1000 km.
+// Returns -Infinity/+Infinity if that altitude would fall below -5 km / above 1000 km.
 export function getDensityAltitude(rho: number): number {
-    if (rho > _stdRho[0] || rho < _stdRho[_STD_N - 1]) return NaN;
+    if (rho > _stdRho[0]) return -Infinity;
+    if (rho < _stdRho[_STD_N - 1]) return Infinity;
     const i    = _bsearchDecreasing(_stdRho, rho);
     const z_lo = Z_MIN + i * Z_STEP;
     const P_lo = _stdP[i];
