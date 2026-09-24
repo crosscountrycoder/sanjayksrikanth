@@ -633,6 +633,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const sci = (document.getElementById('sci-notation') as HTMLInputElement).checked;
 		if (sci) return v.toExponential(5);
 		if (key === 'temperature' || key === 'boiling_point') return roundSig(v, 6, 1e-4, false, unit);
+		// Pressure/density altitude: whole units for m/ft, 3 decimals for mi/km (~1 m either
+		// way) — sub-unit precision here is just binary-search noise, not meaningful.
+		if (key === 'pressure_altitude' || key === 'density_altitude')
+			return (unit === 'm' || unit === 'ft') ? Math.round(v).toString() : v.toFixed(3);
 		return roundSig(v, 6);
 	}
 

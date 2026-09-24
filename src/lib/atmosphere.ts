@@ -201,37 +201,32 @@ function _bsearchDecreasing(table: Float64Array, value: number): number {
     return lo;
 }
 
-// Pressure altitude: altitude in the standard atmosphere with pressure P_Pa.
+// Pressure altitude: altitude in the standard atmosphere with pressure P_Pa, found by
+// log-lin interpolation (altitude linear in log-pressure) between the two bracketing
+// table entries — pressure varies quasi-exponentially with altitude, so this is far
+// more accurate than linear interpolation at the table's 50 m spacing.
 // Returns -Infinity/+Infinity if that altitude would fall below -5 km / above 1000 km.
 export function getPressureAltitude(P_Pa: number): number {
     if (P_Pa > _stdP[0]) return -Infinity;
     if (P_Pa < _stdP[_STD_N - 1]) return Infinity;
     const i    = _bsearchDecreasing(_stdP, P_Pa);
     const z_lo = Z_MIN + i * Z_STEP;
-    const P_lo = _stdP[i];
-    let lo = 0, hi = Z_STEP;
-    while (hi - lo > 1e-6) {
-        const mid = (lo + hi) / 2;
-        _rk4P(z_lo, P_lo, mid, 288.15) > P_Pa ? lo = mid : hi = mid;
-    }
-    return z_lo + lo;
+    const P_lo = _stdP[i], P_hi = _stdP[i + 1];
+    const frac = Math.log(P_Pa / P_lo) / Math.log(P_hi / P_lo);
+    return z_lo + frac * Z_STEP;
 }
 
-// Density altitude: altitude in the standard atmosphere with density rho.
+// Density altitude: altitude in the standard atmosphere with density rho, found the same
+// way as getPressureAltitude (log-lin interpolation between bracketing table entries).
 // Returns -Infinity/+Infinity if that altitude would fall below -5 km / above 1000 km.
 export function getDensityAltitude(rho: number): number {
     if (rho > _stdRho[0]) return -Infinity;
     if (rho < _stdRho[_STD_N - 1]) return Infinity;
     const i    = _bsearchDecreasing(_stdRho, rho);
     const z_lo = Z_MIN + i * Z_STEP;
-    const P_lo = _stdP[i];
-    let lo = 0, hi = Z_STEP;
-    while (hi - lo > 1e-6) {
-        const mid = (lo + hi) / 2;
-        const rho_mid = _rk4P(z_lo, P_lo, mid, 288.15) * getMolarMass(z_lo + mid) / (R * getTemperature(z_lo + mid));
-        rho_mid > rho ? lo = mid : hi = mid;
-    }
-    return z_lo + lo;
+    const rho_lo = _stdRho[i], rho_hi = _stdRho[i + 1];
+    const frac = Math.log(rho / rho_lo) / Math.log(rho_hi / rho_lo);
+    return z_lo + frac * Z_STEP;
 }
 
 // Standard-atmosphere pressure (Pa) at geometric altitude z, read directly from the

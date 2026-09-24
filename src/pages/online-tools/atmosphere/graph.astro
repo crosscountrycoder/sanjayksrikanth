@@ -690,7 +690,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	function formatTick(v: number, isAltitude: boolean): string {
 		if (v === 0) return '0';
 		if (!isAltitude) return stripZerosKeepNotation(roundSig(v, 4, 1e-3));
-		if (Math.abs(v) < 1e-3) return roundSig(v, 4, 1e-3, true);
+		if (Math.abs(v) < 1e-3) return stripZerosKeepNotation(roundSig(v, 4, 1e-3));
 		const sigFigVal = Number(v.toPrecision(4));
 		const intVal = Math.round(v);
 		const chosen = Math.abs(v - intVal) < Math.abs(v - sigFigVal) ? intVal : sigFigVal;
