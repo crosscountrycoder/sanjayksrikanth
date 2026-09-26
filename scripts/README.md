@@ -26,9 +26,11 @@ npx tsx scripts/atm-test.ts [z_m] [T0_K] [P0_Pa]
 | :------- | :---------- | :------ |
 | `z_m`    | Geometric altitude (m)    | `0` |
 | `T0_K`   | Sea-level temperature (K or °C)* | `288.15` |
-| `P0_Pa`  | Sea-level pressure (Pa)   | `101325` |
+| `P0_Pa`  | Sea-level pressure (Pa)** | `101325` |
 
 \* If the input temperature is between `-56.5` and `73.5`, it will be interpreted as being in degrees Celsius.
+
+\*\* Must be less than 1,000,000 Pa (1 MPa) — well beyond any pressure recorded at Earth's surface.
 
 **Outputs** (6 significant figures, temperatures also in °C):
 
@@ -71,9 +73,11 @@ npx tsx scripts/atm-test-simple.ts [z_m] [T0_K] [P0_Pa]
 | :------- | :---------- | :------ |
 | `z_m`    | Geometric altitude (m) | `0` |
 | `T0_K`   | Sea-level temperature (K or °C)* | `288.15` |
-| `P0_Pa`  | Sea-level pressure (Pa) | `101325` |
+| `P0_Pa`  | Sea-level pressure (Pa)** | `101325` |
 
 \* If the input temperature is between `-56.5` and `73.5`, it will be interpreted as being in degrees Celsius.
+
+\*\* Must be less than 1,000,000 Pa (1 MPa) — well beyond any pressure recorded at Earth's surface.
 
 **Outputs** (6 significant figures, temperatures also in °C):
 

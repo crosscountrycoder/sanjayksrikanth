@@ -45,13 +45,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	<p>
 	Example: In Denver (elevation 1,656 m / 5,433 ft), a summer day might be 30°C (86°F) with a pressure of 833 hPa. Extrapolating these conditions
 	down to sea level using the standard lapse rate gives 40.761°C (105.370°F) and <b>1,000.62 hPa</b>. The USSA pressure ratio at 1,656 m is 0.818689, 
-	so the altimeter setting is 833 / 0.818689 = <b>1,017.48 hPa</b> (30.0462 inHg). At these conditions, the pressure altitude is 1,622 m, slightly 
-	below the actual elevation because the pressure is slightly above standard. Due to the high temperature, however, the density altitude is much higher 
-	at 2,497 m.
+	so the altimeter setting is 833 / 0.818689 = <b>1,017.48 hPa</b> (30.0462 inHg). The pressure altitude is 1,622 m, slightly below the actual 
+	elevation because the pressure is slightly above standard. Due to the high temperature, however, the density altitude is much higher at 2,497 m.
 	</p>
 	<p>
 	In the troposphere, USSA pressure can be calculated as <span style="white-space: nowrap;">P = P₀ * (1 − H / 44,331)<sup>5.256</sup></span>, where 
-	H is geopotential height in meters and P₀ is standard sea-level pressure (1 atm or 101,325 Pa).
+	H is geopotential height in meters and P₀ is standard sea-level pressure (1 atm or 1,013.25 hPa).
 	</p>
 	<h2>Geometric versus geopotential altitude</h2>
 	<p>

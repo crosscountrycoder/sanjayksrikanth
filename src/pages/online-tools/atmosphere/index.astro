@@ -569,6 +569,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			if (P_Pa <= 0) {
 				errPress.textContent = `${label} must be greater than 0 ${pressUnit}`;
 				valid = false;
+			} else if (P_Pa >= atm.PRESSURE_INPUT_MAX_PA) {
+				const maxDisplay = roundSig(convert(atm.PRESSURE_INPUT_MAX_PA, 'Pa', pressUnit), 6, 1e-6, true);
+				errPress.textContent = `${label} must be less than ${maxDisplay} ${pressUnit}`;
+				valid = false;
 			} else {
 				errPress.textContent = '';
 			}
@@ -812,18 +816,18 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		lblOut2.textContent = out2; lblOut2.dataset.tooltip = tip2;
 	}
 
-	type UnitPreset = { alt: string; temp: string; press: string; dens: string; speed: string; visc: string; mfp: string; };
+	type UnitPreset = { alt: string; temp: string; press: string; dens: string; speed: string; visc: string; mfp: string; densNum: string; };
 	const PRESETS: Record<string, UnitPreset> = {
-		'default':   { alt: 'm',  temp: 'C', press: 'atm',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm'  },
-		'si-K-Pa':   { alt: 'm',  temp: 'K', press: 'Pa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm'  },
-		'si-C-Pa':   { alt: 'm',  temp: 'C', press: 'Pa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm'  },
-		'si-K-hPa':  { alt: 'm',  temp: 'K', press: 'hPa',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm'  },
-		'si-C-hPa':  { alt: 'm',  temp: 'C', press: 'hPa',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm'  },
-		'us-F-atm':  { alt: 'ft', temp: 'F', press: 'atm',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft' },
-		'us-R-psi':  { alt: 'ft', temp: 'R', press: 'psi',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft' },
-		'us-F-psi':  { alt: 'ft', temp: 'F', press: 'psi',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft' },
-		'us-R-inHg': { alt: 'ft', temp: 'R', press: 'inHg', dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft' },
-		'us-F-inHg': { alt: 'ft', temp: 'F', press: 'inHg', dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft' },
+		'default':   { alt: 'm',  temp: 'C', press: 'atm',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'si-K-Pa':   { alt: 'm',  temp: 'K', press: 'Pa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'si-C-Pa':   { alt: 'm',  temp: 'C', press: 'Pa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'si-K-hPa':  { alt: 'm',  temp: 'K', press: 'hPa',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'si-C-hPa':  { alt: 'm',  temp: 'C', press: 'hPa',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'us-F-atm':  { alt: 'ft', temp: 'F', press: 'atm',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
+		'us-R-psi':  { alt: 'ft', temp: 'R', press: 'psi',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
+		'us-F-psi':  { alt: 'ft', temp: 'F', press: 'psi',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
+		'us-R-inHg': { alt: 'ft', temp: 'R', press: 'inHg', dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
+		'us-F-inHg': { alt: 'ft', temp: 'F', press: 'inHg', dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
 	};
 
 	let applyingPreset = false;
@@ -869,6 +873,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		set('out-geo-alt-unit',            p.alt);
 		set('out-gravity-unit',            p.alt === 'ft' ? 'ft/s2' : 'm/s2');
 		set('out-mfp-unit',                p.mfp);
+		set('out-molecular-density-unit',  p.densNum);
 
 		applyingPreset = false;
 		updateStdNote();

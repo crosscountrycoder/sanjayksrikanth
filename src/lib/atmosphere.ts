@@ -118,6 +118,11 @@ const Z_STEP = 50;   // integration step (m)
 const Z_MIN  = -5000;
 const Z_MAX  = 1000000;
 
+// Sea-level/air/altimeter-setting pressure inputs above this are rejected: real Earth-surface
+// pressure never exceeds ~108 kPa, and well before water's critical pressure (22.064 MPa) the
+// ideal-gas-law-based model (density, viscosity, speed of sound) stops being physically trustworthy.
+export const PRESSURE_INPUT_MAX_PA = 1000000; // 1 MPa
+
 // One RK4 step of the unified hydrostatic equation.
 function _rk4P(z: number, P: number, h: number, T0_K: number): number {
     const f = (zi: number) => getMolarMass(zi) * getGravity(zi) / (R * getTemperature(zi, T0_K));

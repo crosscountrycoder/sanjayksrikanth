@@ -71,6 +71,9 @@ export function getStandardConditionsNote(
 	const P = roundSig(convert(stdP_Pa, 'Pa', pressUnit), 6, 1e-6, true);
 
 	if (!tempNeedsAlt && !pressNeedsAlt) {
+		if (pressMode === 'altimeter') {
+			return `Standard sea-level temperature is ${T} ${tempUnitLabel}; standard altimeter setting is ${P} ${pressUnit}.`;
+		}
 		return `Standard sea-level conditions are ${T} ${tempUnitLabel} and ${P} ${pressUnit}.`;
 	}
 	if (tempNeedsAlt && pressNeedsAlt) {

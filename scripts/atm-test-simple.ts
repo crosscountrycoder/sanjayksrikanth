@@ -134,6 +134,11 @@ if (T0 < atm.SEA_LEVEL_TEMP_MIN_K || T0 > atm.SEA_LEVEL_TEMP_MAX_K) {
     process.exit(1);
 }
 
+if (P0 >= atm.PRESSURE_INPUT_MAX_PA) {
+    console.error(`Error: sea-level pressure must be less than ${atm.PRESSURE_INPUT_MAX_PA} Pa.`);
+    process.exit(1);
+}
+
 const H   = _H(z);
 const T   = _T(H, T0);
 const P   = _P(H, P0, T0);

@@ -43,6 +43,11 @@ if (T0 < atm.SEA_LEVEL_TEMP_MIN_K || T0 > atm.SEA_LEVEL_TEMP_MAX_K) {
     process.exit(1);
 }
 
+if (P0 >= atm.PRESSURE_INPUT_MAX_PA) {
+    console.error(`Error: sea-level pressure must be less than ${atm.PRESSURE_INPUT_MAX_PA} Pa.`);
+    process.exit(1);
+}
+
 const P    = atm.getPressure(z, P0, T0);
 const T    = atm.getTemperature(z, T0);
 const rho  = atm.getDensity(P, T, z);

@@ -907,11 +907,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			if (tempMode === 'air') {
 				const fmtT = (K: number) => parseFloat(convert(K, 'K', slTempUnit).toFixed(3)).toString();
 				const xK = atm.getTemperature(z_cond, hiK);
-				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}.`;
+				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}`;
 			} else {
 				const fmt = (K: number) => roundSig(convert(K, 'K', slTempUnit), 6, 1e-6, true);
 				const lo = fmt(loK), hi = fmt(hiK);
-				errSlTemp.textContent = `Sea-level temperature must be between ${lo} and ${hi} ${unitLabel[slTempUnit]}.`;
+				errSlTemp.textContent = `Sea-level temperature must be between ${lo} and ${hi} ${unitLabel[slTempUnit]}`;
 			}
 			svgEl.innerHTML = ''; return;
 		}
@@ -929,7 +929,13 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		}
 		if (P_input_Pa <= 0) {
 			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
-			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}.`;
+			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}`;
+			svgEl.innerHTML = ''; return;
+		}
+		if (P_input_Pa >= atm.PRESSURE_INPUT_MAX_PA) {
+			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
+			const maxDisplay = roundSig(convert(atm.PRESSURE_INPUT_MAX_PA, 'Pa', slPressUnit), 6, 1e-6, true);
+			errSlPressure.textContent = `${label} must be less than ${maxDisplay} ${slPressUnit}`;
 			svgEl.innerHTML = ''; return;
 		}
 
@@ -941,7 +947,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const factor = convert(1, 'm', xUnit);
 			const lo = roundSig(loX * factor, 6, 1e-6, true);
 			const hi = roundSig(hiX * factor, 6, 1e-6, true);
-			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
+			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}`;
 			svgEl.innerHTML = ''; return;
 		}
 
@@ -1359,7 +1365,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 			const checkedCount = document.querySelectorAll('#var-list input[type=checkbox][data-var]:checked').length;
 			if (checkedCount > MAX_VARS) {
 				target.checked = false;
-				errVarCount.textContent = `You can select up to ${MAX_VARS} variables at once.`;
+				errVarCount.textContent = `You can select up to ${MAX_VARS} variables at once`;
 				return;
 			}
 			errVarCount.textContent = '';
