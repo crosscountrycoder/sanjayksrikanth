@@ -13,7 +13,7 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 	<p>
 	Estimates the station pressure at one location (station B) from the pressure and temperature measured at another (station A), using the
 	barometric formula with a constant lapse rate between the two stations. If station B's temperature is left blank, the standard lapse rate
-	of 6.5°C/km (0.00357°F/ft) is assumed.
+	of 6.5°C/km (0.00357°F/ft) is assumed, limited to the range -56.5°C to 73.5°C (-69.7°F to 164.3°F).
 	</p>
 	<p>
 	This calculator is useful for estimating the pressure on a mountain given the pressure and temperature in a nearby valley, and vice versa.
@@ -62,7 +62,22 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 			</div>
 		</div>
 
-		<div class="station">
+		<div class="settings">
+			<div class="unit-buttons">
+				<button id="btn-metric">Metric (m, °C, hPa)</button>
+				<button id="btn-imperial">Imperial (ft, °F, inHg)</button>
+			</div>
+			<h3>Settings</h3>
+			<div class="field">
+				<label for="pressure-mode">Pressure input</label>
+				<select id="pressure-mode">
+					<option value="station" selected>Station pressure</option>
+					<option value="altimeter">Altimeter setting</option>
+				</select>
+			</div>
+		</div>
+
+		<div class="station station-b">
 			<h2>Station B</h2>
 
 			<div class="field">
@@ -114,27 +129,13 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 				</div>
 			</div>
 		</div>
-
-		<div class="settings">
-			<div class="unit-buttons">
-				<button id="btn-metric">Metric (m, °C, hPa)</button>
-				<button id="btn-imperial">Imperial (ft, °F, inHg)</button>
-			</div>
-			<h3>Settings</h3>
-			<div class="field">
-				<label for="pressure-mode">Pressure input</label>
-				<select id="pressure-mode">
-					<option value="station" selected>Station pressure</option>
-					<option value="altimeter">Altimeter setting</option>
-				</select>
-			</div>
-		</div>
 	</section>
 </Layout>
 
 <style>
-	/* Station A and the settings stack in the left column; station B spans both rows on the
-	   right, so the settings sit directly under station A however tall station B is. */
+	/* Left column: station A, then the settings. Right column: station B, spanning both rows
+	   so the settings sit directly under station A however tall station B is. On narrow
+	   screens the columns stack left then right, as on the atmosphere calculator. */
 	.calculator {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -142,14 +143,9 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		column-gap: 2rem;
 	}
 
-	.calculator > .station:nth-child(2) {
+	.station-b {
 		grid-column: 2;
 		grid-row: 1 / span 2;
-	}
-
-	.settings {
-		grid-column: 1;
-		grid-row: 2;
 	}
 
 	.field {
@@ -196,17 +192,16 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 	}
 
 	@media (max-width: 700px) {
-		/* One column in source order: station A, station B, settings. */
+		/* One column in source order: station A, settings, station B. */
 		.calculator {
 			grid-template-columns: 1fr;
 			grid-template-rows: none;
-			row-gap: 2rem;
 		}
 
-		.calculator > .station:nth-child(2),
-		.settings {
+		.station-b {
 			grid-column: auto;
 			grid-row: auto;
+			margin-top: 2rem;
 		}
 
 		.field {
