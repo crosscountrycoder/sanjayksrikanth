@@ -3,7 +3,7 @@ import { MF_DATA, MF_SPECIES } from './mole-fractions.ts';
 // ── Section 1: Geodesy ────────────────────────────────────────────────────────
 
 export const EARTH_RADIUS_M = 6356766; // m (USSA 1976)
-const G0 = 9.80665; // standard gravity m/s²
+export const G0 = 9.80665; // standard gravity m/s²
 
 export function geometricToGeopotential(z: number): number {
     return (EARTH_RADIUS_M * z) / (EARTH_RADIUS_M + z);
@@ -39,7 +39,7 @@ const TEMP_LAYERS = [
 ] as const;
 
 const TROPOPAUSE_T = 216.65;   // K (-56.5 °C) — floor of the sea-level-driven layer
-const LAPSE_RATE   = 0.0065; // K/m
+export const LAPSE_RATE   = 0.0065; // K/m
 export const EPS = 1e-9; // floating-point slack for boundary comparisons
 export const SEA_LEVEL_TEMP_MIN_K = 216.65 - EPS; // -56.5 °C
 export const SEA_LEVEL_TEMP_MAX_K = 346.65 + EPS; // 73.5 °C

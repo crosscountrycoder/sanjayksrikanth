@@ -1,0 +1,400 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+---
+
+<Layout title="Station Pressure Calculator">
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Online tools', href: '/online-tools' },
+		{ label: 'Station Pressure Calculator' },
+	]} />
+	<h1>Station Pressure Calculator</h1>
+	<p>
+	Estimates the station pressure at one location (station B) from the pressure and temperature measured at another (station A), using the
+	barometric formula with a constant lapse rate between the two stations. If station B's temperature is left blank, the standard lapse rate
+	of 6.5 °C/km is assumed.
+	</p>
+	<p>
+	This calculator is useful for estimating the pressure on a mountain given the pressure and temperature in a nearby valley, and vice versa.
+	</p>
+	<section class="calculator">
+		<div class="station">
+			<h2>Station A</h2>
+
+			<div class="field">
+				<label for="alt-a" data-tooltip="Geopotential height of station A above mean sea level.">Altitude</label>
+				<div class="input-row">
+					<input type="number" id="alt-a" value="0" />
+					<select id="alt-a-unit">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+					</select>
+				</div>
+				<p class="error" id="err-alt-a"></p>
+			</div>
+
+			<div class="field">
+				<label for="temp-a" data-tooltip="Air temperature measured at station A.">Station temperature</label>
+				<div class="input-row">
+					<input type="number" id="temp-a" value="15" />
+					<select id="temp-a-unit">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+					</select>
+				</div>
+				<p class="error" id="err-temp-a"></p>
+			</div>
+
+			<div class="field">
+				<label for="press-a" id="lbl-press-a" data-tooltip="Absolute air pressure measured at station A (not reduced to sea level).">Station pressure</label>
+				<div class="input-row">
+					<input type="number" id="press-a" value="1013.25" />
+					<select id="press-a-unit">
+						<option value="hPa" selected>hPa (mbar)</option>
+						<option value="inHg">inHg</option>
+						<option value="atm">atm</option>
+					</select>
+				</div>
+				<p class="error" id="err-press-a"></p>
+			</div>
+		</div>
+
+		<div class="station">
+			<h2>Station B</h2>
+
+			<div class="field">
+				<label for="alt-b" data-tooltip="Geopotential height of station B above mean sea level.">Altitude</label>
+				<div class="input-row">
+					<input type="number" id="alt-b" value="1000" />
+					<select id="alt-b-unit">
+						<option value="m" selected>m</option>
+						<option value="ft">ft</option>
+					</select>
+				</div>
+				<p class="error" id="err-alt-b"></p>
+			</div>
+
+			<div class="field">
+				<label for="temp-b" data-tooltip="Air temperature at station B. Optional: if left blank, it is estimated from station A using the standard lapse rate of 6.5 °C/km.">Station temperature</label>
+				<div class="input-row">
+					<input type="number" id="temp-b" placeholder="Optional" />
+					<select id="temp-b-unit">
+						<option value="C" selected>°C</option>
+						<option value="F">°F</option>
+						<option value="K">K</option>
+					</select>
+				</div>
+				<p class="error" id="err-temp-b"></p>
+			</div>
+
+			<div class="field">
+				<label data-tooltip="Estimated absolute air pressure at station B.">Station pressure</label>
+				<div class="output-row">
+					<span id="out-press-b">—</span>
+					<select id="out-press-b-unit">
+						<option value="hPa" selected>hPa (mbar)</option>
+						<option value="inHg">inHg</option>
+						<option value="atm">atm</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="field">
+				<label data-tooltip="Estimated altimeter setting at station B: its station pressure divided by the standard-atmosphere pressure ratio at its altitude.">Altimeter setting</label>
+				<div class="output-row">
+					<span id="out-altimeter-b">—</span>
+					<select id="out-altimeter-b-unit">
+						<option value="hPa" selected>hPa (mbar)</option>
+						<option value="inHg">inHg</option>
+						<option value="atm">atm</option>
+					</select>
+				</div>
+			</div>
+		</div>
+
+		<div class="settings">
+			<div class="unit-buttons">
+				<button id="btn-metric">Metric (m, °C, hPa)</button>
+				<button id="btn-imperial">Imperial (ft, °F, inHg)</button>
+			</div>
+			<h3>Settings</h3>
+			<div class="field">
+				<label for="pressure-mode">Pressure input</label>
+				<select id="pressure-mode">
+					<option value="station" selected>Station pressure</option>
+					<option value="altimeter">Altimeter setting</option>
+				</select>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	/* Station A and the settings stack in the left column; station B spans both rows on the
+	   right, so the settings sit directly under station A however tall station B is. */
+	.calculator {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: auto 1fr;
+		column-gap: 2rem;
+	}
+
+	.calculator > .station:nth-child(2) {
+		grid-column: 2;
+		grid-row: 1 / span 2;
+	}
+
+	.settings {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 10rem minmax(0, 1fr);
+		align-items: center;
+		column-gap: 0.75rem;
+		row-gap: 0.15rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.unit-buttons {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.input-row,
+	.output-row {
+		gap: 0.5rem;
+		overflow-x: auto;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		min-width: 5rem;
+	}
+
+	select {
+		min-width: 0;
+	}
+
+	.output-row span {
+		flex: 1;
+		min-width: 5rem;
+	}
+
+	.error {
+		grid-column: 2;
+	}
+
+	/* Informational message shown in an error slot: same formatting, regular text color. */
+	.error.note {
+		color: var(--color-text);
+	}
+
+	@media (max-width: 700px) {
+		/* One column in source order: station A, station B, settings. */
+		.calculator {
+			grid-template-columns: 1fr;
+			grid-template-rows: none;
+			row-gap: 2rem;
+		}
+
+		.calculator > .station:nth-child(2),
+		.settings {
+			grid-column: auto;
+			grid-row: auto;
+		}
+
+		.field {
+			grid-template-columns: 8rem minmax(0, 1fr);
+		}
+	}
+
+	label[data-tooltip] {
+		text-decoration: underline dotted;
+		cursor: help;
+		position: relative;
+	}
+
+	label[data-tooltip]::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		left: 0;
+		top: calc(100% + 4px);
+		width: 16rem;
+		padding: 0.3rem 0.5rem;
+		background: var(--color-output-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		color: var(--color-text);
+		font-size: 0.8125rem;
+		font-weight: normal;
+		white-space: normal;
+		z-index: 100;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+
+	label[data-tooltip]:hover::after {
+		opacity: 1;
+	}
+</style>
+
+<script>
+	import { PRESSURE_INPUT_MAX_PA } from '../../lib/atmosphere.ts';
+	import {
+		STATION_ALT_MIN_M, STATION_ALT_MAX_M, STATION_TEMP_MIN_K, STATION_TEMP_MAX_K,
+		getStandardStationTemperature, getStationPressure, getAltimeterPressureRatio,
+	} from '../../lib/station-pressure.ts';
+	import { convert } from '../../lib/convert.ts';
+	import { roundSig } from '../../lib/helpers.ts';
+
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+	const num  = (id: string) => parseFloat($<HTMLInputElement>(id).value);
+	const unit = (id: string) => $<HTMLSelectElement>(id).value;
+
+	const tempLabel = (u: string) => u === 'C' ? '°C' : u === 'F' ? '°F' : 'K';
+	const fmtTemp   = (K: number, u: string) => convert(K, 'K', u).toFixed(3);
+	const fmtBound  = (v: number, u: string, tempUnit = '') => roundSig(v, 6, 1e-6, true, tempUnit);
+
+	const useAltimeter = () => unit('pressure-mode') === 'altimeter';
+
+	// Each validator returns the value in SI units (m, K, Pa), or NaN if the field is blank
+	// or out of range, writing any range error into the field's error element.
+	function readAltitude(id: string): number {
+		const err = $(`err-${id}`);
+		const v = num(id), u = unit(`${id}-unit`);
+		err.textContent = '';
+		if (isNaN(v)) return NaN;
+		const H_m = convert(v, u, 'm');
+		if (H_m < STATION_ALT_MIN_M || H_m > STATION_ALT_MAX_M) {
+			err.textContent = `Altitude must be between ${fmtBound(convert(STATION_ALT_MIN_M, 'm', u), u)} and ${fmtBound(convert(STATION_ALT_MAX_M, 'm', u), u)} ${u}`;
+			return NaN;
+		}
+		return H_m;
+	}
+
+	function readTemperature(id: string): number {
+		const err = $(`err-${id}`);
+		const v = num(id), u = unit(`${id}-unit`);
+		err.textContent = '';
+		if (isNaN(v)) return NaN;
+		const T_K = convert(v, u, 'K');
+		if (T_K < STATION_TEMP_MIN_K || T_K > STATION_TEMP_MAX_K) {
+			err.textContent = `Station temperature must be between ${fmtBound(convert(STATION_TEMP_MIN_K, 'K', u), u, u)} and ${fmtBound(convert(STATION_TEMP_MAX_K, 'K', u), u, u)} ${tempLabel(u)}`;
+			return NaN;
+		}
+		return T_K;
+	}
+
+	// Returns the pressure as entered (Pa): station pressure or altimeter setting, per the setting.
+	function readPressure(id: string): number {
+		const err = $(`err-${id}`);
+		const v = num(id), u = unit(`${id}-unit`);
+		const label = useAltimeter() ? 'Altimeter setting' : 'Station pressure';
+		err.textContent = '';
+		if (isNaN(v)) return NaN;
+		const P_Pa = convert(v, u, 'Pa');
+		if (P_Pa <= 0) {
+			err.textContent = `${label} must be greater than 0 ${u}`;
+			return NaN;
+		}
+		if (P_Pa >= PRESSURE_INPUT_MAX_PA) {
+			err.textContent = `${label} must be less than ${fmtBound(convert(PRESSURE_INPUT_MAX_PA, 'Pa', u), u)} ${u}`;
+			return NaN;
+		}
+		return P_Pa;
+	}
+
+	function updatePressureLabel() {
+		const lblP = $('lbl-press-a');
+		lblP.textContent = useAltimeter() ? 'Altimeter setting' : 'Station pressure';
+		lblP.dataset.tooltip = useAltimeter()
+			? 'Altimeter setting reported for station A; converted to station pressure using the standard-atmosphere pressure ratio at its altitude.'
+			: 'Absolute air pressure measured at station A (not reduced to sea level).';
+	}
+
+	function calculate() {
+		const H_A = readAltitude('alt-a');
+		const T_A = readTemperature('temp-a');
+		const P_A_input = readPressure('press-a');
+		const P_A = useAltimeter() ? P_A_input * getAltimeterPressureRatio(H_A) : P_A_input;
+		const H_B = readAltitude('alt-b');
+
+		// Station B temperature: blank means "use the standard lapse rate from station A".
+		const tempBInput = $<HTMLInputElement>('temp-b');
+		const tempBUnit  = unit('temp-b-unit');
+		const tempBBlank = tempBInput.value.trim() === '' && tempBInput.validity.valid;
+		const T_B_std    = getStandardStationTemperature(H_A, T_A, H_B); // NaN if any input is invalid
+		// The standard-temperature note shares the error slot so it matches the warnings' layout.
+		const msg        = $('err-temp-b');
+		let T_B: number;
+		if (tempBBlank) {
+			T_B = T_B_std;
+			tempBInput.placeholder = isNaN(T_B_std) ? 'Optional' : fmtTemp(T_B_std, tempBUnit);
+			msg.classList.add('note');
+			msg.textContent = isNaN(T_B_std) ? '' :
+				`Using standard temperature at station B: ${fmtTemp(T_B_std, tempBUnit)} ${tempLabel(tempBUnit)}`;
+		} else {
+			msg.classList.remove('note');
+			T_B = readTemperature('temp-b');
+			tempBInput.placeholder = 'Optional';
+		}
+
+		const P_B = getStationPressure(H_A, P_A, T_A, H_B, T_B);
+		$('out-press-b').textContent = isNaN(P_B) ? '—' : roundSig(convert(P_B, 'Pa', unit('out-press-b-unit')), 6);
+
+		const QNH_B = P_B / getAltimeterPressureRatio(H_B);
+		$('out-altimeter-b').textContent = isNaN(QNH_B) ? '—' : roundSig(convert(QNH_B, 'Pa', unit('out-altimeter-b-unit')), 6);
+	}
+
+	const inputIds = [
+		'alt-a', 'alt-a-unit', 'temp-a', 'temp-a-unit', 'press-a', 'press-a-unit',
+		'alt-b', 'alt-b-unit', 'temp-b', 'temp-b-unit', 'out-press-b-unit',
+		'out-altimeter-b-unit',
+	];
+	for (const id of inputIds) {
+		const el = $(id);
+		el.addEventListener('input', calculate);
+		el.addEventListener('change', calculate);
+	}
+	$('pressure-mode').addEventListener('change', () => { updatePressureLabel(); calculate(); });
+
+	// Unit system buttons: switch every unit dropdown and convert the entered values so the
+	// physical quantities stay the same (the same approach as the atmosphere calculator's presets).
+	const UNIT_SYSTEMS: Record<string, { alt: string; temp: string; press: string }> = {
+		metric:   { alt: 'm',  temp: 'C', press: 'hPa'  },
+		imperial: { alt: 'ft', temp: 'F', press: 'inHg' },
+	};
+
+	function applyUnitSystem(key: string) {
+		const sys = UNIT_SYSTEMS[key];
+		const fields: [string, string, string][] = [
+			['alt-a',   'm',  sys.alt],   ['alt-b',  'm', sys.alt],
+			['temp-a',  'K',  sys.temp],  ['temp-b', 'K', sys.temp],
+			['press-a', 'Pa', sys.press],
+		];
+		for (const [id, si, to] of fields) {
+			const input = $<HTMLInputElement>(id);
+			const from  = unit(`${id}-unit`);
+			const v     = parseFloat(input.value);
+			if (!isNaN(v)) {
+				input.value = roundSig(convert(convert(v, from, si), si, to), 6, 1e-6, true, si === 'K' ? to : '');
+			}
+			$<HTMLSelectElement>(`${id}-unit`).value = to;
+		}
+		$<HTMLSelectElement>('out-press-b-unit').value = sys.press;
+		$<HTMLSelectElement>('out-altimeter-b-unit').value = sys.press;
+		calculate();
+	}
+
+	$('btn-metric').addEventListener('click', () => applyUnitSystem('metric'));
+	$('btn-imperial').addEventListener('click', () => applyUnitSystem('imperial'));
+
+	updatePressureLabel();
+	calculate();
+</script>
