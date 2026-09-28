@@ -36,7 +36,9 @@ const UNIT_FACTORS: Record<string, UnitFactor> = {
 	'psi':  { toSI: 6894.75729316836 },
 
 	// Density (SI: kg/m³)
+	'g/m3':     { toSI: 1e-3 },
 	'lb/ft3':   { toSI: LB_TO_KG / FT3_TO_M3 },
+	'gr/ft3':   { toSI: LB_TO_KG / 7000 / FT3_TO_M3 }, // grains per ft³ (1 grain = 1/7000 lb)
 	'slug/ft3': { toSI: 14.5939029372064 / FT3_TO_M3 },
 	'sigma':    { toSI: 1.22504277026388 }, // ratio to USSA 1976 sea-level standard density
 

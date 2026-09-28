@@ -1,0 +1,404 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+
+const tempOptions = [
+	{ value: 'C', label: '°C' },
+	{ value: 'F', label: '°F' },
+	{ value: 'K', label: 'K' },
+	{ value: 'R', label: '°R' },
+];
+const pressOptions = [
+	{ value: 'atm',  label: 'atm' },
+	{ value: 'Pa',   label: 'Pa' },
+	{ value: 'hPa',  label: 'hPa (mbar)' },
+	{ value: 'kPa',  label: 'kPa' },
+	{ value: 'mmHg', label: 'mmHg (Torr)' },
+	{ value: 'inHg', label: 'inHg' },
+	{ value: 'psi',  label: 'psi' },
+];
+const densOptions = [
+	{ value: 'kg/m3',  label: 'kg/m³' },
+	{ value: 'g/m3',   label: 'g/m³' },
+	{ value: 'lb/ft3', label: 'lb/ft³' },
+	{ value: 'gr/ft3', label: 'grains/ft³' },
+];
+---
+
+<Layout title="Dew Point Calculator">
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Online tools', href: '/online-tools' },
+		{ label: 'Dew Point Calculator' },
+	]} />
+	<h1>Dew Point Calculator</h1>
+	<p>
+	Relates air temperature, relative humidity, dew point, water vapor pressure, and absolute humidity using
+	the <a href="https://iapws.org/public/documents/6dGkr/Supp-sat.pdf" target="_blank">Wagner-Pruss formula</a>.
+	Any field can be modified, and the others update to match. Changing the temperature or saturation vapor pressure keeps the
+	dew point fixed; changing the dew point, vapor pressure, relative humidity, or absolute humidity keeps the temperature fixed.
+	</p>
+	<p>
+	Below water's triple point (0.01°C / 32.018°F / 273.16 K), saturation is taken over ice rather than liquid water, so the dew point is
+	a frost point. In this temperature range, <a href="https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf" target="_blank">the IAPWS 
+	formula for sublimation pressure over ice</a> is used.
+	</p>
+	<p>
+	Vapor pressure and saturation vapor pressure are accurate to within 100 ppm from -80°C to 373.946°C (the critical point). Below -223.15°C, 
+	the accuracy decreases substantially, although water's vapor pressure is vanishingly small at these temperatures.
+	</p>
+
+	<section class="calculator">
+		<div class="field">
+			<label for="temp" data-tooltip="Air temperature. Determines the saturation vapor pressure.">Temperature</label>
+			<div class="input-row">
+				<input type="number" id="temp" value="25" />
+				<select id="temp-unit">
+					{tempOptions.map(o => <option value={o.value} selected={o.value === 'C'}>{o.label}</option>)}
+				</select>
+			</div>
+			<p class="error" id="err-temp"></p>
+		</div>
+
+		<div class="field">
+			<label for="rh" data-tooltip="Vapor pressure as a percentage of the saturation vapor pressure at the air temperature.">Relative humidity</label>
+			<div class="input-row">
+				<input type="number" id="rh" value="50" />
+				<select disabled><option>%</option></select>
+			</div>
+			<p class="error" id="err-rh"></p>
+		</div>
+
+		<div class="field">
+			<label for="dew" data-tooltip="Temperature to which the air must be cooled for its water vapor to condense (or deposit as frost, below the triple point).">Dew point</label>
+			<div class="input-row">
+				<input type="number" id="dew" />
+				<select id="dew-unit">
+					{tempOptions.map(o => <option value={o.value} selected={o.value === 'C'}>{o.label}</option>)}
+				</select>
+			</div>
+			<p class="error" id="err-dew"></p>
+		</div>
+
+		<div class="field">
+			<label for="vp" data-tooltip="Partial pressure of water vapor in the air; equal to the saturation vapor pressure at the dew point.">Vapor pressure</label>
+			<div class="input-row">
+				<input type="number" id="vp" />
+				<select id="vp-unit">
+					{pressOptions.map(o => <option value={o.value} selected={o.value === 'hPa'}>{o.label}</option>)}
+				</select>
+			</div>
+			<p class="error" id="err-vp"></p>
+		</div>
+
+		<div class="field">
+			<label for="svp" data-tooltip="Maximum equilibrium vapor pressure of water at the air temperature (over ice below the triple point).">Saturation vapor pressure</label>
+			<div class="input-row">
+				<input type="number" id="svp" />
+				<select id="svp-unit">
+					{pressOptions.map(o => <option value={o.value} selected={o.value === 'hPa'}>{o.label}</option>)}
+				</select>
+			</div>
+			<p class="error" id="err-svp"></p>
+		</div>
+
+		<div class="field">
+			<label for="ah" data-tooltip="Mass of water vapor per unit volume of air, treating the vapor as an ideal gas at the air temperature.">Absolute humidity</label>
+			<div class="input-row">
+				<input type="number" id="ah" />
+				<select id="ah-unit">
+					{densOptions.map(o => <option value={o.value} selected={o.value === 'g/m3'}>{o.label}</option>)}
+				</select>
+			</div>
+			<p class="error" id="err-ah"></p>
+		</div>
+
+		<h3>Settings</h3>
+		<div class="field">
+			<label for="units-preset">Units</label>
+			<select id="units-preset">
+				<option value="C-atm-g/m3">SI (°C, atm, g/m³)</option>
+				<option value="K-Pa-g/m3">SI (K, Pa, g/m³)</option>
+				<option value="C-Pa-g/m3">SI (°C, Pa, g/m³)</option>
+				<option value="K-hPa-g/m3">SI (K, hPa, g/m³)</option>
+				<option value="C-hPa-g/m3" selected>SI (°C, hPa, g/m³)</option>
+				<option value="F-atm-gr/ft3">US (°F, atm, grains/ft³)</option>
+				<option value="R-psi-gr/ft3">US (°R, psi, grains/ft³)</option>
+				<option value="F-psi-gr/ft3">US (°F, psi, grains/ft³)</option>
+				<option value="R-inHg-gr/ft3">US (°R, inHg, grains/ft³)</option>
+				<option value="F-inHg-gr/ft3">US (°F, inHg, grains/ft³)</option>
+				<option value="custom">Custom</option>
+			</select>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.calculator {
+		max-width: 36rem;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 12rem minmax(0, 1fr);
+		align-items: center;
+		column-gap: 0.75rem;
+		row-gap: 0.15rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.input-row {
+		gap: 0.5rem;
+		overflow-x: auto;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		min-width: 5rem;
+	}
+
+	select {
+		min-width: 0;
+	}
+
+	.error {
+		grid-column: 2;
+	}
+
+	/* Informational message shown in an error slot: same formatting, regular text color. */
+	.error.note {
+		color: var(--color-text);
+	}
+
+	@media (max-width: 700px) {
+		.field {
+			grid-template-columns: 8rem minmax(0, 1fr);
+		}
+	}
+
+	label[data-tooltip] {
+		text-decoration: underline dotted;
+		cursor: help;
+		position: relative;
+	}
+
+	label[data-tooltip]::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		left: 0;
+		top: calc(100% + 4px);
+		width: 16rem;
+		padding: 0.3rem 0.5rem;
+		background: var(--color-output-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 3px;
+		color: var(--color-text);
+		font-size: 0.8125rem;
+		font-weight: normal;
+		white-space: normal;
+		z-index: 100;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+
+	label[data-tooltip]:hover::after {
+		opacity: 1;
+	}
+</style>
+
+<script>
+	import {
+		waterVaporPressure, getBoilingPoint, getDewPoint,
+		getAbsoluteHumidity, getVaporPressureFromAbsoluteHumidity,
+	} from '../../lib/water-properties.ts';
+	import { convert } from '../../lib/convert.ts';
+	import { roundSig } from '../../lib/helpers.ts';
+
+	// Water's critical point: the upper limit for temperatures and vapor pressures.
+	const T_CRIT_K  = 647.096;
+	const P_CRIT_PA = 22064000;
+
+	type Field = 'temp' | 'rh' | 'dew' | 'vp' | 'svp' | 'ah';
+	const FIELDS: Field[] = ['temp', 'rh', 'dew', 'vp', 'svp', 'ah'];
+
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+	const unit = (id: string) => $<HTMLSelectElement>(id).value;
+
+	const tempLabel = (u: string) => u === 'C' ? '°C' : u === 'F' ? '°F' : u === 'R' ? '°R' : 'K';
+	const densLabel = (u: string) => ({ 'kg/m3': 'kg/m³', 'g/m3': 'g/m³', 'lb/ft3': 'lb/ft³', 'gr/ft3': 'grains/ft³' })[u] ?? u;
+	const fmtBound  =(v: number, u: string, tempUnit = '') => roundSig(v, 6, 1e-6, true, tempUnit);
+
+	// The calculator's state is the air temperature and dew point (K); every field is derived
+	// from these two. Temperature and saturation vapor pressure edit T_K; dew point, vapor
+	// pressure, relative humidity, and absolute humidity edit Td_K.
+	let T_K  = NaN;
+	let Td_K = NaN;
+
+	// Formats a field's value from the current state, or '' if it can't be computed
+	// (e.g. the saturation pressure underflows to 0 near absolute zero).
+	function formatField(f: Field): string {
+		let v: number, s: string;
+		switch (f) {
+			case 'temp': v = T_K;  s = roundSig(convert(v, 'K', unit('temp-unit')), 6, 1e-4, false, unit('temp-unit')); break;
+			case 'dew':  v = Td_K; s = roundSig(convert(v, 'K', unit('dew-unit')), 6, 1e-4, false, unit('dew-unit')); break;
+			case 'vp':   v = waterVaporPressure(Td_K); s = roundSig(convert(v, 'Pa', unit('vp-unit')), 6); break;
+			case 'svp':  v = waterVaporPressure(T_K);  s = roundSig(convert(v, 'Pa', unit('svp-unit')), 6); break;
+			case 'rh':   v = 100 * waterVaporPressure(Td_K) / waterVaporPressure(T_K); s = roundSig(v, 6); break;
+			case 'ah':   v = getAbsoluteHumidity(waterVaporPressure(Td_K), T_K); s = roundSig(convert(v, 'kg/m3', unit('ah-unit')), 6); break;
+		}
+		return isFinite(v) ? s : '';
+	}
+
+	function setError(f: Field, msg: string) {
+		const el = $(`err-${f}`);
+		el.classList.remove('note');
+		el.textContent = msg;
+	}
+
+	// Rewrites every field except `skip` (the one being typed in) from the state.
+	function render(skip?: Field) {
+		for (const f of FIELDS) {
+			if (f === skip) continue;
+			$<HTMLInputElement>(f).value = formatField(f);
+			setError(f, '');
+		}
+		// Supersaturation note, shown whenever the RH field itself has no error.
+		const errRh = $('err-rh');
+		if (skip !== 'rh' || errRh.textContent === '') {
+			const supersaturated = Td_K > T_K;
+			errRh.classList.toggle('note', supersaturated);
+			errRh.textContent = supersaturated ? 'Relative humidity is over 100%: the air is supersaturated.' : '';
+		}
+	}
+
+	// Parses and validates a temperature field; returns kelvins or NaN (writing any error).
+	// The dew point may be exactly absolute zero (completely dry air); the air temperature may not,
+	// since its saturation vapor pressure would be 0 and the relative humidity undefined.
+	function readTemperature(f: 'temp' | 'dew', name: string): number {
+		const u = unit(`${f}-unit`);
+		const T = convert(parseFloat($<HTMLInputElement>(f).value), u, 'K');
+		// Unit conversion can leave absolute zero a hair off 0 K (e.g. from -459.67 °F).
+		const T_K = Math.abs(T) < 1e-9 ? 0 : T;
+		const allowZero = f === 'dew';
+		if (!((allowZero ? T_K >= 0 : T_K > 0) && T_K <= T_CRIT_K)) {
+			setError(f, `${name} must be between ${fmtBound(convert(0, 'K', u), u, u)} and ${fmtBound(convert(T_CRIT_K, 'K', u), u, u)} ${tempLabel(u)}`);
+			return NaN;
+		}
+		return T_K;
+	}
+
+	// Parses and validates a pressure field; returns pascals or NaN (writing any error).
+	// The vapor pressure may be 0 (completely dry air); the saturation vapor pressure may not.
+	function readPressure(f: 'vp' | 'svp', name: string): number {
+		const u = unit(`${f}-unit`);
+		const P = convert(parseFloat($<HTMLInputElement>(f).value), u, 'Pa');
+		const allowZero = f === 'vp';
+		if (!((allowZero ? P >= 0 : P > 0) && P <= P_CRIT_PA)) {
+			const max = `${fmtBound(convert(P_CRIT_PA, 'Pa', u), u)} ${u}`;
+			setError(f, allowZero
+				? `${name} must be between 0 and ${max}`
+				: `${name} must be greater than 0 ${u} and at most ${max}`);
+			return NaN;
+		}
+		return P;
+	}
+
+	function onInput(f: Field) {
+		const input = $<HTMLInputElement>(f);
+		setError(f, '');
+		// A blank (or partially typed) value leaves the other fields as they are.
+		if (isNaN(parseFloat(input.value))) return;
+
+		switch (f) {
+			case 'temp': {
+				const T = readTemperature('temp', 'Temperature');
+				if (isNaN(T)) return;
+				T_K = T;
+				break;
+			}
+			case 'svp': {
+				const P = readPressure('svp', 'Saturation vapor pressure');
+				if (isNaN(P)) return;
+				T_K = getBoilingPoint(P);
+				break;
+			}
+			case 'dew': {
+				const T = readTemperature('dew', 'Dew point');
+				if (isNaN(T)) return;
+				Td_K = T;
+				break;
+			}
+			case 'vp': {
+				const P = readPressure('vp', 'Vapor pressure');
+				if (isNaN(P)) return;
+				Td_K = getBoilingPoint(P);
+				break;
+			}
+			case 'rh': {
+				const RH = parseFloat(input.value);
+				if (RH < 0) {
+					setError('rh', 'Relative humidity must be at least 0%');
+					return;
+				}
+				const e = RH / 100 * waterVaporPressure(T_K);
+				if (e > P_CRIT_PA) {
+					const u = unit('vp-unit');
+					setError('rh', `Relative humidity is too high: vapor pressure would exceed water's critical pressure (${fmtBound(convert(P_CRIT_PA, 'Pa', u), u)} ${u})`);
+					return;
+				}
+				// 0% gives e = 0, for which getBoilingPoint returns absolute zero.
+				Td_K = getBoilingPoint(e);
+				break;
+			}
+			case 'ah': {
+				const u = unit('ah-unit');
+				const rho = convert(parseFloat(input.value), u, 'kg/m3');
+				if (rho < 0) {
+					setError('ah', `Absolute humidity must be at least 0 ${densLabel(u)}`);
+					return;
+				}
+				const e = getVaporPressureFromAbsoluteHumidity(rho, T_K);
+				if (e > P_CRIT_PA) {
+					const max = convert(getAbsoluteHumidity(P_CRIT_PA, T_K), 'kg/m3', u);
+					setError('ah', `Absolute humidity at this temperature must be at most ${fmtBound(max, u)} ${densLabel(u)} (water's critical pressure)`);
+					return;
+				}
+				Td_K = getBoilingPoint(e);
+				break;
+			}
+		}
+		render(f);
+	}
+
+	for (const f of FIELDS) {
+		$(f).addEventListener('input', () => onInput(f));
+	}
+
+	// Changing a field's unit re-expresses the current state in that unit (discarding any
+	// invalid entry in the field) and switches the preset to Custom.
+	for (const f of ['temp', 'dew', 'vp', 'svp', 'ah'] as Field[]) {
+		$(`${f}-unit`).addEventListener('change', () => {
+			$<HTMLSelectElement>('units-preset').value = 'custom';
+			$<HTMLInputElement>(f).value = formatField(f);
+			setError(f, '');
+		});
+	}
+
+	$('units-preset').addEventListener('change', () => {
+		const val = unit('units-preset');
+		if (val === 'custom') return;
+		const [temp, press, dens] = val.split('-');
+		$<HTMLSelectElement>('temp-unit').value = temp;
+		$<HTMLSelectElement>('dew-unit').value  = temp;
+		$<HTMLSelectElement>('vp-unit').value   = press;
+		$<HTMLSelectElement>('svp-unit').value  = press;
+		$<HTMLSelectElement>('ah-unit').value   = dens;
+		render();
+	});
+
+	// Initial state from the default temperature and relative humidity.
+	T_K  = convert(parseFloat($<HTMLInputElement>('temp').value), unit('temp-unit'), 'K');
+	Td_K = getDewPoint(T_K, parseFloat($<HTMLInputElement>('rh').value) / 100);
+	render();
+</script>

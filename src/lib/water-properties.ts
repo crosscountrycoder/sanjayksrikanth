@@ -4,7 +4,9 @@
 // Below the triple point (611.657 Pa) liquid water cannot exist.
 
 export function waterVaporPressure(T: number): number {
-    if (T > 647.096) return NaN; // no vapor pressure above critical temperature
+    if (T < 0) return NaN; // negative temperature, no vapor pressure
+    if (T === 0) return 0; // limit of the ice formula at absolute zero (it evaluates to 0/0 there)
+    if (T > 647.096) return Infinity; // no vapor pressure above critical temperature
     if (T >= 273.1600117513473) {
         /* The IAPWS ice and water formulas intersect at precisely 273.1600117513473 K due to rounding. 
         The actual triple point is still 273.16 K.*/
@@ -27,7 +29,8 @@ export function waterVaporPressure(T: number): number {
  * Formula is accurate to within 0.0024 K, and to within 0.0011 K for pressures below 10 megapascals.
 */
 export function getBoilingPoint(P_Pa: number): number {
-    if (P_Pa > 22064000) return NaN; // supercritical fluid, no boiling point
+    if (P_Pa < 0) return NaN; // negative pressure, no boiling point
+    if (P_Pa > 22064000) return Infinity; // supercritical fluid, no boiling point
     let lo = 0, hi = 647.096;
     while (hi - lo > 1e-9) {
         const mid = (lo + hi) / 2;
@@ -49,9 +52,27 @@ export function getDewPoint(T: number, RH: number): number {
     return getBoilingPoint(e);
 }
 
-/** Returns temperature given dew point in kelvins and relative humidity in range [0, 1]. 
+/** Returns temperature given dew point in kelvins and relative humidity in range [0, 1].
  * Value is in kelvins. */
 export function getTempFromDewPointAndRH(T_d: number, RH: number): number {
     const e = waterVaporPressure(T_d) / RH;
     return getBoilingPoint(e);
+}
+
+// ── Absolute humidity ────────────────────────────────────────────────────────
+// Water vapor treated as an ideal gas: ρ_w = P_w · M_w / (R · T).
+
+const M_WATER = 18.015268;        // Molar mass of VSMOW water, kg/kmol
+const R_UNIV  = 8314.46261815324; // J/(kmol·K)
+
+/** Returns absolute humidity (mass of water vapor per unit volume) in kg/m³,
+ * given the water vapor partial pressure P_w in pascals and temperature T in kelvins. */
+export function getAbsoluteHumidity(P_w: number, T: number): number {
+    return P_w * M_WATER / (R_UNIV * T);
+}
+
+/** Returns the water vapor partial pressure in pascals, given absolute humidity rho_w in kg/m³
+ * and temperature T in kelvins. Inverse of getAbsoluteHumidity. */
+export function getVaporPressureFromAbsoluteHumidity(rho_w: number, T: number): number {
+    return rho_w * R_UNIV * T / M_WATER;
 }

@@ -33,7 +33,11 @@ export function roundSig(
 ): string {
 	if (tempUnit === 'C' || tempUnit === 'F') {
 		const T_abs = n + (tempUnit === 'C' ? 273.15 : 459.67);
-		const digits = Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
+		// At absolute zero (allowing for floating-point residue from unit conversion), use
+		// sigFigs - 1 decimals, matching how a zero is shown on the absolute scales (0.00000 K).
+		const digits = Math.abs(T_abs) < 1e-9
+			? sigFigs - 1
+			: Math.max(0, (sigFigs - 1) - Math.floor(Math.log10(Math.abs(T_abs))));
 		const s = n.toFixed(digits);
 		return stripTrailingZeros ? parseFloat(s).toString() : s;
 	}
