@@ -1,0 +1,16 @@
+---
+import CalculatorNav from './CalculatorNav.astro';
+
+interface Props {
+	active: 'calculator' | 'graph' | 'table';
+}
+const { active } = Astro.props;
+
+const tabs = [
+	{ id: 'calculator', label: 'Calculator', href: '/online-tools/dew-point' },
+	{ id: 'graph',      label: 'Graph',      href: '/online-tools/dew-point/graph' },
+	{ id: 'table',      label: 'Table',      href: '/online-tools/dew-point/table' },
+];
+---
+
+<CalculatorNav tabs={tabs} active={active} />

@@ -1,0 +1,533 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import DewPointNav from '../../../components/DewPointNav.astro';
+
+const varOptions = [
+	{ value: 'temp', label: 'Temperature' },
+	{ value: 'rh',   label: 'Relative humidity' },
+	{ value: 'dew',  label: 'Dew point' },
+	{ value: 'vp',   label: 'Vapor pressure' },
+	{ value: 'svp',  label: 'Saturation vapor pressure' },
+	{ value: 'ah',   label: 'Absolute humidity' },
+];
+---
+
+<Layout title="Table | Dew Point Calculator">
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Online tools', href: '/online-tools' },
+		{ label: 'Dew Point Calculator' },
+	]} />
+	<h1>Dew Point Calculator</h1>
+	<DewPointNav active="table" />
+	<p>
+	Tabulate humidity quantities using
+	the <a href="https://iapws.org/public/documents/6dGkr/Supp-sat.pdf" target="_blank">Wagner-Pruss formula</a> (<a href="https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf" target="_blank">over ice</a> below
+	the triple point). The 2-variable table lists other quantities for a range of one variable while another is held fixed. The
+	3-variable table gives one quantity for every combination of two others, such as the dew point for each temperature and relative
+	humidity.
+	</p>
+
+	<section class="table-page">
+		<div class="controls">
+			<h2>Settings</h2>
+
+			<h3>Variables</h3>
+			<div class="field">
+				<label for="table-type">Table</label>
+				<select id="table-type">
+					<option value="2" selected>2 variables</option>
+					<option value="3">3 variables</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="row-var">Rows</label>
+				<select id="row-var">
+					{varOptions.map(o => <option value={o.value} selected={o.value === 'temp'}>{o.label}</option>)}
+				</select>
+			</div>
+			<div class="field" id="col-var-field" hidden>
+				<label for="col-var">Columns</label>
+				<select id="col-var"></select>
+			</div>
+			<div class="field" id="fixed-var-field">
+				<label for="fixed-var">Fixed</label>
+				<select id="fixed-var"></select>
+			</div>
+			<div class="field" id="fixed-value-field">
+				<label for="fixed-value">Value</label>
+				<div class="input-row">
+					<input type="number" id="fixed-value" />
+					<select id="fixed-unit"></select>
+				</div>
+			</div>
+			<p class="error" id="err-fixed"></p>
+			<div class="field" id="cell-var-field" hidden>
+				<label for="cell-var">Values</label>
+				<div class="input-row">
+					<select id="cell-var"></select>
+					<select id="cell-unit"></select>
+				</div>
+			</div>
+
+			<h3>Rows</h3>
+			<div class="field">
+				<label>Range</label>
+				<div class="range-row">
+					<input type="number" id="row-min" />
+					<span>–</span>
+					<input type="number" id="row-max" />
+					<select id="row-unit"></select>
+				</div>
+			</div>
+			<p class="error" id="err-row-range"></p>
+			<div class="field">
+				<label for="row-n">Intervals</label>
+				<input type="number" id="row-n" value="8" min="1" step="1" />
+			</div>
+			<p class="error" id="err-row-n"></p>
+
+			<div id="col-range-section" hidden>
+				<h3>Columns</h3>
+				<div class="field">
+					<label>Range</label>
+					<div class="range-row">
+						<input type="number" id="col-min" />
+						<span>–</span>
+						<input type="number" id="col-max" />
+						<select id="col-unit"></select>
+					</div>
+				</div>
+				<p class="error" id="err-col-range"></p>
+				<div class="field">
+					<label for="col-n">Intervals</label>
+					<input type="number" id="col-n" value="5" min="1" step="1" />
+				</div>
+				<p class="error" id="err-col-n"></p>
+			</div>
+
+			<div id="col-list-section">
+				<h3>Columns</h3>
+				<div class="var-list" id="var-list"></div>
+			</div>
+
+			<div class="checkbox-row">
+				<input type="checkbox" id="sci-notation" />
+				<label for="sci-notation">Use scientific notation</label>
+			</div>
+		</div>
+
+		<div class="table-area">
+			<div class="table-wrapper">
+				<table id="dp-table">
+					<caption id="table-caption"></caption>
+					<thead id="table-head"></thead>
+					<tbody id="table-body"></tbody>
+				</table>
+			</div>
+			<div class="table-actions">
+				<button id="btn-export-csv">Export CSV</button>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.table-page {
+		display: grid;
+		grid-template-columns: 1fr 2fr;
+		gap: 1.5rem;
+		align-items: start;
+	}
+
+	.error {
+		color: red;
+		font-size: 0.875rem;
+		margin: 0 0 0.4rem;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 4.5rem 1fr;
+		align-items: center;
+		column-gap: 0.5rem;
+		margin-bottom: 0.4rem;
+	}
+
+	/* .field's display: grid would otherwise override the hidden attribute. */
+	.field[hidden] {
+		display: none;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		min-width: 0;
+		max-width: 6rem;
+	}
+
+	select {
+		width: 100%;
+	}
+
+	.input-row select,
+	.range-row select {
+		width: auto;
+	}
+
+	.input-row #cell-var {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.range-row input[type="number"] {
+		max-width: 4rem;
+	}
+
+	.checkbox-row {
+		margin-bottom: 0.4rem;
+	}
+
+	.var-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		padding: 0.4rem 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.table-area {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
+	.table-wrapper {
+		overflow-x: auto;
+	}
+
+	.table-actions button {
+		font-size: 1rem;
+	}
+
+	@media (max-width: 700px) {
+		.table-page {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+
+<style is:global>
+	/* Column checkboxes are generated by the script, so their styles can't be scoped. */
+	#var-list .var-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	#var-list .var-row input[type="checkbox"] {
+		flex-shrink: 0;
+	}
+
+	#var-list .var-row label {
+		flex: 1;
+		min-width: 0;
+		font-size: 0.9375rem;
+	}
+
+	#var-list .var-row select {
+		width: auto;
+		flex-shrink: 0;
+		font-size: 0.9375rem;
+		padding: 0.15rem 0.25rem;
+	}
+
+	#dp-table {
+		border-collapse: collapse;
+		width: auto;
+		font-size: 1rem;
+		border: 1px solid var(--color-text);
+	}
+
+	#dp-table caption {
+		font-weight: bold;
+		color: var(--color-heading);
+		padding-bottom: 0.4rem;
+		text-align: left;
+	}
+
+	#dp-table th,
+	#dp-table td {
+		padding: 0.25rem 0.6rem;
+		border: 1px solid var(--color-text);
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	#dp-table th {
+		background: var(--color-output-bg);
+		font-weight: bold;
+		color: var(--color-heading);
+		max-width: 8rem;
+		white-space: normal;
+	}
+
+	/* Row and column values in a 3-variable table are numbers, so keep them on one line. */
+	#dp-table th.value {
+		white-space: nowrap;
+	}
+
+	#dp-table td {
+		color: var(--color-text);
+		white-space: nowrap;
+	}
+
+	#dp-table tbody tr:nth-child(even) td {
+		background: var(--color-output-bg);
+	}
+</style>
+
+<script>
+	import {
+		type Key, KEYS, NAMES, PARTNER, varLabel, withUnit, DEFAULT_RANGE, DEFAULT_FIXED,
+		toSI, fromSI, fmtInput, fmtOutput, rangeError, solveState, valueOf,
+		fillUnits, fillVarOptions, convertOnUnitChange,
+	} from '../../../lib/humidity.ts';
+
+	// Limits on the number of intervals (rows or columns, one fewer than the count shown).
+	const MAX_ROW_INTERVALS = 1000;
+	const MAX_COL_INTERVALS = 50;
+
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+	const sel = (id: string) => $<HTMLSelectElement>(id);
+	const inp = (id: string) => $<HTMLInputElement>(id);
+	const num = (id: string) => parseFloat(inp(id).value);
+
+	// 2-variable table: one row per value of the row variable, with the fixed variable held
+	// at one value and a column for each chosen output variable.
+	// 3-variable table: rows and columns are two variables, and each cell is a third.
+	const threeVar = () => sel('table-type').value === '3';
+	const rowKey   = () => sel('row-var').value as Key;
+	const colKey   = () => sel('col-var').value as Key;
+	const fixedKey = () => sel('fixed-var').value as Key;
+	const cellKey  = () => sel('cell-var').value as Key;
+
+	// Together with the row variable, the fixed (or column) variable must pin down the air's
+	// state, so it can't be the row variable or its one-to-one partner.
+	const partnerOptions = (k: Key) => KEYS.filter(o => o !== k && o !== PARTNER[k]);
+
+	// Output columns of a 2-variable table: every variable except the row and fixed ones.
+	// Checked state and units are remembered per variable as the list is rebuilt.
+	const colChecked: Partial<Record<Key, boolean>> = {};
+	const colUnit: Partial<Record<Key, string>> = {};
+
+	function buildColumnList() {
+		const list = $('var-list');
+		const keys = KEYS.filter(k => k !== rowKey() && k !== fixedKey());
+		list.innerHTML = keys.map(k => `
+			<div class="var-row">
+				<input type="checkbox" id="chk-${k}" data-key="${k}" ${colChecked[k] ?? true ? 'checked' : ''} />
+				<label for="chk-${k}">${NAMES[k]}</label>
+				<select id="unit-${k}" data-key="${k}"></select>
+			</div>`).join('');
+		for (const k of keys) {
+			const s = sel(`unit-${k}`);
+			fillUnits(s, k);
+			if (colUnit[k]) s.value = colUnit[k]!;
+		}
+	}
+
+	function resetRange(prefix: 'row' | 'col', key: Key) {
+		fillUnits(sel(`${prefix}-unit`), key);
+		const u = sel(`${prefix}-unit`).value;
+		inp(`${prefix}-min`).value = fmtInput(key, fromSI(key, DEFAULT_RANGE[key][0], u));
+		inp(`${prefix}-max`).value = fmtInput(key, fromSI(key, DEFAULT_RANGE[key][1], u));
+	}
+
+	function resetFixedValue() {
+		const f = fixedKey();
+		fillUnits(sel('fixed-unit'), f);
+		inp('fixed-value').value = fmtInput(f, fromSI(f, DEFAULT_FIXED[f], sel('fixed-unit').value));
+	}
+
+	// Refreshes the dependent dropdowns after the row (or column) variable changes.
+	function updateOptions() {
+		const prevFixed = sel('fixed-var').value, prevCol = sel('col-var').value, prevCell = sel('cell-var').value;
+		fillVarOptions(sel('fixed-var'), partnerOptions(rowKey()), 'rh');
+		fillVarOptions(sel('col-var'), partnerOptions(rowKey()), 'rh');
+		fillVarOptions(sel('cell-var'), KEYS.filter(k => k !== rowKey() && k !== colKey()), 'dew');
+		if (sel('fixed-var').value !== prevFixed) resetFixedValue();
+		if (sel('col-var').value !== prevCol) resetRange('col', colKey());
+		if (sel('cell-var').value !== prevCell) fillUnits(sel('cell-unit'), cellKey());
+		buildColumnList();
+	}
+
+	function updateModeUI() {
+		const three = threeVar();
+		$('col-var-field').hidden = !three;
+		$('cell-var-field').hidden = !three;
+		$('col-range-section').hidden = !three;
+		$('fixed-var-field').hidden = three;
+		$('fixed-value-field').hidden = three;
+		$('col-list-section').hidden = three;
+	}
+
+	// ── Building the table ───────────────────────────────────────────────────
+
+	// Values of a range split into n intervals, in the displayed unit.
+	const rangeValues = (min: number, max: number, n: number) =>
+		Array.from({ length: n + 1 }, (_, i) => parseFloat((min + (max - min) * i / n).toPrecision(12)));
+
+	// A variable's value at (row value, other value), in unit u, or null if no valid state exists.
+	function cellValue(out: Key, u: string, row: Key, rowSI: number, other: Key, otherSI: number): number | null {
+		const s = solveState({ [row]: rowSI, [other]: otherSI });
+		if (!s) return null;
+		const v = fromSI(out, valueOf(out, s), u);
+		return isFinite(v) ? v : null;
+	}
+
+	// The table as text: a heading row, then data rows, each starting with a heading cell.
+	// Shared by the HTML table and the CSV export.
+	interface TableData { caption: string; corner: string; colLabel: string; cols: string[]; rows: { head: string; cells: string[] }[] }
+	let current: TableData | null = null;
+
+	// Reads and validates a range; returns its values, or null after writing an error.
+	function readRange(prefix: 'row' | 'col', key: Key, maxN: number, label: string): number[] | null {
+		const errRange = $(`err-${prefix}-range`), errN = $(`err-${prefix}-n`);
+		const min = num(`${prefix}-min`), max = num(`${prefix}-max`), n = parseInt(inp(`${prefix}-n`).value);
+		const u = sel(`${prefix}-unit`).value;
+		if (isNaN(min) || isNaN(max) || isNaN(n)) return null;
+		const err = rangeError(key, toSI(key, min, u), u, `${label} range`) || rangeError(key, toSI(key, max, u), u, `${label} range`);
+		if (err) { errRange.textContent = err; return null; }
+		if (min >= max) { errRange.textContent = `${label} minimum must be less than the maximum.`; return null; }
+		if (n < 1 || n > maxN) { errN.textContent = `Number of ${label.toLowerCase()} intervals must be between 1 and ${maxN}.`; return null; }
+		return rangeValues(min, max, n);
+	}
+
+	function buildTable(): TableData | null {
+		const sci = inp('sci-notation').checked;
+		const row = rowKey(), ru = sel('row-unit').value;
+		const fmtCell = (key: Key, v: number | null) => v === null ? 'N/A' : sci ? v.toExponential(5) : fmtOutput(key, v);
+
+		const rowVals = readRange('row', row, MAX_ROW_INTERVALS, 'Row');
+		if (!rowVals) return null;
+
+		if (!threeVar()) {
+			const f = fixedKey(), fu = sel('fixed-unit').value;
+			const fv = num('fixed-value');
+			if (isNaN(fv)) return null;
+			const fSI = toSI(f, fv, fu);
+			const err = rangeError(f, fSI, fu, NAMES[f]);
+			if (err) { $('err-fixed').textContent = err; return null; }
+
+			const outs = KEYS.filter(k => k !== row && k !== f && inp(`chk-${k}`)?.checked);
+			if (outs.length === 0) return null;
+			const units = outs.map(k => sel(`unit-${k}`).value);
+			return {
+				caption: `${NAMES[f]} = ${withUnit(fmtInput(f, fv), fu)}`,
+				corner: varLabel(row, ru),
+				colLabel: '',
+				cols: outs.map((k, i) => varLabel(k, units[i])),
+				rows: rowVals.map(rv => ({
+					head: fmtInput(row, rv),
+					cells: outs.map((k, i) => fmtCell(k, cellValue(k, units[i], row, toSI(row, rv, ru), f, fSI))),
+				})),
+			};
+		}
+
+		const col = colKey(), cu = sel('col-unit').value;
+		const cell = cellKey(), zu = sel('cell-unit').value;
+		const colVals = readRange('col', col, MAX_COL_INTERVALS, 'Column');
+		if (!colVals) return null;
+		const colSI = colVals.map(cv => toSI(col, cv, cu));
+		return {
+			caption: varLabel(cell, zu),
+			corner: varLabel(row, ru),
+			colLabel: varLabel(col, cu),
+			cols: colVals.map(cv => fmtInput(col, cv)),
+			rows: rowVals.map(rv => ({
+				head: fmtInput(row, rv),
+				cells: colSI.map(cs => fmtCell(cell, cellValue(cell, zu, row, toSI(row, rv, ru), col, cs))),
+			})),
+		};
+	}
+
+	function render() {
+		for (const id of ['err-fixed', 'err-row-range', 'err-row-n', 'err-col-range', 'err-col-n']) $(id).textContent = '';
+		current = buildTable();
+		const caption = $('table-caption'), head = $('table-head'), body = $('table-body');
+		if (!current) { caption.textContent = ''; head.innerHTML = ''; body.innerHTML = ''; return; }
+
+		const t = current;
+		caption.textContent = t.caption;
+		if (threeVar()) {
+			// The row variable's name spans both heading rows; the column variable's name spans
+			// the column values beneath it.
+			head.innerHTML =
+				`<tr><th rowspan="2">${t.corner}</th><th colspan="${t.cols.length}">${t.colLabel}</th></tr>` +
+				`<tr>${t.cols.map(c => `<th class="value">${c}</th>`).join('')}</tr>`;
+			body.innerHTML = t.rows.map(r =>
+				`<tr><th class="value">${r.head}</th>${r.cells.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+		} else {
+			head.innerHTML = `<tr><th>${t.corner}</th>${t.cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+			body.innerHTML = t.rows.map(r =>
+				`<tr><td>${r.head}</td>${r.cells.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+		}
+	}
+
+	// ── Events ───────────────────────────────────────────────────────────────
+
+	sel('table-type').addEventListener('change', () => { updateModeUI(); render(); });
+	sel('row-var').addEventListener('change', () => { resetRange('row', rowKey()); updateOptions(); render(); });
+	sel('col-var').addEventListener('change', () => { resetRange('col', colKey()); updateOptions(); render(); });
+	sel('fixed-var').addEventListener('change', () => { resetFixedValue(); buildColumnList(); render(); });
+	sel('cell-var').addEventListener('change', () => { fillUnits(sel('cell-unit'), cellKey()); render(); });
+	sel('cell-unit').addEventListener('change', render);
+
+	convertOnUnitChange(sel('row-unit'), [inp('row-min'), inp('row-max')], rowKey, render);
+	convertOnUnitChange(sel('col-unit'), [inp('col-min'), inp('col-max')], colKey, render);
+	convertOnUnitChange(sel('fixed-unit'), [inp('fixed-value')], fixedKey, render);
+
+	for (const id of ['fixed-value', 'row-min', 'row-max', 'row-n', 'col-min', 'col-max', 'col-n', 'sci-notation']) {
+		inp(id).addEventListener('input', render);
+		inp(id).addEventListener('change', render);
+	}
+
+	// Output column checkboxes and units: remember the choice, then redraw.
+	$('var-list').addEventListener('change', (e) => {
+		const el = e.target as HTMLInputElement | HTMLSelectElement;
+		const k = el.dataset.key as Key;
+		if (el instanceof HTMLInputElement) colChecked[k] = el.checked;
+		else colUnit[k] = el.value;
+		render();
+	});
+
+	// Export CSV: the same cells as the table. A CSV has no caption or spanning headings, so
+	// the top-left cell also holds the caption (and, in a 3-variable table, both variables).
+	const csvCell = (s: string) => /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+	$('btn-export-csv').addEventListener('click', () => {
+		const t = current;
+		if (!t) return;
+		const corner = threeVar()
+			? `${t.caption} [rows: ${t.corner}; columns: ${t.colLabel}]`
+			: `${t.corner} [${t.caption}]`;
+		const lines = [[corner, ...t.cols], ...t.rows.map(r => [r.head, ...r.cells])];
+		const csv = lines.map(l => l.map(csvCell).join(',')).join('\n') + '\n';
+		const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+		const a = Object.assign(document.createElement('a'), { href: url, download: 'dew-point-table.csv' });
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	});
+
+	// Initial state: a 2-variable table of temperature at 50% relative humidity; switching to
+	// 3 variables shows the dew point for each temperature and relative humidity.
+	resetRange('row', rowKey());
+	updateOptions();
+	updateModeUI();
+	render();
+</script>

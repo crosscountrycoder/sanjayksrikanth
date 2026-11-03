@@ -1,0 +1,58 @@
+---
+// Tab bar linking a calculator's pages (Calculator, Graph, Table, Notes, ...).
+interface Props {
+	tabs: { id: string; label: string; href: string }[];
+	active: string;
+}
+const { tabs, active } = Astro.props;
+---
+
+<nav class="calc-nav">
+	{tabs.map(tab => (
+		<a
+			href={tab.href}
+			class:list={['calc-nav-tab', { active: active === tab.id }]}
+			data-label={tab.label}
+		>{tab.label}</a>
+	))}
+</nav>
+
+<style>
+	.calc-nav {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1.25rem;
+	}
+	.calc-nav-tab {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		font-family: Arial, sans-serif;
+		font-size: 0.875rem;
+		font-weight: normal;
+		color: var(--color-text);
+		background: var(--color-button-bg);
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+		padding: 0.4rem 1rem;
+		text-decoration: none;
+		cursor: pointer;
+	}
+	/* Reserve bold width so button size doesn't shift */
+	.calc-nav-tab::after {
+		content: attr(data-label);
+		font-weight: bold;
+		height: 0;
+		visibility: hidden;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	.calc-nav-tab:hover {
+		background: var(--color-button-hover);
+		text-decoration: none;
+	}
+	.calc-nav-tab.active {
+		font-weight: bold;
+		background: var(--color-output-bg);
+	}
+</style>

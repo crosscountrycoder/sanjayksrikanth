@@ -1,0 +1,575 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import DewPointNav from '../../../components/DewPointNav.astro';
+
+const varOptions = [
+	{ value: 'temp', label: 'Temperature' },
+	{ value: 'rh',   label: 'Relative humidity' },
+	{ value: 'dew',  label: 'Dew point' },
+	{ value: 'vp',   label: 'Vapor pressure' },
+	{ value: 'svp',  label: 'Saturation vapor pressure' },
+	{ value: 'ah',   label: 'Absolute humidity' },
+];
+---
+
+<Layout title="Graph | Dew Point Calculator">
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Online tools', href: '/online-tools' },
+		{ label: 'Dew Point Calculator' },
+	]} />
+	<h1>Dew Point Calculator</h1>
+	<DewPointNav active="graph" />
+	<p>
+	Graph one humidity quantity against another while a third is held fixed, using
+	the <a href="https://iapws.org/public/documents/6dGkr/Supp-sat.pdf" target="_blank">Wagner-Pruss formula</a> (<a href="https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf" target="_blank">over ice</a> below
+	the triple point). For example, plot relative humidity against temperature for a fixed dew point. Temperature and
+	saturation vapor pressure have a one-to-one relationship, as do dew point and vapor pressure, so graphing either pair needs
+	no fixed variable.
+	</p>
+	<p>
+	The 3-variable graph draws a contour for each of several values of the third variable instead, colored from blue (lowest)
+	to red (highest).
+	</p>
+
+	<section class="graph-page">
+		<div class="controls">
+			<h2>Settings</h2>
+
+			<h3>Variables</h3>
+			<div class="field">
+				<label for="graph-type">Graph</label>
+				<select id="graph-type">
+					<option value="2" selected>2 variables</option>
+					<option value="3">3 variables (contours)</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="x-var">X-axis</label>
+				<select id="x-var">
+					{varOptions.map(o => <option value={o.value} selected={o.value === 'temp'}>{o.label}</option>)}
+				</select>
+			</div>
+			<div class="field">
+				<label for="y-var">Y-axis</label>
+				<select id="y-var"></select>
+			</div>
+			<div class="field">
+				<label for="fixed-var" id="lbl-fixed-var">Fixed</label>
+				<select id="fixed-var"></select>
+			</div>
+			<div class="field" id="fixed-value-field">
+				<label for="fixed-value">Value</label>
+				<div class="input-row">
+					<input type="number" id="fixed-value" />
+					<select id="fixed-unit"></select>
+				</div>
+			</div>
+			<div id="contour-fields" hidden>
+				<div class="field">
+					<label>Range</label>
+					<div class="range-row">
+						<input type="number" id="c-min" />
+						<span>–</span>
+						<input type="number" id="c-max" />
+						<select id="c-unit"></select>
+					</div>
+				</div>
+				<div class="field">
+					<label for="c-step">Interval</label>
+					<input type="number" id="c-step" min="0" />
+				</div>
+			</div>
+			<p class="error" id="err-fixed"></p>
+
+			<h3>X-axis</h3>
+			<div class="field">
+				<label>Range</label>
+				<div class="range-row">
+					<input type="number" id="x-min" />
+					<span>–</span>
+					<input type="number" id="x-max" />
+					<select id="x-unit"></select>
+				</div>
+			</div>
+			<p class="error" id="err-x-range"></p>
+			<div class="field">
+				<label for="x-intervals">Intervals</label>
+				<input type="number" id="x-intervals" value="5" min="1" step="1" />
+			</div>
+			<div class="checkbox-row">
+				<input type="checkbox" id="x-log" />
+				<label for="x-log">Logarithmic scale</label>
+			</div>
+
+			<h3>Y-axis</h3>
+			<div class="field">
+				<label>Range</label>
+				<div class="range-row">
+					<input type="number" id="y-min" placeholder="auto" />
+					<span>–</span>
+					<input type="number" id="y-max" placeholder="auto" />
+					<select id="y-unit"></select>
+				</div>
+			</div>
+			<p class="error" id="err-y-range"></p>
+			<div class="field">
+				<label for="y-intervals">Intervals</label>
+				<input type="number" id="y-intervals" value="5" min="1" step="1" />
+			</div>
+			<div class="checkbox-row">
+				<input type="checkbox" id="y-log" />
+				<label for="y-log">Logarithmic scale</label>
+			</div>
+		</div>
+
+		<div class="graph-area">
+			<svg id="graph-svg" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg"></svg>
+			<div class="graph-actions">
+				<button id="btn-download">Download SVG</button>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.graph-page {
+		display: grid;
+		grid-template-columns: 1fr 2fr;
+		gap: 1.5rem;
+		align-items: start;
+	}
+
+	.error {
+		color: red;
+		font-size: 0.875rem;
+		margin: 0 0 0.4rem;
+	}
+
+	.field {
+		display: grid;
+		grid-template-columns: 4.5rem 1fr;
+		align-items: center;
+		column-gap: 0.5rem;
+		margin-bottom: 0.4rem;
+	}
+
+	/* .field's display: grid would otherwise override the hidden attribute. */
+	.field[hidden] {
+		display: none;
+	}
+
+	input[type="number"] {
+		flex: 1;
+		min-width: 0;
+		max-width: 6rem;
+	}
+
+	select {
+		width: 100%;
+	}
+
+	.input-row select,
+	.range-row select {
+		width: auto;
+	}
+
+	.range-row input[type="number"] {
+		max-width: 4rem;
+	}
+
+	.checkbox-row {
+		margin-bottom: 0.4rem;
+	}
+
+	.graph-area {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	#graph-svg {
+		width: 100%;
+		height: auto;
+		display: block;
+		border: 1px solid var(--color-border);
+		border-radius: 0;
+	}
+
+	.graph-actions button {
+		font-size: 1rem;
+	}
+
+	@media (max-width: 700px) {
+		.graph-page {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+
+<script>
+	import { formatTemp, formatSig } from '../../../lib/helpers.ts';
+	import {
+		type Key, KEYS, NAMES, KIND, varLabel, withUnit, DEFAULT_RANGE, DEFAULT_FIXED, fixedOptions,
+		toSI, fromSI, changeUnit, fmtInput, rangeError, solveState, valueOf,
+		fillUnits, fillVarOptions, convertOnUnitChange,
+	} from '../../../lib/humidity.ts';
+	import { linearTicks, logTicks, formatTick, graphColors, downloadSvg } from '../../../lib/graph.ts';
+
+	// Intervals sampled along the x-axis (N_POINTS + 1 points), matching the atmosphere graph.
+	const N_POINTS = 1000;
+
+	// Default contour range and interval (min, max, step) for each variable, in SI units.
+	const DEFAULT_CONTOURS: Record<Key, [number, number, number]> = {
+		temp: [263.15, 313.15, 10], dew: [263.15, 303.15, 5], rh: [0.1, 1, 0.1],
+		vp: [500, 4000, 500], svp: [1000, 7000, 1000], ah: [0.005, 0.03, 0.005],
+	};
+	const MAX_CONTOURS = 30;
+
+	// Contour colors run along this scale from the lowest value to the highest.
+	const CONTOUR_STOPS = ['#0000ff', '#00c0c0', '#00c000', '#c0c000', '#ff0000'];
+
+	// Color at position t (0 to 1) along CONTOUR_STOPS, interpolating linearly between stops.
+	function contourColor(t: number): string {
+		const segments = CONTOUR_STOPS.length - 1;
+		const i = Math.min(Math.floor(t * segments), segments - 1);
+		const f = t * segments - i;
+		const rgb = (hex: string) => [1, 3, 5].map(j => parseInt(hex.slice(j, j + 2), 16));
+		const a = rgb(CONTOUR_STOPS[i]), b = rgb(CONTOUR_STOPS[i + 1]);
+		return '#' + a.map((c, j) => Math.round(c + (b[j] - c) * f).toString(16).padStart(2, '0')).join('');
+	}
+
+	// ── Controls ─────────────────────────────────────────────────────────────
+
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+	const sel = (id: string) => $<HTMLSelectElement>(id);
+	const inp = (id: string) => $<HTMLInputElement>(id);
+	const num = (id: string) => parseFloat(inp(id).value);
+
+	const xKey     = () => sel('x-var').value as Key;
+	const yKey     = () => sel('y-var').value as Key;
+	// The third variable: held fixed (2-variable graph) or drawn as contours (3-variable graph).
+	const fixedKey = () => (sel('fixed-var').value || null) as Key | null;
+	const contourMode = () => sel('graph-type').value === '3';
+
+	// Lists every variable except x. If y was just chosen as the new x, y takes the old x
+	// (the axes swap).
+	function fillYOptions(oldX: Key | null) {
+		fillVarOptions(sel('y-var'), KEYS.filter(k => k !== xKey()), oldX ?? 'rh');
+	}
+
+	function fillFixedOptions() {
+		const s = sel('fixed-var');
+		const prev = s.value;
+		const options = fixedOptions(xKey(), yKey());
+		if (options.length === 0) {
+			s.innerHTML = '<option value="">None (one-to-one)</option>';
+			s.disabled = true;
+		} else {
+			fillVarOptions(s, options);
+			s.disabled = false;
+		}
+		if (s.value !== prev) resetFixedValue();
+		updateModeUI();
+	}
+
+	// Shows the fixed value or the contour settings, depending on the graph type. A
+	// one-to-one pair has no third variable, so it shows neither.
+	function updateModeUI() {
+		const hasThird = fixedKey() !== null;
+		$('lbl-fixed-var').textContent = contourMode() ? 'Contours' : 'Fixed';
+		$('fixed-value-field').hidden = !hasThird || contourMode();
+		$('contour-fields').hidden = !hasThird || !contourMode();
+	}
+
+	function resetXRange() {
+		const x = xKey(), u = sel('x-unit').value;
+		inp('x-min').value = fmtInput(x, fromSI(x, DEFAULT_RANGE[x][0], u));
+		inp('x-max').value = fmtInput(x, fromSI(x, DEFAULT_RANGE[x][1], u));
+	}
+
+	// Resets the third variable's fixed value and contour settings to its defaults.
+	function resetFixedValue() {
+		const f = fixedKey();
+		if (!f) return;
+		fillUnits(sel('fixed-unit'), f);
+		inp('fixed-value').value = fmtInput(f, fromSI(f, DEFAULT_FIXED[f], sel('fixed-unit').value));
+		fillUnits(sel('c-unit'), f);
+		const cu = sel('c-unit').value;
+		const [cMin, cMax, cStep] = DEFAULT_CONTOURS[f];
+		inp('c-min').value  = fmtInput(f, fromSI(f, cMin, cu));
+		inp('c-max').value  = fmtInput(f, fromSI(f, cMax, cu));
+		inp('c-step').value = formatSig(fromSI(f, cStep, changeUnit(cu)), 6, true);
+	}
+
+	// A logarithmic scale is only offered for pressures and absolute humidity; it's disabled
+	// (and unchecked) for temperature, dew point, and relative humidity.
+	function updateLogOptions() {
+		for (const [id, key] of [['x-log', xKey()], ['y-log', yKey()]] as const) {
+			const canLog = KIND[key] === 'press' || KIND[key] === 'dens';
+			inp(id).disabled = !canLog;
+			if (!canLog) inp(id).checked = false;
+		}
+	}
+
+	// ── Drawing ──────────────────────────────────────────────────────────────
+
+	const tickLabel = (key: Key, v: number) => KIND[key] === 'temp' ? formatTemp(v, 1, true) : formatTick(v);
+
+	function draw() {
+		const svg = $('graph-svg') as unknown as SVGSVGElement;
+		const errFixed = $('err-fixed'), errX = $('err-x-range'), errY = $('err-y-range');
+		errFixed.textContent = errX.textContent = errY.textContent = '';
+		const clear = () => { svg.innerHTML = ''; };
+
+		const x = xKey(), y = yKey(), f = fixedKey();
+		const xu = sel('x-unit').value, yu = sel('y-unit').value;
+		const fu = contourMode() ? sel('c-unit').value : sel('fixed-unit').value;
+
+		// One curve per value of the third variable: a single fixed value, or one per contour.
+		// `value` is in the third variable's displayed unit; with no third variable it's NaN.
+		const fValues: number[] = [];
+		if (!f) {
+			fValues.push(NaN);
+		} else if (!contourMode()) {
+			const fv = num('fixed-value');
+			if (isNaN(fv)) return clear();
+			const err = rangeError(f, toSI(f, fv, fu), fu, NAMES[f]);
+			if (err) { errFixed.textContent = err; return clear(); }
+			fValues.push(fv);
+		} else {
+			const cMin = num('c-min'), cMax = num('c-max'), cStep = num('c-step');
+			if (isNaN(cMin) || isNaN(cMax) || isNaN(cStep)) return clear();
+			const err = rangeError(f, toSI(f, cMin, fu), fu, 'Contour range') || rangeError(f, toSI(f, cMax, fu), fu, 'Contour range');
+			if (err) { errFixed.textContent = err; return clear(); }
+			if (cMin > cMax) { errFixed.textContent = 'Contour minimum must not be greater than the maximum.'; return clear(); }
+			if (!(cStep > 0)) { errFixed.textContent = 'Contour interval must be greater than 0.'; return clear(); }
+			const count = Math.floor((cMax - cMin) / cStep + 1e-9) + 1;
+			if (count > MAX_CONTOURS) {
+				errFixed.textContent = `Contour interval is too small: at most ${MAX_CONTOURS} contours can be drawn.`;
+				return clear();
+			}
+			// Rounding keeps e.g. 0.1 + 2 × 0.1 from showing as 0.30000000000000004.
+			for (let k = 0; k < count; k++) fValues.push(parseFloat((cMin + k * cStep).toPrecision(12)));
+		}
+
+		// X-axis range
+		const xMin = num('x-min'), xMax = num('x-max');
+		if (isNaN(xMin) || isNaN(xMax)) return clear();
+		const err = rangeError(x, toSI(x, xMin, xu), xu, 'X-axis range') || rangeError(x, toSI(x, xMax, xu), xu, 'X-axis range');
+		if (err) { errX.textContent = err; return clear(); }
+		if (xMin >= xMax) { errX.textContent = 'X-axis minimum must be less than the maximum.'; return clear(); }
+		const xLog = inp('x-log').checked;
+		if (xLog && xMin <= 0) { errX.textContent = 'X-axis minimum must be positive for logarithmic scale.'; return clear(); }
+
+		// Y-axis range: blank means auto.
+		const yMinUser = isNaN(num('y-min')) ? null : num('y-min');
+		const yMaxUser = isNaN(num('y-max')) ? null : num('y-max');
+		const yLog = inp('y-log').checked;
+		if (yMinUser !== null && yMaxUser !== null && yMinUser >= yMaxUser) {
+			errY.textContent = 'Y-axis minimum must be less than the maximum.';
+			return clear();
+		}
+		if (yLog && yMinUser !== null && yMinUser <= 0) {
+			errY.textContent = 'Y-axis minimum must be positive for logarithmic scale.';
+			return clear();
+		}
+
+		const xIntervals = parseInt(inp('x-intervals').value) || 5;
+		const yIntervals = parseInt(inp('y-intervals').value) || 5;
+
+		// Sample each curve, at points evenly spaced along the x-axis as drawn (in log10 space
+		// on a logarithmic scale).
+		const xAt = xLog
+			? (i: number) => xMin * Math.pow(xMax / xMin, i / N_POINTS)
+			: (i: number) => xMin + (xMax - xMin) * i / N_POINTS;
+		const curves = fValues.map(fv => {
+			const fSI = f ? toSI(f, fv, fu) : NaN;
+			const pts: { x: number; y: number | null }[] = [];
+			for (let i = 0; i <= N_POINTS; i++) {
+				const xv = xAt(i);
+				const known: Partial<Record<Key, number>> = { [x]: toSI(x, xv, xu) };
+				if (f) known[f] = fSI;
+				const s = solveState(known);
+				const yv = s ? fromSI(y, valueOf(y, s), yu) : NaN;
+				pts.push({ x: xv, y: isFinite(yv) && !(yLog && yv <= 0) ? yv : null });
+			}
+			return { value: fv, pts };
+		});
+		const validY = curves.flatMap(c => c.pts).filter(p => p.y !== null).map(p => p.y as number);
+		if (validY.length < 2) return clear();
+		const yDataMin = Math.min(...validY), yDataMax = Math.max(...validY);
+
+		// Y-axis extent: start non-temperature axes at 0 when the data spans more than a factor
+		// of 2, and stop an automatic relative humidity axis at 100% unless all the data is above
+		// it (supersaturated values are still drawn, up to the edge of the plot).
+		const autoYMin = !yLog && KIND[y] !== 'temp' && yDataMin >= 0 && yDataMax > yDataMin * 2 ? 0 : yDataMin;
+		const autoYMax = y === 'rh' && yDataMin < 100 ? Math.min(yDataMax, 100) : yDataMax;
+		const yLo = yMinUser ?? autoYMin;
+		const yHi = yMaxUser ?? autoYMax;
+		if (!(yLo < yHi)) return clear();
+
+		const C = graphColors();
+		const W = 600, HS = 400;
+		const pL = 62, pR = W - 20, pT = 35, pB = HS - 50;
+		const pW = pR - pL, pH = pB - pT;
+
+		const xTicks = xLog ? logTicks(xMin, xMax, xIntervals) : linearTicks(xMin, xMax, xIntervals);
+		const yTicks = yLog ? logTicks(yLo, yHi, yIntervals) : linearTicks(yLo, yHi, yIntervals);
+		const mx = xLog
+			? (v: number) => pL + (Math.log10(v) - Math.log10(xMin)) / (Math.log10(xMax) - Math.log10(xMin)) * pW
+			: (v: number) => pL + (v - xMin) / (xMax - xMin) * pW;
+		const my = yLog
+			? (v: number) => pB - (Math.log10(v) - Math.log10(yLo)) / (Math.log10(yHi) - Math.log10(yLo)) * pH
+			: (v: number) => pB - (v - yLo) / (yHi - yLo) * pH;
+
+		const text = (attrs: string, size: number, content: string) =>
+			`<text ${attrs} font-family="Arial,sans-serif" font-size="${size}" fill="${C.text}">${content}</text>`;
+
+		let s = '';
+		s += `<rect width="${W}" height="${HS}" fill="${C.bg}"/>`;
+		s += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="${C.plotBg}"/>`;
+		s += `<defs><clipPath id="c"><rect x="${pL}" y="${pT}" width="${pW}" height="${pH}"/></clipPath></defs>`;
+
+		// Grid lines
+		for (const t of xTicks) {
+			const px = mx(t).toFixed(1);
+			s += `<line x1="${px}" y1="${pT}" x2="${px}" y2="${pB}" stroke="${C.grid}" stroke-width="1"/>`;
+		}
+		for (const t of yTicks) {
+			const py = my(t).toFixed(1);
+			s += `<line x1="${pL}" y1="${py}" x2="${pR}" y2="${py}" stroke="${C.grid}" stroke-width="1"/>`;
+		}
+
+		// Axes
+		s += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
+		s += `<line x1="${pL}" y1="${pB}" x2="${pR}" y2="${pB}" stroke="${C.axis}" stroke-width="1.5"/>`;
+
+		// Ticks and labels
+		for (const t of xTicks) {
+			const px = mx(t).toFixed(1);
+			s += `<line x1="${px}" y1="${pB}" x2="${px}" y2="${pB + 5}" stroke="${C.axis}" stroke-width="1"/>`;
+			s += text(`x="${px}" y="${pB + 18}" text-anchor="middle"`, 11, tickLabel(x, t));
+		}
+		for (const t of yTicks) {
+			const py = my(t);
+			s += `<line x1="${pL - 5}" y1="${py.toFixed(1)}" x2="${pL}" y2="${py.toFixed(1)}" stroke="${C.axis}" stroke-width="1"/>`;
+			s += text(`x="${pL - 8}" y="${(py + 4).toFixed(1)}" text-anchor="end"`, 11, tickLabel(y, t));
+		}
+
+		// Axis labels, and the fixed variable's value as a title.
+		s += text(`x="${(pL + pW / 2).toFixed(1)}" y="${HS - 10}" text-anchor="middle"`, 13, varLabel(x, xu));
+		s += text(`transform="rotate(-90)" x="${-(pT + pH / 2).toFixed(1)}" y="15" text-anchor="middle"`, 13, varLabel(y, yu));
+		if (f) {
+			const title = contourMode()
+				? `Contours: ${varLabel(f, fu)}`
+				: `${NAMES[f]} = ${withUnit(fmtInput(f, fValues[0]), fu)}`;
+			s += text(`x="${(pL + pW / 2).toFixed(1)}" y="22" text-anchor="middle"`, 13, title);
+		}
+
+		// Data lines, broken wherever no valid state exists. Contours are colored along the
+		// color scale from the lowest value to the highest, and each is labeled with its value
+		// halfway along the part of the line that's inside the plot, or, if that would overlap
+		// a label already placed, at the nearest point along the line where it doesn't.
+		const inPlot = (px: number, py: number) => px >= pL && px <= pR && py >= pT && py <= pB;
+		let labels = '';
+		const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
+		const LABEL_H = 11, CHAR_W = 6.5, PAD = 2; // bold 11px Arial; PAD keeps labels apart
+		curves.forEach((c, k) => {
+			const color = contourMode() && f ? contourColor(curves.length > 1 ? k / (curves.length - 1) : 0) : C.line;
+			let d = '';
+			let started = false;
+			// Visible stretches of the line, as [x, y, cumulative length] points.
+			const visible: [number, number, number][] = [];
+			let length = 0, prevVisible: [number, number] | null = null;
+			for (const p of c.pts) {
+				if (p.y === null) { started = false; prevVisible = null; continue; }
+				const px = mx(p.x), py = my(p.y);
+				d += started ? ` L${px.toFixed(2)},${py.toFixed(2)}` : `M${px.toFixed(2)},${py.toFixed(2)}`;
+				started = true;
+				if (inPlot(px, py)) {
+					if (prevVisible) length += Math.hypot(px - prevVisible[0], py - prevVisible[1]);
+					visible.push([px, py, length]);
+					prevVisible = [px, py];
+				} else {
+					prevVisible = null;
+				}
+			}
+			if (d) s += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" clip-path="url(#c)"/>`;
+			if (contourMode() && f && visible.length > 0) {
+				// Candidate positions, nearest the middle of the visible line first.
+				const label = tickLabel(f, c.value);
+				const halfW = label.length * CHAR_W / 2 + PAD, halfH = LABEL_H / 2 + PAD;
+				const box = (px: number, py: number) => ({ x0: px - halfW, y0: py - halfH, x1: px + halfW, y1: py + halfH });
+				const fits = (b: ReturnType<typeof box>) =>
+					b.x0 >= pL && b.x1 <= pR && b.y0 >= pT && b.y1 <= pB &&
+					placed.every(o => b.x1 <= o.x0 || b.x0 >= o.x1 || b.y1 <= o.y0 || b.y0 >= o.y1);
+				const byDistance = [...visible].sort((a, b) => Math.abs(a[2] - length / 2) - Math.abs(b[2] - length / 2));
+				const [lx, ly] = byDistance.find(v => fits(box(v[0], v[1]))) ?? byDistance[0];
+				placed.push(box(lx, ly));
+				// Centered on the line; a halo in the plot's background color hides the line
+				// behind the label and keeps it readable over grid lines and other curves.
+				labels += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle" `
+					+ `font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="${color}" `
+					+ `stroke="${C.plotBg}" stroke-width="4" paint-order="stroke">${label}</text>`;
+			}
+		});
+		// Labels go on top of every line.
+		s += labels;
+
+		svg.innerHTML = s;
+	}
+
+	// ── Events ───────────────────────────────────────────────────────────────
+
+	let lastX = xKey();
+	sel('x-var').addEventListener('change', () => {
+		fillUnits(sel('x-unit'), xKey());
+		resetXRange();
+		fillYOptions(lastX);
+		lastX = xKey();
+		fillUnits(sel('y-unit'), yKey());
+		updateLogOptions();
+		fillFixedOptions();
+		draw();
+	});
+
+	sel('y-var').addEventListener('change', () => {
+		fillUnits(sel('y-unit'), yKey());
+		inp('y-min').value = inp('y-max').value = '';
+		updateLogOptions();
+		fillFixedOptions();
+		draw();
+	});
+
+	sel('fixed-var').addEventListener('change', () => { resetFixedValue(); draw(); });
+	sel('graph-type').addEventListener('change', () => { updateModeUI(); draw(); });
+
+	convertOnUnitChange(sel('x-unit'), [inp('x-min'), inp('x-max')], xKey, draw);
+	convertOnUnitChange(sel('y-unit'), [inp('y-min'), inp('y-max')], yKey, draw);
+	convertOnUnitChange(sel('fixed-unit'), [inp('fixed-value')], fixedKey, draw);
+	convertOnUnitChange(sel('c-unit'), [inp('c-min'), inp('c-max')], fixedKey, draw, [inp('c-step')]);
+
+	for (const id of ['fixed-value', 'c-min', 'c-max', 'c-step', 'x-min', 'x-max', 'x-intervals', 'y-min', 'y-max', 'y-intervals', 'x-log', 'y-log']) {
+		inp(id).addEventListener('input', draw);
+		inp(id).addEventListener('change', draw);
+	}
+
+	$('btn-download').addEventListener('click', () =>
+		downloadSvg($('graph-svg') as unknown as SVGElement, 'dew-point-graph.svg'));
+
+	// Re-render when dark mode is toggled.
+	document.getElementById('theme-toggle')?.addEventListener('click', () => setTimeout(draw, 0));
+
+	// Initial state: relative humidity against temperature at a fixed dew point.
+	fillUnits(sel('x-unit'), xKey());
+	resetXRange();
+	fillYOptions(null);
+	fillUnits(sel('y-unit'), yKey());
+	updateLogOptions();
+	fillFixedOptions();
+	sel('fixed-var').value = 'dew';
+	resetFixedValue();
+	draw();
+</script>

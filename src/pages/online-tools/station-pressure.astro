@@ -247,15 +247,15 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		getStandardStationTemperature, getStationPressure, getAltimeterPressureRatio,
 	} from '../../lib/station-pressure.ts';
 	import { convert } from '../../lib/convert.ts';
-	import { roundSig } from '../../lib/helpers.ts';
+	import { formatTemp, formatSig } from '../../lib/helpers.ts';
 
 	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 	const num  = (id: string) => parseFloat($<HTMLInputElement>(id).value);
 	const unit = (id: string) => $<HTMLSelectElement>(id).value;
 
 	const tempLabel = (u: string) => u === 'C' ? '°C' : u === 'F' ? '°F' : 'K';
-	const fmtTemp   = (K: number, u: string) => convert(K, 'K', u).toFixed(3);
-	const fmtBound  = (v: number, u: string, tempUnit = '') => roundSig(v, 6, 1e-6, true, tempUnit);
+	const fmtTemp   = (K: number, u: string) => formatTemp(convert(K, 'K', u));
+	const fmtBound  = (v: number) => formatSig(v, 6, true);
 
 	const useAltimeter = () => unit('pressure-mode') === 'altimeter';
 
@@ -268,7 +268,7 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		if (isNaN(v)) return NaN;
 		const H_m = convert(v, u, 'm');
 		if (H_m < STATION_ALT_MIN_M || H_m > STATION_ALT_MAX_M) {
-			err.textContent = `Altitude must be between ${fmtBound(convert(STATION_ALT_MIN_M, 'm', u), u)} and ${fmtBound(convert(STATION_ALT_MAX_M, 'm', u), u)} ${u}`;
+			err.textContent = `Altitude must be between ${fmtBound(convert(STATION_ALT_MIN_M, 'm', u))} and ${fmtBound(convert(STATION_ALT_MAX_M, 'm', u))} ${u}.`;
 			return NaN;
 		}
 		return H_m;
@@ -281,7 +281,7 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		if (isNaN(v)) return NaN;
 		const T_K = convert(v, u, 'K');
 		if (T_K < STATION_TEMP_MIN_K || T_K > STATION_TEMP_MAX_K) {
-			err.textContent = `Station temperature must be between ${fmtBound(convert(STATION_TEMP_MIN_K, 'K', u), u, u)} and ${fmtBound(convert(STATION_TEMP_MAX_K, 'K', u), u, u)} ${tempLabel(u)}`;
+			err.textContent = `Station temperature must be between ${formatTemp(convert(STATION_TEMP_MIN_K, 'K', u), 3, true)} and ${formatTemp(convert(STATION_TEMP_MAX_K, 'K', u), 3, true)} ${tempLabel(u)}.`;
 			return NaN;
 		}
 		return T_K;
@@ -296,11 +296,11 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		if (isNaN(v)) return NaN;
 		const P_Pa = convert(v, u, 'Pa');
 		if (P_Pa <= 0) {
-			err.textContent = `${label} must be greater than 0 ${u}`;
+			err.textContent = `${label} must be greater than 0 ${u}.`;
 			return NaN;
 		}
 		if (P_Pa >= PRESSURE_INPUT_MAX_PA) {
-			err.textContent = `${label} must be less than ${fmtBound(convert(PRESSURE_INPUT_MAX_PA, 'Pa', u), u)} ${u}`;
+			err.textContent = `${label} must be less than ${fmtBound(convert(PRESSURE_INPUT_MAX_PA, 'Pa', u))} ${u}.`;
 			return NaN;
 		}
 		return P_Pa;
@@ -342,10 +342,10 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 		}
 
 		const P_B = getStationPressure(H_A, P_A, T_A, H_B, T_B);
-		$('out-press-b').textContent = isNaN(P_B) ? '—' : roundSig(convert(P_B, 'Pa', unit('out-press-b-unit')), 6);
+		$('out-press-b').textContent = isNaN(P_B) ? '—' : formatSig(convert(P_B, 'Pa', unit('out-press-b-unit')));
 
 		const QNH_B = P_B / getAltimeterPressureRatio(H_B);
-		$('out-altimeter-b').textContent = isNaN(QNH_B) ? '—' : roundSig(convert(QNH_B, 'Pa', unit('out-altimeter-b-unit')), 6);
+		$('out-altimeter-b').textContent = isNaN(QNH_B) ? '—' : formatSig(convert(QNH_B, 'Pa', unit('out-altimeter-b-unit')));
 	}
 
 	const inputIds = [
@@ -379,7 +379,8 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 			const from  = unit(`${id}-unit`);
 			const v     = parseFloat(input.value);
 			if (!isNaN(v)) {
-				input.value = roundSig(convert(convert(v, from, si), si, to), 6, 1e-6, true, si === 'K' ? to : '');
+				const converted = convert(convert(v, from, si), si, to);
+				input.value = si === 'K' ? formatTemp(converted, 3, true) : formatSig(converted, 6, true);
 			}
 			$<HTMLSelectElement>(`${id}-unit`).value = to;
 		}

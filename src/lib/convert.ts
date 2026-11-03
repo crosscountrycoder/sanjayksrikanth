@@ -27,6 +27,13 @@ const UNIT_FACTORS: Record<string, UnitFactor> = {
 	'F': { toSI: 1/1.8, offset: 273.15 - 32/1.8 },
 	'R': { toSI: 1/1.8 },
 
+	// Temperature change (SI: K) — a difference between two temperatures, e.g. a contour
+	// interval: it scales like the temperature unit but has no offset (5 °C → 9 °F, not 41 °F).
+	// A change in kelvins is just 'K'.
+	'C-change': { toSI: 1 },
+	'F-change': { toSI: 1/1.8 },
+	'R-change': { toSI: 1/1.8 },
+
 	// Pressure (SI: Pa)
 	'atm':  { toSI: 101325 },
 	'hPa':  { toSI: 100 },

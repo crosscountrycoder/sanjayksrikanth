@@ -546,7 +546,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	import * as atm from '../../../lib/atmosphere.ts';
 	import { getBoilingPoint } from '../../../lib/water-properties.ts';
 	import { convert } from '../../../lib/convert.ts';
-	import { roundSig } from '../../../lib/helpers.ts';
+	import { formatTemp, formatAltitude, formatSig } from '../../../lib/helpers.ts';
 
 	// Geopotential-altitude equivalents of the model's geometric range (-5000 to 1000000 m),
 	// computed rather than hardcoded so bound-check messages round to the true value.
@@ -634,12 +634,10 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 	function fmtY(v: number, key: string, unit: string): string {
 		const sci = (document.getElementById('sci-notation') as HTMLInputElement).checked;
 		if (sci) return v.toExponential(5);
-		if (key === 'temperature' || key === 'boiling_point') return roundSig(v, 6, 1e-4, false, unit);
-		// Pressure/density altitude: whole units for m/ft, 3 decimals for mi/km (~1 m either
-		// way) — sub-unit precision here is just binary-search noise, not meaningful.
+		if (key === 'temperature' || key === 'boiling_point') return formatTemp(v);
 		if (key === 'pressure_altitude' || key === 'density_altitude')
-			return (unit === 'm' || unit === 'ft') ? Math.round(v).toString() : v.toFixed(3);
-		return roundSig(v, 6);
+			return formatAltitude(v, unit);
+		return formatSig(v);
 	}
 
 	let tableData: { x: number; ys: (number | null)[] }[] = [];
@@ -699,7 +697,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const hiH = xVar === 'geopotential' ? GEOPOT_MAX : 1000000;
 		if (condAlt_m < loH || condAlt_m > hiH) {
 			const factor = convert(1, 'm', condAltUnit);
-			errCondAlt.textContent = `Altitude must be between ${roundSig(loH * factor, 6, 1e-6, true)} and ${roundSig(hiH * factor, 6, 1e-6, true)} ${condAltUnit}`;
+			errCondAlt.textContent = `Altitude must be between ${formatSig(loH * factor, 6, true)} and ${formatSig(hiH * factor, 6, true)} ${condAltUnit}.`;
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
 		}
@@ -712,12 +710,12 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if (isNaN(T0_K) || T0_K < loK || T0_K > hiK) {
 			const unitLabel: Record<string, string> = { C: '°C', F: '°F', K: 'K', R: '°R' };
 			if (tempMode === 'air') {
-				const fmtT = (K: number) => parseFloat(convert(K, 'K', slTempUnit).toFixed(3)).toString();
+				const fmtT = (K: number) => formatTemp(convert(K, 'K', slTempUnit), 3, true);
 				const xK = atm.getTemperature(z_cond, hiK);
-				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}`;
+				errSlTemp.textContent = `Temperature at this altitude must be between ${fmtT(loK)} and ${fmtT(xK)} ${unitLabel[slTempUnit]}.`;
 			} else {
-				const fmt = (K: number) => roundSig(convert(K, 'K', slTempUnit), 6, 1e-6, true);
-				errSlTemp.textContent = `Sea-level temperature must be between ${fmt(loK)} and ${fmt(hiK)} ${unitLabel[slTempUnit]}`;
+				const fmt = (K: number) => formatTemp(convert(K, 'K', slTempUnit), 3, true);
+				errSlTemp.textContent = `Sea-level temperature must be between ${fmt(loK)} and ${fmt(hiK)} ${unitLabel[slTempUnit]}.`;
 			}
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
@@ -736,14 +734,14 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		}
 		if (P_input_Pa <= 0) {
 			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
-			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}`;
+			errSlPressure.textContent = `${label} must be greater than 0 ${slPressUnit}.`;
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
 		}
 		if (P_input_Pa >= atm.PRESSURE_INPUT_MAX_PA) {
 			const label = pressMode === 'air' ? 'Air pressure' : pressMode === 'altimeter' ? 'Altimeter setting' : 'Sea-level pressure';
-			const maxDisplay = roundSig(convert(atm.PRESSURE_INPUT_MAX_PA, 'Pa', slPressUnit), 6, 1e-6, true);
-			errSlPressure.textContent = `${label} must be less than ${maxDisplay} ${slPressUnit}`;
+			const maxDisplay = formatSig(convert(atm.PRESSURE_INPUT_MAX_PA, 'Pa', slPressUnit), 6, true);
+			errSlPressure.textContent = `${label} must be less than ${maxDisplay} ${slPressUnit}.`;
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
 		}
@@ -754,9 +752,9 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const hiX = xVar === 'geopotential' ? GEOPOT_MAX : 1000000;
 		if (xMin_m < loX || xMax_m > hiX) {
 			const factor = convert(1, 'm', xUnit);
-			const lo = roundSig(loX * factor, 6, 1e-6, true);
-			const hi = roundSig(hiX * factor, 6, 1e-6, true);
-			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}`;
+			const lo = formatSig(loX * factor, 6, true);
+			const hi = formatSig(hiX * factor, 6, true);
+			errXRange.textContent = `Altitude range must be between ${lo} and ${hi} ${xUnit}.`;
 			thead.innerHTML = ''; tbody.innerHTML = '';
 			return;
 		}
@@ -817,7 +815,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		// Render
 		thead.innerHTML = `<th>${xLabel}</th>` + vars.map(v => `<th>${v.label}</th>`).join('');
 		tbody.innerHTML = tableData.map(row =>
-			`<tr><td>${roundSig(row.x, 6, 1e-4, true)}</td>${row.ys.map((y, i) =>
+			`<tr><td>${formatSig(row.x, 6, true)}</td>${row.ys.map((y, i) =>
 				`<td>${y === null || !isFinite(y) ? 'N/A' : fmtY(y, vars[i].key, vars[i].unit)}</td>`
 			).join('')}</tr>`
 		).join('');
@@ -866,11 +864,11 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		const tempUnit  = (document.getElementById('sl-temp-unit') as HTMLSelectElement).value;
 		const pressUnit = (document.getElementById('sl-pressure-unit') as HTMLSelectElement).value;
 		(document.getElementById('cond-alt') as HTMLInputElement).value =
-			roundSig(convert(0, 'm', altUnit), 6, 1e-6, true);
+			formatSig(convert(0, 'm', altUnit), 6, true);
 		(document.getElementById('sl-temp') as HTMLInputElement).value =
-			roundSig(convert(288.15, 'K', tempUnit), 6, 1e-6, true);
+			formatTemp(convert(288.15, 'K', tempUnit), 3, true);
 		(document.getElementById('sl-pressure') as HTMLInputElement).value =
-			roundSig(convert(101325, 'Pa', pressUnit), 6, 1e-6, true);
+			formatSig(convert(101325, 'Pa', pressUnit), 6, true);
 		(document.getElementById('temp-mode') as HTMLSelectElement).value = 'sea-level';
 		(document.getElementById('pressure-mode') as HTMLSelectElement).value = 'sea-level';
 		updateConditionLabels();
@@ -882,7 +880,7 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		if (tableData.length === 0 || tableYConfigs.length === 0) return;
 		let csv = `"${tableXLabel}",${tableYConfigs.map(v => `"${v.label}"`).join(',')}\n`;
 		for (const row of tableData) {
-			csv += `${roundSig(row.x, 6, 1e-4, true)},${row.ys.map((y, i) =>
+			csv += `${formatSig(row.x, 6, true)},${row.ys.map((y, i) =>
 				y !== null ? fmtY(y, tableYConfigs[i].key, tableYConfigs[i].unit) : 'N/A'
 			).join(',')}\n`;
 		}
