@@ -31,7 +31,7 @@ const UNITS: Record<Kind, { value: string; label: string }[]> = {
 	rh:    [{ value: '%', label: '%' }],
 	dens:  [{ value: 'kg/m3', label: 'kg/m³' }, { value: 'g/m3', label: 'g/m³' }, { value: 'lb/ft3', label: 'lb/ft³' }, { value: 'gr/ft3', label: 'grains/ft³' }],
 };
-const DEFAULT_UNIT: Record<Kind, string> = { temp: 'C', press: 'hPa', rh: '%', dens: 'g/m3' };
+const DEFAULT_UNIT: Record<Kind, string> = { temp: 'C', press: 'kPa', rh: '%', dens: 'g/m3' };
 
 // Short unit labels for headings and messages.
 const UNIT_LABELS: Record<string, string> = {
