@@ -102,8 +102,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 						<option value="default" selected>Metric (m, °C, atm, kg, s)</option>
 						<option value="si-K-Pa">Metric (m, K, Pa, kg, s)</option>
 						<option value="si-C-Pa">Metric (m, °C, Pa, kg, s)</option>
-						<option value="si-K-hPa">Metric (m, K, hPa, kg, s)</option>
-						<option value="si-C-hPa">Metric (m, °C, hPa, kg, s)</option>
+						<option value="si-K-kPa">Metric (m, K, kPa, kg, s)</option>
+						<option value="si-C-kPa">Metric (m, °C, kPa, kg, s)</option>
 						<option value="us-F-atm">US (ft, °F, atm, lb, s)</option>
 						<option value="us-R-psi">US (ft, °R, psi, lb, s)</option>
 						<option value="us-F-psi">US (ft, °F, psi, lb, s)</option>
@@ -815,8 +815,8 @@ import AtmosphereNav from '../../../components/AtmosphereNav.astro';
 		'default':   { alt: 'm',  temp: 'C', press: 'atm',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
 		'si-K-Pa':   { alt: 'm',  temp: 'K', press: 'Pa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
 		'si-C-Pa':   { alt: 'm',  temp: 'C', press: 'Pa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
-		'si-K-hPa':  { alt: 'm',  temp: 'K', press: 'hPa',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
-		'si-C-hPa':  { alt: 'm',  temp: 'C', press: 'hPa',  dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'si-K-kPa':  { alt: 'm',  temp: 'K', press: 'kPa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
+		'si-C-kPa':  { alt: 'm',  temp: 'C', press: 'kPa',   dens: 'kg/m3',   speed: 'm/s',  visc: 'Pa·s',        mfp: 'm',  densNum: 'per_m3'  },
 		'us-F-atm':  { alt: 'ft', temp: 'F', press: 'atm',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
 		'us-R-psi':  { alt: 'ft', temp: 'R', press: 'psi',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },
 		'us-F-psi':  { alt: 'ft', temp: 'F', press: 'psi',  dens: 'lb/ft3',  speed: 'ft/s', visc: 'lbf·s/ft2',  mfp: 'ft', densNum: 'per_ft3' },

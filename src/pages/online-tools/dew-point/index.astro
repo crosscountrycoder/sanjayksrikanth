@@ -45,10 +45,6 @@ const densOptions = [
 	a frost point. In this temperature range, <a href="https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf" target="_blank">the IAPWS 
 	formula for sublimation pressure over ice</a> is used.
 	</p>
-	<p>
-	Vapor pressure and saturation vapor pressure are accurate to within 100 parts per million from -80°C to 373.946°C (the critical point). 
-	Below -223.15°C, accuracy decreases substantially, although water's vapor pressure is vanishingly small at these temperatures.
-	</p>
 
 	<section class="calculator">
 		<div class="field">
@@ -87,7 +83,7 @@ const densOptions = [
 			<div class="input-row">
 				<input type="number" id="vp" />
 				<select id="vp-unit">
-					{pressOptions.map(o => <option value={o.value} selected={o.value === 'hPa'}>{o.label}</option>)}
+					{pressOptions.map(o => <option value={o.value} selected={o.value === 'kPa'}>{o.label}</option>)}
 				</select>
 			</div>
 			<p class="error" id="err-vp"></p>
@@ -98,7 +94,7 @@ const densOptions = [
 			<div class="input-row">
 				<input type="number" id="svp" />
 				<select id="svp-unit">
-					{pressOptions.map(o => <option value={o.value} selected={o.value === 'hPa'}>{o.label}</option>)}
+					{pressOptions.map(o => <option value={o.value} selected={o.value === 'kPa'}>{o.label}</option>)}
 				</select>
 			</div>
 			<p class="error" id="err-svp"></p>
@@ -122,8 +118,8 @@ const densOptions = [
 				<option value="C-atm-g/m3">Metric (°C, atm, g/m³)</option>
 				<option value="K-Pa-g/m3">Metric (K, Pa, g/m³)</option>
 				<option value="C-Pa-g/m3">Metric (°C, Pa, g/m³)</option>
-				<option value="K-hPa-g/m3">Metric (K, hPa, g/m³)</option>
-				<option value="C-hPa-g/m3" selected>Metric (°C, hPa, g/m³)</option>
+				<option value="K-kPa-g/m3">Metric (K, kPa, g/m³)</option>
+				<option value="C-kPa-g/m3" selected>Metric (°C, kPa, g/m³)</option>
 				<option value="F-atm-gr/ft3">US (°F, atm, grains/ft³)</option>
 				<option value="R-psi-gr/ft3">US (°R, psi, grains/ft³)</option>
 				<option value="F-psi-gr/ft3">US (°F, psi, grains/ft³)</option>
@@ -263,13 +259,28 @@ const densOptions = [
 			writeField(f);
 			setError(f, '');
 		}
-		// Supersaturation warning, shown whenever the RH field itself has no error and RH is finite
-		// and over 100% (not, e.g., at 0 K with a higher dew point, where RH is infinite).
+		updateWarnings(skip);
+	}
+
+	// Warnings about the current state, shown in a field's message slot whenever that field
+	// has no error of its own (`skip` is the field being typed in, which may have one).
+	function updateWarnings(skip?: Field) {
+		// Supersaturation: RH is finite and over 100% (not, e.g., at 0 K with a higher dew point,
+		// where RH is infinite).
 		const errRh = $('err-rh');
 		if (skip !== 'rh' || errRh.textContent === '') {
 			const RH = wp.getRelativeHumidity(T_K, Td_K);
 			const supersaturated = isFinite(RH) && RH > 1;
 			errRh.textContent = supersaturated ? 'Relative humidity is over 100%: the air is supersaturated.' : '';
+		}
+		// Absolute humidity treats water vapor as an ideal gas, which underestimates it by about
+		// 1.6% at a dew point of 100°C (saturated vapor), rising to a factor of about 4 at the
+		// critical point. The error depends on the vapor pressure, which the dew point sets.
+		const errAh = $('err-ah');
+		if (skip !== 'ah' || errAh.textContent === '') {
+			errAh.textContent = Td_K > 373.15
+				? 'Absolute humidity has considerable error at this concentration because water vapor is treated as an ideal gas.'
+				: '';
 		}
 	}
 
@@ -378,6 +389,7 @@ const densOptions = [
 			$<HTMLSelectElement>('units-preset').value = 'custom';
 			writeField(f);
 			setError(f, '');
+			updateWarnings();
 		});
 	}
 

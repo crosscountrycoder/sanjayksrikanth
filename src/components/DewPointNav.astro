@@ -2,7 +2,7 @@
 import CalculatorNav from './CalculatorNav.astro';
 
 interface Props {
-	active: 'calculator' | 'graph' | 'table';
+	active: 'calculator' | 'graph' | 'table' | 'notes';
 }
 const { active } = Astro.props;
 
@@ -10,6 +10,7 @@ const tabs = [
 	{ id: 'calculator', label: 'Calculator', href: '/online-tools/dew-point' },
 	{ id: 'graph',      label: 'Graph',      href: '/online-tools/dew-point/graph' },
 	{ id: 'table',      label: 'Table',      href: '/online-tools/dew-point/table' },
+	{ id: 'notes',      label: 'Notes',      href: '/online-tools/dew-point/notes' },
 ];
 ---
 

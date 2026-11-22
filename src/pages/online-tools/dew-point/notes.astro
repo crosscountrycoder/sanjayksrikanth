@@ -1,0 +1,66 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import DewPointNav from '../../../components/DewPointNav.astro';
+---
+
+<Layout title="Notes | Dew Point Calculator">
+	<Breadcrumb crumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Online tools', href: '/online-tools' },
+		{ label: 'Dew Point Calculator' },
+	]} />
+	<h1>Dew Point Calculator</h1>
+	<DewPointNav active="notes" />
+	<h2>Quantities</h2>
+	<p>
+	The quantities in this calculator relate to the water content of air. The calculator uses the following definitions:
+	</p>
+	<ul>
+		<li><b>Dew point (T<sub>d</sub>):</b> the temperature to which air must be cooled for water vapor to start to condense.</li>
+		<li><b>Vapor pressure (e):</b> the partial pressure of water vapor in the air.</li>
+		<li><b>Saturation vapor pressure (e<sub>s</sub>):</b> the highest vapor pressure that can exist in equilibrium with liquid water (or ice) at the air temperature.</li>
+		<li><b>Relative humidity (RH):</b> vapor pressure as a percentage of saturation vapor pressure.</li>
+		<li><b>Absolute humidity (ρ):</b> the mass of water vapor per unit volume of air.</li>
+	</ul>
+	<h2>How they relate</h2>
+	<p>
+	Saturation vapor pressure depends only on temperature, and vapor pressure depends only on dew point: the vapor pressure of water in the air 
+	equals the saturation vapor pressure at its dew point. Temperature and saturation vapor pressure therefore determine each other, as do dew point 
+	and vapor pressure. Any two quantities other than one of these pairs determine all the others.
+	</p>
+	<p>
+	Relative humidity is <span style="white-space: nowrap;">RH = e / e<sub>s</sub></span>, where e is vapor pressure and e<sub>s</sub> is saturation
+	vapor pressure. Absolute humidity follows from the ideal gas law: <span style="white-space: nowrap;">ρ = e · M / (R · T)</span>, where M is the molar
+	mass of water, R is the gas constant (8.31446 J/(mol·K)), and T is the absolute temperature.
+	</p>
+	<h2>Dew point and frost point</h2>
+	<p>
+	Below water's triple point (0.01°C / 32.018°F / 273.16 K), liquid water cannot exist in equilibrium with its vapor, so saturation is taken over ice
+	using <a href="https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf" target="_blank">the IAPWS formula for sublimation pressure</a>, and the dew
+	point is called the frost point. The pressure at the triple point is 611.657 Pa (0.00604 atm / 0.0887 psi).
+	</p>
+	<h2>Limits and assumptions</h2>
+	<ul>
+		<li>Temperatures range from absolute zero to water's critical point (373.946°C / 705.103°F / 647.096 K), and vapor pressures from 0 to the
+			critical pressure (22,064 kPa / 217.755 atm / 3,200.11 psi). Above the critical point, liquid and vapor are indistinguishable.</li>
+		<li>Vapor pressures are for pure water vapor. In air at normal atmospheric pressure, the saturation vapor pressure is about 0.4% higher.</li>
+		<li>Absolute humidity treats water vapor as an ideal gas. This is accurate to within about 0.1% at ordinary temperatures but becomes much less
+			accurate near the critical point.</li>
+		<li>Relative humidity above 100% (dew point > temperature) means supersaturated air, which can exist briefly but quickly
+			condenses into cloud, fog, or frost.</li>
+		<li>At absolute zero, saturation vapor pressure is 0, so relative and absolute humidity are undefined and shown as N/A.</li>
+		<li>The calculator uses 18.015268 g/mol for water's molar mass (used for absolute humidity). This refers 
+			to <a href="https://en.wikipedia.org/wiki/Vienna_Standard_Mean_Ocean_Water" target="_blank">Vienna Standard Mean Ocean Water (VSMOW)</a>, a 
+			standardized isotopic composition of water representative of Earth's oceans.</li>
+	</ul>
+	<h2>Sources</h2>
+	<ul>
+		<li>Source code for this calculator: <a href="https://github.com/crosscountrycoder/sanjayksrikanth" target="_blank">GitHub</a></li>
+		<li><a href="https://iapws.org/public/documents/6dGkr/Supp-sat.pdf" target="_blank">Wagner-Pruss formula for saturation vapor pressure
+			over liquid water</a>, accurate to within 72 parts per million (ppm) above the triple point</li>
+		<li><a href="https://iapws.org/public/documents/MdUFK/MeltSub2011.pdf" target="_blank">IAPWS formula for sublimation pressure over ice</a>,
+			accurate to within 100 ppm to -80°C</li>
+		<li><a href="https://iapws.org/public/documents/3pv80/FundGuide26.pdf" target="_blank">IAPWS</a> for the molar mass of VSMOW</li>
+	</ul>
+</Layout>
